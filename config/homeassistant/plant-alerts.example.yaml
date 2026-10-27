@@ -1,0 +1,68 @@
+# EXAMPLES (WIP) - adapt entity IDs. notify.your_phone = your phone's notify entity.
+template:
+  - sensor:
+      - name: "Boiler Pressure Change 24h"
+        unique_id: boiler_pressure_change_24h
+        unit_of_measurement: "bar"
+        state: >
+          {{ (states('sensor.boiler_system_pressure') | float(0)
+              - states('sensor.boiler_pressure_24h_ago') | float(0)) | round(3) }}
+# Pair with a statistics sensor or a trigger-based template that stores the reading
+# at the same time each day (e.g. 05:00, heating off, system cold) to remove thermal effects.
+
+automation:
+  - id: boiler_pressure_low
+    alias: Plant - boiler pressure low
+    triggers:
+      - trigger: numeric_state
+        entity_id: sensor.boiler_system_pressure
+        below: 1.0
+        for: "00:10:00"
+    actions:
+      - action: notify.send_message
+        target: {entity_id: notify.your_phone}
+        data:
+          title: Boiler pressure low
+          message: "System pressure {{ states('sensor.boiler_system_pressure') }} bar - top up and check for leaks."
+
+  - id: tundish_discharge
+    alias: Plant - tundish discharge detected
+    triggers:
+      - trigger: state
+        entity_id: binary_sensor.tundish_any_wet
+        to: "on"
+    actions:
+      - action: notify.send_message
+        target: {entity_id: notify.your_phone}
+        data:
+          title: Tundish discharge
+          message: "Water detected at a tundish - unvented cylinder relief discharge. Check cylinder inlet pressure and expansion vessel."
+
+  - id: firing_without_call
+    alias: Plant - boiler firing without a call
+    triggers:
+      - trigger: state
+        entity_id: binary_sensor.firing_without_call
+        to: "on"
+        for: "00:02:00"
+    actions:
+      - action: notify.send_message
+        target: {entity_id: notify.your_phone}
+        data:
+          title: Boiler firing without a call
+          message: "Boiler current shows firing with no switched-live demand for 2 minutes."
+
+  - id: cylinder_pressure_high
+    alias: Plant - cylinder inlet pressure rising
+    triggers:
+      - trigger: numeric_state
+        entity_id:
+          - sensor.cylinder_left_inlet_pressure
+          - sensor.cylinder_right_inlet_pressure
+        above: 5.0          # relief valves are 6 bar: warn at 5.0, critical at 5.5
+    actions:
+      - action: notify.send_message
+        target: {entity_id: notify.your_phone}
+        data:
+          title: Cylinder pressure high
+          message: "{{ trigger.to_state.name }} at {{ trigger.to_state.state }} bar - expansion vessel/relief valve check."

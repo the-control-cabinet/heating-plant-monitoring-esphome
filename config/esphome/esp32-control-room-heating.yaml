@@ -1,0 +1,466 @@
+# =============================================================================
+# esp32-control-room-heating.yaml - boiler plant monitoring (CURRENT / WIP)
+# ESP32-S3-DevKitC-1 (16 MB), ESPHome, ESP-IDF
+# Status: written and flashed; field wiring partly installed (see README status table).
+#   - Boiler flow/return NTCs: installed, NOISY (fixes in docs/02)
+#   - Boiler pressure sensor: installed, zero to calibrate (docs/04)
+#   - Current clamp: to install on the boiler PERMANENT LIVE supply (docs/03)
+#   - Opto board (BDR91 + boiler switched lives): to install; `inverted:` unconfirmed (docs/06)
+#   - Tundish plates: to install (docs/05)
+# The proposed next allocation (20k dividers, DHW NTCs, cylinder inlet pressures) is in
+# esp32-control-room-heating-proposed.yaml.
+# =============================================================================
+esphome:
+  name: esp32-control-room-heating
+  friendly_name: Control Room (Heating)
+
+esp32:
+  board: esp32-s3-devkitc-1
+  variant: esp32s3
+  flash_size: 16MB
+  framework:
+    type: esp-idf
+
+logger:
+  hardware_uart: UART0
+  deassert_rts_dtr: true
+
+mqtt:
+  id: mqtt_client
+  broker: !secret mqtt_broker
+  username: !secret mqtt_username
+  password: !secret mqtt_password
+  keepalive: 60s
+
+api:
+  encryption:
+    key: !secret esp32_control_room_heating_key
+  custom_services: true
+  homeassistant_services: true
+
+ota:
+  - platform: esphome
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  ap:
+    ssid: "Plant Room Fallback Hotspot"
+    password: !secret control_room_ap_password
+
+globals:
+  - id: was_calling
+    type: bool
+    initial_value: 'false'
+  - id: overrun_start_time
+    type: uint32_t
+    initial_value: '0'
+  - id: elevated_start_time
+    type: uint32_t
+    initial_value: '0'
+  - id: last_real_cycle_time
+    type: uint32_t
+    initial_value: '0'
+  # --- Tundish ---
+  - id: t1_streak
+    type: int
+    initial_value: '0'
+  - id: t2_streak
+    type: int
+    initial_value: '0'
+  - id: t1_events
+    type: int
+    restore_value: true
+    initial_value: '0'
+  - id: t2_events
+    type: int
+    restore_value: true
+    initial_value: '0'
+
+# --- Tundish: switched 3V3 for both plates, shared ---
+switch:
+  - platform: gpio
+    pin: GPIO21
+    id: plate_power
+    internal: true
+    restore_mode: ALWAYS_OFF
+
+sensor:
+  # =========================================================
+  # Flow / return NTCs (beta 3977) — left side
+  # 3V3 -> 10k -> IO4 -> NTC -> GND
+  # 3V3 -> 10k -> IO5 -> NTC -> GND
+  # =========================================================
+  - platform: adc
+    pin: GPIO4
+    id: boiler_flow_adc
+    attenuation: 12db
+    update_interval: 2s
+
+  - platform: resistance
+    id: boiler_flow_ohm
+    sensor: boiler_flow_adc
+    configuration: DOWNSTREAM
+    resistor: 10kOhm
+
+  - platform: ntc
+    sensor: boiler_flow_ohm
+    name: "Boiler Flow Temperature"
+    id: boiler_flow_temperature
+    unit_of_measurement: "°C"
+    accuracy_decimals: 1
+    calibration:
+      b_constant: 3977
+      reference_temperature: 25°C
+      reference_resistance: 10kOhm
+
+  - platform: adc
+    pin: GPIO5
+    id: boiler_return_adc
+    attenuation: 12db
+    update_interval: 2s
+
+  - platform: resistance
+    id: boiler_return_ohm
+    sensor: boiler_return_adc
+    configuration: DOWNSTREAM
+    resistor: 10kOhm
+
+  - platform: ntc
+    sensor: boiler_return_ohm
+    name: "Boiler Return Temperature"
+    id: boiler_return_temperature
+    unit_of_measurement: "°C"
+    accuracy_decimals: 1
+    calibration:
+      b_constant: 3977
+      reference_temperature: 25°C
+      reference_resistance: 10kOhm
+
+  - platform: template
+    name: "Boiler ΔT (Flow − Return)"
+    id: boiler_delta_t
+    unit_of_measurement: "K"
+    accuracy_decimals: 1
+    update_interval: 2s
+    lambda: |-
+      if (!id(boiler_flow_temperature).has_state() || !id(boiler_return_temperature).has_state())
+        return {};
+      return id(boiler_flow_temperature).state - id(boiler_return_temperature).state;
+
+  # =========================================================
+  # Boiler current clamp — SCT013-015 (15A = 1V RMS) — left side
+  # 3V3 -> 10k -> IO3 -> 10k -> GND (1:1 bias, confirmed correct)
+  # Capacitor + on IO3, - on IO13. Clamp tip -> IO13, sleeve -> GND.
+  # =========================================================
+  - platform: adc
+    pin: GPIO3
+    id: boiler_adc
+    attenuation: 12db
+    update_interval: never
+    internal: true
+
+  - platform: ct_clamp
+    sensor: boiler_adc
+    name: "Boiler Current"
+    id: boiler_current
+    sample_duration: 1000ms
+    update_interval: 1s
+    accuracy_decimals: 2
+    filters:
+      - multiply: 15.0   # 1V RMS = 15A. Refine with calibrate_linear against a known load.
+
+  # =========================================================
+  # Pressure sensor — right side (top)
+  # sensor signal -> IO2 (anchor) -> 10k -> IO1 -> 10k -> IO42 -> 10k -> GND
+  # =========================================================
+  - platform: adc
+    pin: GPIO1
+    id: boiler_system_pressure_raw
+    attenuation: 12db
+    update_interval: 2s
+    filters:
+      - median:
+          window_size: 5
+          send_every: 5
+
+  - platform: template
+    name: "Boiler System Pressure"
+    id: boiler_system_pressure
+    unit_of_measurement: "bar"
+    accuracy_decimals: 2
+    update_interval: 2s
+    lambda: |-
+      if (!id(boiler_system_pressure_raw).has_state())
+        return {};
+      float v_divided = id(boiler_system_pressure_raw).state;
+      float v_actual_sensor = v_divided / 0.6667;
+      float pressure = (v_actual_sensor - 0.5) * (5.0 / 4.0);
+      if (pressure < 0) pressure = 0;
+      return pressure;
+
+  # --- Tundish event counters ---
+  - platform: template
+    name: "Tundish 1 Wet Events"
+    lambda: 'return (float) id(t1_events);'
+    accuracy_decimals: 0
+    update_interval: 60s
+  - platform: template
+    name: "Tundish 2 Wet Events"
+    lambda: 'return (float) id(t2_events);'
+    accuracy_decimals: 0
+    update_interval: 60s
+
+  # --- Board health ---
+  - platform: wifi_signal
+    name: "Control Room WiFi Signal"
+    update_interval: 60s
+
+  - platform: uptime
+    name: "Control Room Uptime"
+
+text_sensor:
+  - platform: template
+    name: "Boiler Electrical State"
+    id: boiler_electrical_state
+    update_interval: 1s
+    lambda: |-
+      if (!id(boiler_current).has_state())
+        return {"Unknown"};
+      float a = id(boiler_current).state;
+      bool calling = id(boiler_call_for_heat).state;
+      uint32_t now = millis();
+
+      if (a < 0.15) {
+        id(was_calling) = false;
+        id(elevated_start_time) = 0;
+        return {"Off"};
+      }
+
+      if (a < 0.25) {
+        id(elevated_start_time) = 0;
+        if (calling && !id(was_calling)) {
+          id(was_calling) = true;
+          id(last_real_cycle_time) = now;
+          return {"Pre-Purge"};
+        }
+        if (!calling && id(was_calling)) {
+          if (id(overrun_start_time) == 0) id(overrun_start_time) = now;
+          if (now - id(overrun_start_time) < 60000) {
+            return {"Overrun"};
+          }
+          id(was_calling) = false;
+          id(overrun_start_time) = 0;
+          return {"Idle"};
+        }
+        return {"Idle"};
+      }
+
+      if (a < 0.40) {
+        id(elevated_start_time) = 0;
+        if (!calling && id(last_real_cycle_time) > 0) {
+          uint32_t hours_since = (now - id(last_real_cycle_time)) / 3600000;
+          if (hours_since >= 23 && hours_since <= 25) {
+            return {"24h Pump Self-Test (likely)"};
+          }
+        }
+        return {"Fan and/or Pump Active"};
+      }
+
+      id(was_calling) = calling;
+      id(overrun_start_time) = 0;
+      id(last_real_cycle_time) = now;
+
+      if (id(elevated_start_time) == 0) {
+        id(elevated_start_time) = now;
+        return {"Ignition Attempt"};
+      }
+      if (now - id(elevated_start_time) < 10000) {
+        return {"Ignition Attempt"};
+      }
+
+      if (a < 0.80)
+        return {"Firing (Running) - Low"};
+
+      return {"Firing (Running) - High"};
+
+binary_sensor:
+  - platform: status
+    name: "Control Room Online"
+
+  # --- Opto-isolated demand monitoring — left side ---
+  # inverted: true is UNCONFIRMED - test one channel against a real demand event
+  - platform: gpio
+    pin:
+      number: GPIO6
+      mode: INPUT_PULLUP
+      inverted: true
+    name: "Boiler Demand"
+    id: boiler_call_for_heat
+    filters:
+      - delayed_on: 100ms
+      - delayed_off: 100ms
+
+  - platform: gpio
+    pin:
+      number: GPIO7
+      mode: INPUT_PULLUP
+      inverted: true
+    name: "Radiator Heating Demand"
+    id: ch_demand
+    filters:
+      - delayed_on: 100ms
+      - delayed_off: 100ms
+
+  - platform: gpio
+    pin:
+      number: GPIO15
+      mode: INPUT_PULLUP
+      inverted: true
+    name: "Underfloor Heating Demand"
+    id: ufh_demand
+    filters:
+      - delayed_on: 100ms
+      - delayed_off: 100ms
+
+  - platform: gpio
+    pin:
+      number: GPIO16
+      mode: INPUT_PULLUP
+      inverted: true
+    name: "Hot Water Cylinder (Left) Demand"
+    id: hot_water_store_1
+    filters:
+      - delayed_on: 100ms
+      - delayed_off: 100ms
+
+  - platform: gpio
+    pin:
+      number: GPIO17
+      mode: INPUT_PULLUP
+      inverted: true
+    name: "Hot Water Cylinder (Right) Demand"
+    id: hot_water_store_2
+    filters:
+      - delayed_on: 100ms
+      - delayed_off: 100ms
+
+  # --- Boiler electrical state flags ---
+  - platform: template
+    name: "Boiler State - Off"
+    id: state_off
+    lambda: |-
+      return id(boiler_electrical_state).state == "Off";
+
+  - platform: template
+    name: "Boiler State - Idle"
+    id: state_idle
+    lambda: |-
+      return id(boiler_electrical_state).state == "Idle";
+
+  - platform: template
+    name: "Boiler State - Fan and/or Pump Active"
+    id: state_fan_pump_active
+    lambda: |-
+      return id(boiler_electrical_state).state == "Fan and/or Pump Active";
+
+  - platform: template
+    name: "Boiler State - 24h Pump Self-Test"
+    id: state_24h_self_test
+    lambda: |-
+      return id(boiler_electrical_state).state == "24h Pump Self-Test (likely)";
+
+  - platform: template
+    name: "Boiler State - Pre-Purge"
+    id: state_pre_purge
+    lambda: |-
+      return id(boiler_electrical_state).state == "Pre-Purge";
+
+  - platform: template
+    name: "Boiler State - Ignition Attempt"
+    id: state_ignition_attempt
+    lambda: |-
+      return id(boiler_electrical_state).state == "Ignition Attempt";
+
+  - platform: template
+    name: "Boiler State - Firing (Running) - Low"
+    id: state_firing_low
+    lambda: |-
+      return id(boiler_electrical_state).state == "Firing (Running) - Low";
+
+  - platform: template
+    name: "Boiler State - Firing (Running) - High"
+    id: state_firing_high
+    lambda: |-
+      return id(boiler_electrical_state).state == "Firing (Running) - High";
+
+  - platform: template
+    name: "Boiler State - Overrun"
+    id: state_overrun
+    lambda: |-
+      return id(boiler_electrical_state).state == "Overrun";
+
+  - platform: template
+    name: "Firing Without Call"
+    id: firing_without_call
+    lambda: |-
+      std::string s = id(boiler_electrical_state).state;
+      return (s == "Ignition Attempt" || s == "Firing (Running) - Low" || s == "Firing (Running) - High")
+             && !id(boiler_call_for_heat).state;
+
+  # --- Tundish: raw transistor drain outputs (sense pins) ---
+  - platform: gpio
+    pin:
+      number: GPIO39
+      mode: INPUT_PULLUP
+      inverted: true
+    id: t1_sense
+    internal: true
+  - platform: gpio
+    pin:
+      number: GPIO20
+      mode: INPUT_PULLUP
+      inverted: true
+    id: t2_sense
+    internal: true
+
+  # --- Tundish: what Home Assistant sees ---
+  - platform: template
+    name: "Tundish 1 Wet"
+    id: t1_wet
+    device_class: moisture
+  - platform: template
+    name: "Tundish 2 Wet"
+    id: t2_wet
+    device_class: moisture
+  - platform: template
+    name: "Tundish Any Wet"
+    id: any_wet
+    device_class: moisture
+    lambda: |-
+      return id(t1_wet).state || id(t2_wet).state;
+
+button:
+  - platform: template
+    name: "Reset Tundish Wet Events"
+    on_press:
+      - lambda: |-
+          id(t1_events) = 0;
+          id(t2_events) = 0;
+
+interval:
+  - interval: 5s
+    then:
+      - switch.turn_on: plate_power
+      - delay: 150ms
+      - lambda: |-
+          if (id(t1_sense).state) { id(t1_streak)++; } else { id(t1_streak) = 0; }
+          bool wet1 = id(t1_streak) >= 2;
+          if (wet1 && !id(t1_wet).state) { id(t1_events)++; }
+          id(t1_wet).publish_state(wet1);
+
+          if (id(t2_sense).state) { id(t2_streak)++; } else { id(t2_streak) = 0; }
+          bool wet2 = id(t2_streak) >= 2;
+          if (wet2 && !id(t2_wet).state) { id(t2_events)++; }
+          id(t2_wet).publish_state(wet2);
+      - switch.turn_off: plate_power

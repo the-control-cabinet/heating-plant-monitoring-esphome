@@ -1,0 +1,203 @@
+# understairs-monitor.yaml - UFH plant and circuit monitoring (WIP)
+# Status: flashed; clamps and probes NOT yet connected. Readings seen with nothing attached
+# were floating-input noise; add the guards described in docs/10 before trusting values.
+# Cooker circuit clamp, UFH pump clamp, UFH manifold flow/return NTCs, BLE scanner.
+
+esphome:
+  name: understairs-monitor
+  friendly_name: ESP32 Understairs
+
+esp32:
+  board: esp32-s3-devkitc-1
+  variant: esp32s3
+  flash_size: 16MB
+  framework:
+    type: esp-idf
+
+logger:
+  hardware_uart: UART0
+  deassert_rts_dtr: true
+
+mqtt:
+  id: mqtt_client
+  broker: !secret mqtt_broker
+  username: !secret mqtt_username
+  password: !secret mqtt_password
+  keepalive: 60s
+
+api:
+  encryption:
+    key: !secret esp32_understairs_monitor_key
+  custom_services: true
+  homeassistant_services: true
+
+ota:
+  - platform: esphome
+    encryption:
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  ap:
+    ssid: "ESP Understairs Fallback Hotspot"
+    password: !secret understairs_ap_password
+
+captive_portal:
+
+# The two clamps sample one after the other so they never compete for the ADC
+interval:
+  - interval: 5s
+    then:
+      - component.update: cooker_current
+      - delay: 1200ms
+      - component.update: ufh_pump_current
+
+sensor:
+  # ===========================================================
+  # COOKER circuit current - SCT013-030 (30A = 1V RMS)   RIGHT side
+  # 3V3 -> wire -> IO38 (post) -> 10k -> IO2 -> 10k -> GND
+  # Capacitor + leg -> IO2, striped - leg -> IO40
+  # Clamp tip -> IO40, clamp sleeve -> GND
+  # IO38 and IO40 are unconfigured posts, so they are not in this file
+  # ===========================================================
+  - platform: adc
+    pin: GPIO2
+    id: cooker_adc
+    attenuation: 12db
+    update_interval: never
+    internal: true
+
+  - platform: ct_clamp
+    sensor: cooker_adc
+    name: "Cooker Circuit Current"
+    id: cooker_current
+    sample_duration: 1000ms
+    update_interval: never
+    accuracy_decimals: 2
+    filters:
+      - multiply: 30.0   # 1V RMS = 30A. Refine with calibrate_linear against a known load.
+
+  # ===========================================================
+  # UFH PUMP current - SCT013-005 (5A = 1V RMS)   LEFT side
+  # 3V3 -> 10k -> IO10 -> 10k -> GND
+  # Capacitor + leg -> IO10, striped - leg -> IO12
+  # Clamp tip -> IO12, clamp sleeve -> GND
+  # IO12 is an unconfigured post, so it is not in this file
+  # ===========================================================
+  - platform: adc
+    pin: GPIO10
+    id: ufh_pump_adc
+    attenuation: 12db
+    update_interval: never
+    internal: true
+
+  - platform: ct_clamp
+    sensor: ufh_pump_adc
+    name: "UFH Pump Current"
+    id: ufh_pump_current
+    sample_duration: 1000ms
+    update_interval: never
+    accuracy_decimals: 3
+    filters:
+      - multiply: 5.0    # 1V RMS = 5A. Refine against a known load.
+
+  # ===========================================================
+  # UFH manifold FLOW temperature (NTC)
+  # 3V3 -> 10k -> IO4 -> NTC -> GND
+  # PLACEHOLDER: b_constant 3977 assumed, confirm against the probe
+  # ===========================================================
+  - platform: adc
+    pin: GPIO4
+    id: ufh_flow_adc
+    attenuation: 12db
+    update_interval: 500ms
+    internal: true
+    filters:
+      - median:
+          window_size: 5
+          send_every: 4
+          send_first_at: 4
+
+  - platform: resistance
+    id: ufh_flow_ohm
+    sensor: ufh_flow_adc
+    configuration: DOWNSTREAM
+    resistor: 10kOhm
+
+  - platform: ntc
+    sensor: ufh_flow_ohm
+    name: "UFH Manifold Flow Temperature"
+    id: ufh_flow_temperature
+    unit_of_measurement: "°C"
+    accuracy_decimals: 1
+    calibration:
+      b_constant: 3977
+      reference_temperature: 25°C
+      reference_resistance: 10kOhm
+
+  # ===========================================================
+  # UFH manifold RETURN temperature (NTC)
+  # 3V3 -> 10k -> IO5 -> NTC -> GND
+  # ===========================================================
+  - platform: adc
+    pin: GPIO5
+    id: ufh_return_adc
+    attenuation: 12db
+    update_interval: 500ms
+    internal: true
+    filters:
+      - median:
+          window_size: 5
+          send_every: 4
+          send_first_at: 4
+
+  - platform: resistance
+    id: ufh_return_ohm
+    sensor: ufh_return_adc
+    configuration: DOWNSTREAM
+    resistor: 10kOhm
+
+  - platform: ntc
+    sensor: ufh_return_ohm
+    name: "UFH Manifold Return Temperature"
+    id: ufh_return_temperature
+    unit_of_measurement: "°C"
+    accuracy_decimals: 1
+    calibration:
+      b_constant: 3977
+      reference_temperature: 25°C
+      reference_resistance: 10kOhm
+
+  - platform: template
+    name: "UFH Manifold ΔT (Flow − Return)"
+    id: ufh_delta_t
+    unit_of_measurement: "K"
+    accuracy_decimals: 1
+    update_interval: 2s
+    lambda: |-
+      if (!id(ufh_flow_temperature).has_state() || !id(ufh_return_temperature).has_state())
+        return {};
+      return id(ufh_flow_temperature).state - id(ufh_return_temperature).state;
+
+  # --- Board health ---
+  - platform: wifi_signal
+    name: "ESP32 Understairs Monitor WiFi Signal"
+    update_interval: 60s
+
+  - platform: uptime
+    name: "ESP32 Understairs Uptime"
+
+binary_sensor:
+  - platform: status
+    name: "ESP32 Understairs Online"
+
+  # Thresholds are PROVISIONAL. Set them just above the idle noise reading once wired.
+  - platform: template
+    name: "Cooker On"
+    lambda: |-
+      return id(cooker_current).has_state() && id(cooker_current).state > 1.0;
+
+  - platform: template
+    name: "UFH Pump Running"
+    lambda: |-
+      return id(ufh_pump_current).has_state() && id(ufh_pump_current).state > 0.10;

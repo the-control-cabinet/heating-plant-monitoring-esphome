@@ -1,0 +1,20 @@
+# Baseline statistics for the boiler pressure sensor (noise floor and trend)
+sensor:
+  - platform: statistics
+    name: "Boiler Pressure 1h Std Dev"
+    entity_id: sensor.boiler_system_pressure
+    state_characteristic: standard_deviation
+    max_age: {hours: 1}
+    sampling_size: 1000
+  - platform: statistics
+    name: "Boiler Pressure 1h Mean"
+    entity_id: sensor.boiler_system_pressure
+    state_characteristic: mean
+    max_age: {hours: 1}
+    sampling_size: 1000
+  - platform: statistics
+    name: "Boiler Pressure 7d Change"
+    entity_id: sensor.boiler_system_pressure
+    state_characteristic: change
+    max_age: {days: 7}
+    sampling_size: 20000

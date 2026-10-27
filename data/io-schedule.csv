@@ -1,0 +1,22 @@
+board,signal,gpio_current,gpio_proposed,type,circuit,status,notes
+control-room,Boiler flow temperature,GPIO4,GPIO4,ADC1 analogue,3V3-10k-GPIO-NTC(10k B3977)-GND + 100nF to GND,Installed - noisy,Noise fix: 100 nF + shielded/twisted cable + filters
+control-room,Boiler return temperature,GPIO5,GPIO5,ADC1 analogue,as above,Installed - noisy,as above
+control-room,Boiler system pressure,GPIO1 (anchor GPIO2; bridge GPIO42),GPIO1,ADC1 analogue,sensor-10k-GPIO-20k-GND (2/3),Installed - zero to calibrate,0-5 bar 0.5-4.5 V 5 V supply
+control-room,Boiler supply current (SCT013-015),GPIO3 (cap anchor GPIO13),GPIO3,ADC1 analogue,3V3-10k-GPIO-10k-GND bias + 10 uF coupling,To install,On boiler PERMANENT LIVE; consider 3-5 turns for resolution
+control-room,Boiler demand (boiler switched live),GPIO6,GPIO14,Digital (opto),Hailege 8-ch AC opto (3.3 V logic) -> GPIO pull-up,To install,inverted: expected true - confirm
+control-room,Radiator heating demand (BDR91),GPIO7,GPIO18,Digital (opto),as above,To install,
+control-room,UFH demand (BDR91),GPIO15,GPIO15,Digital (opto),as above,To install,
+control-room,Cylinder left demand (BDR91),GPIO16,GPIO16,Digital (opto),as above,To install,
+control-room,Cylinder right demand (BDR91),GPIO17,GPIO17,Digital (opto),as above,To install,
+control-room,Tundish plate power (pulsed),GPIO21,GPIO21,Digital out,3V3 to both plates 150 ms every 5 s,To install,Pulsed to limit electrolysis
+control-room,Tundish 1 sense,GPIO39,GPIO39,Digital in,2N7000 drain,To install,
+control-room,Tundish 2 sense,GPIO20,GPIO20,Digital in,2N7000 drain,To install,
+control-room,Cylinder left hot outlet temperature,-,GPIO8,ADC1 analogue,NTC 10k B3977 + 100nF,To install,Strap-on and lag
+control-room,Cylinder right hot outlet temperature,-,GPIO9,ADC1 analogue,as above,To install,
+control-room,Cylinder left cold-inlet pressure,-,GPIO2,ADC1 analogue,sensor-10k-GPIO-20k-GND,To install (with plumber),Ausla 0-150 psi G1/4 5 V 0.5-4.5 V
+control-room,Cylinder right cold-inlet pressure,-,GPIO10,ADC1 analogue,as above,To install (with plumber),
+understairs,Cooker circuit current (SCT013-030),GPIO2,GPIO2,ADC1 analogue,bias + coupling cap,Firmware flashed - clamp to fit at CU,On > 1.0 A
+understairs,UFH pump current (SCT013-005),GPIO10 (anchor GPIO12),GPIO10,ADC1 analogue,bias + coupling cap,Firmware flashed - clamp to fit,Running > 0.10 A
+understairs,UFH flow temperature (mixed side),GPIO4,GPIO4,ADC1 analogue,NTC divider + 100nF,Firmware flashed - placement to decide,Steel pipework after mixing valve
+understairs,UFH return temperature,GPIO5,GPIO5,ADC1 analogue,NTC divider + 100nF,Firmware flashed - placement to decide,
+understairs,UFH manifold pressure (proposed),-,GPIO1,ADC1 analogue,sensor-10k-GPIO1-20k-GND,Proposed,Leak isolation of the UFH circuit

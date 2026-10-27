@@ -1,0 +1,145 @@
+# =============================================================================
+# PROPOSED changes for esp32-control-room-heating (WIP, not yet flashed)
+# Merge into the current file once the hardware is fitted.
+#  1. Simplified 5 V -> 3.3 V dividers using 10k + 20k (frees the "anchor"/"bridge" pins)
+#  2. NTC noise filtering (multi-sample ADC + median + moving average)
+#  3. Two DHW outlet NTCs and two cylinder cold-inlet pressure sensors
+#  4. Opto inputs moved off ADC1 pins so ADC1 is kept for analogue signals
+# =============================================================================
+substitutions:
+  # Boiler pressure transducer (0-5 bar, 0.5-4.5 V). Set zero from a 0-bar reading (docs/04).
+  boiler_p_zero_v: "0.500"
+  boiler_p_span_bar: "5.0"
+  # Cylinder inlet transducers (150 psi = 10.34 bar, 0.5-4.5 V)
+  cyl_p_zero_v: "0.500"
+  cyl_p_span_bar: "10.34"
+  # Divider: signal -> 10k -> ADC pin -> 20k -> GND  => Vadc = Vsensor x 20/30
+  div_ratio: "0.6667"
+
+sensor:
+  # ---------- Boiler system pressure (GPIO1), 10k/20k divider ----------
+  - platform: adc
+    pin: GPIO1
+    id: boiler_p_adc
+    attenuation: 12db
+    samples: 16                    # average 16 conversions per reading
+    update_interval: 1s
+    filters:
+      - median: {window_size: 5, send_every: 1}
+      - sliding_window_moving_average: {window_size: 10, send_every: 5}
+  - platform: template
+    name: "Boiler System Pressure"
+    id: boiler_system_pressure
+    unit_of_measurement: "bar"
+    device_class: pressure
+    state_class: measurement
+    accuracy_decimals: 2
+    update_interval: 5s
+    lambda: |-
+      if (!id(boiler_p_adc).has_state()) return {};
+      float v = id(boiler_p_adc).state / ${div_ratio};
+      float p = (v - ${boiler_p_zero_v}) * (${boiler_p_span_bar} / 4.0);
+      return p < 0 ? 0 : p;
+
+  # ---------- Cylinder cold-inlet pressures (GPIO2 left, GPIO10 right) ----------
+  - platform: adc
+    pin: GPIO2
+    id: cyl_l_p_adc
+    attenuation: 12db
+    samples: 16
+    update_interval: 1s
+    filters:
+      - median: {window_size: 5, send_every: 1}
+      - sliding_window_moving_average: {window_size: 10, send_every: 5}
+  - platform: template
+    name: "Cylinder Left Inlet Pressure"
+    unit_of_measurement: "bar"
+    device_class: pressure
+    state_class: measurement
+    accuracy_decimals: 2
+    update_interval: 5s
+    lambda: |-
+      if (!id(cyl_l_p_adc).has_state()) return {};
+      float v = id(cyl_l_p_adc).state / ${div_ratio};
+      float p = (v - ${cyl_p_zero_v}) * (${cyl_p_span_bar} / 4.0);
+      return p < 0 ? 0 : p;
+  - platform: adc
+    pin: GPIO10
+    id: cyl_r_p_adc
+    attenuation: 12db
+    samples: 16
+    update_interval: 1s
+    filters:
+      - median: {window_size: 5, send_every: 1}
+      - sliding_window_moving_average: {window_size: 10, send_every: 5}
+  - platform: template
+    name: "Cylinder Right Inlet Pressure"
+    unit_of_measurement: "bar"
+    device_class: pressure
+    state_class: measurement
+    accuracy_decimals: 2
+    update_interval: 5s
+    lambda: |-
+      if (!id(cyl_r_p_adc).has_state()) return {};
+      float v = id(cyl_r_p_adc).state / ${div_ratio};
+      float p = (v - ${cyl_p_zero_v}) * (${cyl_p_span_bar} / 4.0);
+      return p < 0 ? 0 : p;
+
+  # ---------- NTC pattern with noise filtering (apply to all four NTCs) ----------
+  # 3V3 -> 10k -> ADC pin -> NTC -> GND, with 100 nF from ADC pin to GND at the board
+  - platform: adc
+    pin: GPIO8
+    id: dhw_l_out_adc
+    attenuation: 12db
+    samples: 16
+    update_interval: 2s
+    filters:
+      - median: {window_size: 5, send_every: 1}
+  - platform: resistance
+    id: dhw_l_out_ohm
+    sensor: dhw_l_out_adc
+    configuration: DOWNSTREAM
+    resistor: 10kOhm
+  - platform: ntc
+    sensor: dhw_l_out_ohm
+    name: "Cylinder Left Hot Outlet Temperature"
+    unit_of_measurement: "°C"
+    accuracy_decimals: 1
+    calibration:
+      b_constant: 3977
+      reference_temperature: 25°C
+      reference_resistance: 10kOhm
+    filters:
+      - sliding_window_moving_average: {window_size: 5, send_every: 1}
+      - offset: 0.0                # set after two-point check against a reference thermometer
+  - platform: adc
+    pin: GPIO9
+    id: dhw_r_out_adc
+    attenuation: 12db
+    samples: 16
+    update_interval: 2s
+    filters:
+      - median: {window_size: 5, send_every: 1}
+  - platform: resistance
+    id: dhw_r_out_ohm
+    sensor: dhw_r_out_adc
+    configuration: DOWNSTREAM
+    resistor: 10kOhm
+  - platform: ntc
+    sensor: dhw_r_out_ohm
+    name: "Cylinder Right Hot Outlet Temperature"
+    unit_of_measurement: "°C"
+    accuracy_decimals: 1
+    calibration:
+      b_constant: 3977
+      reference_temperature: 25°C
+      reference_resistance: 10kOhm
+    filters:
+      - sliding_window_moving_average: {window_size: 5, send_every: 1}
+      - offset: 0.0
+
+# ---------- Opto inputs moved off ADC1 (GPIO6/7 freed for analogue) ----------
+# Boiler Demand: GPIO6 -> GPIO14 ; Radiator Heating Demand: GPIO7 -> GPIO18
+# Opto module logic VCC = 3.3 V (outputs are pulled up to VCC).
+# OpenTherm is NOT on this board: it gets its own ESP8266 D1 mini node (see docs/07).
+# (GPIO15/16/17 unchanged). Keep `inverted:` unconfirmed until each channel is tested.
