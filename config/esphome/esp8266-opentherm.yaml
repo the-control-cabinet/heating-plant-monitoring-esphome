@@ -1,0 +1,65 @@
+# esp8266-opentherm.yaml - DESIGN STAGE (not yet deployed). Credentials via !secret.
+esphome:
+  name: esp8266-opentherm
+  friendly_name: Boiler OpenTherm
+
+esp8266:
+  board: d1_mini
+
+logger:
+  level: INFO
+
+api:
+  encryption:
+    key: !secret esp8266_opentherm_key
+
+ota:
+  - platform: esphome
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  ap:
+    password: !secret fallback_ap_password
+
+captive_portal:
+
+opentherm:
+  in_pin: GPIO4    # D2 - proven from the shield tracks
+  out_pin: GPIO5   # D1
+
+sensor:
+  - platform: opentherm
+    t_boiler:
+      name: "OT Boiler Flow Temperature"
+    t_ret:
+      name: "OT Boiler Return Temperature"
+    rel_mod_level:
+      name: "OT Modulation Level"
+  - platform: homeassistant
+    id: outdoor_temp
+    entity_id: sensor.outdoor_temperature
+  - platform: homeassistant
+    id: zone_demand_pct
+    entity_id: sensor.heating_zone_demand_max
+  - platform: debug
+    free:
+      name: "OpenTherm Node Heap Free"
+    loop_time:
+      name: "OpenTherm Node Loop Time"
+
+binary_sensor:
+  - platform: opentherm
+    flame_on:
+      name: "OT Flame On"
+    fault_indication:
+      name: "OT Fault"
+  - platform: homeassistant
+    id: any_demand
+    entity_id: binary_sensor.heating_any_demand
+
+debug:
+  update_interval: 30s
+
+# Control outputs (ch_enable, t_set), the weather-compensation curve, PID trim, DHW priority
+# and anti-cycling are added at the control stage (doc 07), after the read-only session (doc 09, test 3).

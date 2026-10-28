@@ -1,0 +1,13 @@
+test_no,test,date,result,notes
+1,Node bench test,,,
+2,Changeover Mode A,,,
+3,Mode B read-only,,,
+4,Mode B fixed setpoint,,,
+5,Each demand path,,,
+6,DHW priority,,,
+7,Anti-cycling,,,
+8,HA offline,,,
+9,Node offline,,,
+10,Changeover power loss,,,
+11,Boiler fault simulation,,,
+12,7-day soak,,,
