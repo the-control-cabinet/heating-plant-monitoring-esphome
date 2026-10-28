@@ -1,76 +1,171 @@
-# OpenTherm Boiler Control with ESPHome: Modulating, PID-Trimmed Flow Temperature Alongside Two Evohome Controllers (Design Stage)
+# Heating Plant Monitoring: Boiler, Cylinders and Safety Devices on ESPHome (WIP)
 
-**Moving a system boiler from on/off switching to modulating flow-temperature control over OpenTherm, the way a BMS controls a plant room: a dedicated controller drives the boiler with a weather-compensated, PID-trimmed setpoint, while zone control (two Honeywell Evohome systems) becomes an input. The design works around Evohome's one-controller-per-boiler OpenTherm limit, keeps a hard-wired fall-back to the existing BDR91 control, and is set out as a commissioning plan with tests, metrics and use cases.**
+**Instrumenting a domestic heating plant the way a BMS instruments a plant room. Two ESP32-S3 boards running ESPHome monitor the boiler's flow/return temperatures, system pressure, electrical load and operating state; every demand signal from the Evohome BDR91 relays; both unvented hot-water cylinders (outlet temperatures, inlet pressures, tundish discharge); and the underfloor heating plant. A planned OpenTherm stage moves the boiler to modulating, PID-trimmed flow-temperature control, with Evohome as an input rather than the controller.**
 
 [![YouTube](https://img.shields.io/badge/YouTube-The%20Control%20Cabinet-red?logo=youtube)](https://www.youtube.com/channel/UC5Cupmz7vlfcodpCX7k8iuQ)
 [![Portfolio](https://img.shields.io/badge/Portfolio-the--control--cabinet-24292f?logo=github)](https://github.com/the-control-cabinet)
-![Domain](https://img.shields.io/badge/BMS-boiler%20control%20%2B%20PID-blue)
-![Status](https://img.shields.io/badge/Status-Design%20stage-yellow)
+![ESPHome](https://img.shields.io/badge/ESPHome-ESP32--S3-000000)
+![Signals](https://img.shields.io/badge/Points-26%20across%202%20boards-blue)
+![Status](https://img.shields.io/badge/Status-Work%20in%20progress-orange)
 
-> **The short version:**
-> - **Today:** four Evohome BDR91 relays switch the boiler on and off at whatever flow temperature its dial is set to.
-> - **The plan:** a DIYLESS OpenTherm master shield on a dedicated ESP8266 node becomes the boiler's **only controller**. Its flow setpoint comes from **weather compensation + a PID trim** driven by zone demand, with **DHW priority**, **anti-cycling** and **safe fall-backs**.
-> - **Evohome stays** for room and zone control. Its demand is read three ways: **hard-wired** (opto inputs on every BDR91), **RAMSES-II** radio (per-zone heat demand) and the **cloud** (back-up).
-> - **An interlocked changeover** switches the boiler between OpenTherm control and the original BDR91 switched lives, so the house is never left without heating.
+> **The short version:** a plant-room points list built from scratch:
+> - **temperatures** (NTC dividers)
+> - **pressures** (0.5-4.5 V transducers through 10k/20k dividers)
+> - **current** (SCT013 clamps with a bias network, banded into boiler states: Off, Idle, Pump, Ignition, Firing Low/High, Overrun, and a "firing without call" alarm)
+> - **demand** (230 V opto-isolated BDR91 and boiler switched lives)
+> - **leak detection** (pulsed tundish plates)
 >
-> **Status:** design. The node hardware is assembled (shield orientation proven); boiler connection, firmware and tuning are still to come. Docs 08-10 are templates for the results.
+> **Built so far:** the firmware for both boards, the boiler pressure sensor and the flow/return probes.
+>
+> **In progress:** noise fixes and calibration, divider simplification, clamp/opto/tundish/cylinder installs, slow-leak diagnosis, and a plumber visit for the expansion vessels and inlet gauges.
+>
+> **Then:** OpenTherm with a DIYLESS shield and PID logic.
 
-**Portfolio position:** Automation level · plant control strategy. Built on: [Heating plant monitoring](https://github.com/the-control-cabinet/heating-plant-monitoring-esphome) (opto demand inputs, flow/return, boiler state) · [Evohome & RAMSES-II](https://github.com/the-control-cabinet/evohome-heating-controls-ramses-integration) (zone demand)
+**Portfolio position:** Stage 2.5 · Heating instrumentation and protocol integration. Feeds #4 optimum start, #5 energy, #6 alarms and #8 PID. Related: [Evohome controls & RAMSES-II](https://github.com/the-control-cabinet/evohome-heating-controls-ramses-integration) · [Mains water metering](https://github.com/the-control-cabinet/mains-water-metering-modbus-rtu) · [HA integration schedule](https://github.com/the-control-cabinet/home-assistant-integration-schedule)
 
 ---
+
+## Status at a glance
+
+| Area | Status |
+|---|---|
+| ESPHome firmware: control room + understairs | ✅ Both written and flashed |
+| Boiler pressure transducer | ✅ Installed · ⏳ zero by single-point offset against the mechanical gauge, noise, leak diagnosis (≈0.035 bar/day) |
+| Boiler flow/return NTCs | ✅ Installed · ⚠️ noisy, fix defined |
+| 10k/20k divider simplification | ⏳ Resistors in hand, YAML proposed |
+| Boiler current clamp | ⏳ Fit on the boiler's **permanent live supply**, calibrate, band |
+| Opto board (Hailege 8-ch; 5 inputs used) | ⏳ Install on **3.3 V logic**, test polarity |
+| Cylinder hot-outlet NTCs ×2 | ⏳ Install, lag, calibrate |
+| Cylinder inlet pressures ×2 | ⏳ With the plumber |
+| Expansion vessels + relief valves | ⏳ Plumber |
+| Tundish sensors ×2 | ⏳ Install |
+| Understairs board: UFH pump + cooker clamps, UFH flow/return, (proposed) manifold pressure | ✅ Flashed · ⏳ sensors to connect (floating readings seen, guards to add) |
+| OpenTherm + PID | 📐 Designed in its own repo: [opentherm-boiler-control-esphome](https://github.com/the-control-cabinet/opentherm-boiler-control-esphome) · node hardware assembled |
+
+Full tracker: [docs/08](docs/08-commissioning-tracker.md)
 
 ## Architecture
 
 ```mermaid
-flowchart LR
-    subgraph EVO["Two Evohome systems (zone control, unchanged)"]
-        Z1["Upper floors: HR92s + BDR91s"]
-        Z2["Ground floor: HCC80R UFH + BDR91s"]
+flowchart TB
+    subgraph PLANT["Plant"]
+        B["Ideal Logic+ S30 boiler"]
+        C1["Cylinder L (250 L unvented)"]
+        C2["Cylinder R (250 L unvented)"]
+        UFH["UFH manifold + pump"]
+        BDR["4 × BDR91 + boiler switched live"]
     end
-    EVO -->|"BDR91 contacts<br/>(hard-wired)"| OPTO["Opto inputs<br/>(plant monitoring board)"]
-    EVO -.->|"RAMSES-II radio<br/>zone heat demand"| HA["Home Assistant"]
-    EVO -.->|"cloud (back-up)"| HA
-    OPTO --> HA
-    OUT["Outdoor temperature"] --> HA
-    HA -->|"demand, outdoor temp,<br/>tuning parameters"| NODE["esp8266-opentherm<br/>D1 mini + DIYLESS shield<br/>WC + PID + interlocks"]
-    NODE <-->|"OpenTherm"| CO{"Changeover<br/>(interlocked)"}
-    CO <--> BOIL["Ideal Logic+ System S30"]
-    EVO -.->|"BDR91 switched lives<br/>(fall-back mode only)"| CO
+    subgraph CR["esp32-control-room-heating"]
+        T["Flow/return NTCs"]
+        P["Boiler pressure"]
+        I["Boiler current (SCT013)"]
+        O["5 × opto demand inputs"]
+        DH["Cylinder outlet NTCs ×2<br/>inlet pressures ×2"]
+        TD["Tundish plates ×2"]
+    end
+    subgraph US["understairs-monitor"]
+        UP["UFH pump current"]
+        UT["UFH flow/return NTCs"]
+        CK["Cooker circuit current"]
+    end
+    B --> T & P & I
+    BDR --> O
+    C1 & C2 --> DH & TD
+    UFH --> UP & UT
+    CR & US -->|"ESPHome API (encrypted)"| HA["Home Assistant<br/>dashboards · alerts · history"]
+    OT["esp8266-opentherm (planned)<br/>D1 mini + DIYLESS shield"] <-.->|"OpenTherm"| B
+    OT <-.->|"API"| HA
+    EVO["Evohome via RAMSES-II"] --> HA
 ```
+
+## Points list
+
+| # | Point | Board / GPIO | Type | Range / scaling | Status |
+|---|---|---|---|---|---|
+| 1 | Boiler flow temperature | CR GPIO4 | AI | NTC 10k B3977 | Installed (noisy) |
+| 2 | Boiler return temperature | CR GPIO5 | AI | NTC 10k B3977 | Installed (noisy) |
+| 3 | Boiler ΔT | derived | Calc | Flow − return | Live once 1-2 are clean |
+| 4 | Boiler system pressure | CR GPIO1 | AI | 0-5 bar, 0.5-4.5 V, ÷0.667 | Installed (zero to set) |
+| 5 | Boiler supply current | CR GPIO3 | AI | SCT013-015, 15 A/V | To install |
+| 6 | Boiler electrical state | derived | Multi-state | Current bands + demand | With #5 |
+| 7 | Firing without call | derived | Alarm | State vs demand | With #5 and #8 |
+| 8 | Boiler demand | CR GPIO14* | DI | Opto, 230 V | To install |
+| 9 | Radiator demand | CR GPIO18* | DI | Opto | To install |
+| 10 | UFH demand | CR GPIO15 | DI | Opto | To install |
+| 11 | Cylinder L demand | CR GPIO16 | DI | Opto | To install |
+| 12 | Cylinder R demand | CR GPIO17 | DI | Opto | To install |
+| 13 | Cylinder L hot-outlet temperature | CR GPIO8* | AI | NTC | To install |
+| 14 | Cylinder R hot-outlet temperature | CR GPIO9* | AI | NTC | To install |
+| 15 | Cylinder L inlet pressure | CR GPIO2* | AI | 0-150 psi (10.34 bar) | With plumber |
+| 16 | Cylinder R inlet pressure | CR GPIO10* | AI | 0-150 psi | With plumber |
+| 17-18 | Tundish 1 / 2 wet | CR GPIO39 / 20 | DI | Pulsed plates, 2N7000 | To install |
+| 19 | Tundish events | derived | Counter | Persistent | With 17-18 |
+| 20 | UFH pump current / running | US GPIO10 | AI + derived | SCT013-005 (> 0.10 A = running) | Firmware ✅, clamp to fit |
+| 21-22 | UFH flow / return (mixed side) + ΔT | US GPIO4 / 5 | AI | NTC | Firmware ✅, placement to decide |
+| 23 | Cooker circuit current / on | US GPIO2 | AI + derived | SCT013-030 (> 1.0 A = on) | Firmware ✅, clamp to fit |
+| 24 | UFH manifold pressure | US GPIO1* | AI | 0-5 bar | 📐 Proposed (leak isolation) |
+| 25 | UFH zone heat demand ×6 | via RAMSES-II | Network | From the HCC80R | ✅ Live (Evohome repo) |
+| 26 | Board health (online, Wi-Fi, uptime) | both | Diagnostic | | Live |
+
+\* proposed allocation after the divider rework ([docs/01](docs/01-hardware-and-io-schedule.md)). CSV: [data/io-schedule.csv](data/io-schedule.csv)
+
+## Key design points
+
+- **Signal conditioning ([docs/02](docs/02-signal-conditioning-and-noise.md)):**
+  - NTC dividers from 3V3
+  - **10k/20k dividers** bring the 5 V sensors down to ≤3.0 V at the ADC
+  - SCT013 clamps on a **1.65 V bias** with a 10 µF coupling capacitor, so both half-cycles stay in range
+  - **ADC1 only** for analogue signals, since ADC2 is unusable with Wi-Fi on
+- **NTC noise fix:** 100 nF at each ADC pin, twisted/shielded leads away from mains, `samples: 16` + median + moving average, decoupled 3V3, and probes lagged in.
+- **Boiler current ([docs/03](docs/03-boiler-current-and-states.md)):** clamp on the **permanent live**, with 3-5 turns for resolution. States are banded from current plus the demand input. Thresholds are set from a week of real data.
+- **Slow leak ([docs/04](docs/04-pressure-and-leak-diagnosis.md)):** compare pressure at the same cold condition daily, compute the decay rate, then isolate circuits one at a time. The PRV discharge, auto air vents and joints are checked; the boiler's expansion vessel is already ruled out.
+- **Cylinders and tundishes ([docs/05](docs/05-dhw-cylinders-expansion-and-tundish.md)):** the inlet pressure rise during reheat reveals expansion-vessel health. Tundish plates are pulsed (150 ms every 5 s) to limit electrolysis, debounced, and counted.
+- **Demand monitoring ([docs/06](docs/06-demand-monitoring-opto.md)):** 230 V opto-isolation of every BDR91 output and the boiler switched live.
+- **Understairs UFH plant ([docs/10](docs/10-understairs-ufh-and-circuits.md)):** the UFH pump and cooker clamps at the consumer unit, mixed-side flow/return ΔT, HCC80R zone demand via RAMSES-II, and a proposed manifold pressure sensor for split-system leak testing. The firmware is flashed, and a no-sensors-attached test showed floating inputs producing plausible values, a useful lesson.
+- **OpenTherm plan ([docs/07](docs/07-opentherm-and-pid-plan.md)):**
+  - DIYLESS shield as the OpenTherm master, on its **own ESP8266 D1 mini node** (control kept separate from monitoring)
+  - weather compensation + RAMSES-II demand trim + PID with anti-windup and minimum on/off times
+  - DHW priority
+  - an **interlocked relay changeover** back to Evohome control (force-guided contacts)
+
+## Configuration files
+
+| File | Content |
+|---|---|
+| [`config/esphome/esp32-control-room-heating.yaml`](config/esphome/esp32-control-room-heating.yaml) | Current control-room firmware: NTCs, pressure, clamp + state machine, opto inputs, tundishes |
+| [`config/esphome/esp32-control-room-heating-proposed.yaml`](config/esphome/esp32-control-room-heating-proposed.yaml) | Proposed: 10k/20k dividers, noise filters, cylinder NTCs and pressures, opto pin moves |
+| [`config/esphome/understairs-monitor.yaml`](config/esphome/understairs-monitor.yaml) | UFH pump and cooker clamps, UFH manifold NTCs |
+| [`config/homeassistant/plant-alerts.example.yaml`](config/homeassistant/plant-alerts.example.yaml) | Low pressure, tundish discharge, firing without call, cylinder overpressure |
+| [`config/homeassistant/pressure-statistics.example.yaml`](config/homeassistant/pressure-statistics.example.yaml) | Noise floor (1 h std dev), mean, 7-day change |
+
+All credentials are `!secret` references.
 
 ## Documents
 
-| Doc | Contents | Status |
-|---|---|---|
-| [01 Why OpenTherm, and the constraints](docs/01-why-and-constraints.md) | On/off vs modulation; the one-controller limit; why HA is the master | Design |
-| [02 Hardware: node build](docs/02-hardware-node.md) | DIYLESS shield + D1 mini, orientation proof, soldering, enclosure | Assembled |
-| [03 Boiler side: Ideal Logic+ S30](docs/03-boiler-connection.md) | OpenTherm terminals, the link, safety, connection steps | Design (verify on site) |
-| [04 Firmware and Home Assistant](docs/04-firmware-and-ha.md) | Node YAML, entities, what the boiler reports | Design |
-| [05 Evohome integration](docs/05-evohome-integration.md) | Demand from opto, RAMSES-II and cloud; Evohome settings | Design |
-| [06 BDR91s and the changeover](docs/06-bdr91-and-changeover.md) | What happens to the switched lives; interlock; fail-safe | Design |
-| [07 Control strategy](docs/07-control-strategy.md) | Weather compensation, PID trim, DHW priority, anti-cycling | Design |
-| [08 PID tuning](docs/08-pid-tuning.md) | Method, step tests, parameter log | Template |
-| [09 Commissioning and tests](docs/09-commissioning-tests.md) | Test plan with pass criteria | Template |
-| [10 Outcomes and use cases](docs/10-outcomes-and-use-cases.md) | Metrics before/after; scenarios; constraints | Template |
+| Doc | Covers |
+|---|---|
+| [01 Hardware and I/O schedule](docs/01-hardware-and-io-schedule.md) | Boards, pin rules, current vs proposed allocation, sensors |
+| [02 Signal conditioning and noise](docs/02-signal-conditioning-and-noise.md) | Circuits, NTC noise fixes, calibration |
+| [03 Boiler current and states](docs/03-boiler-current-and-states.md) | Clamp placement, turns, state banding, commissioning |
+| [04 Pressure and leak diagnosis](docs/04-pressure-and-leak-diagnosis.md) | In-place zero/span (no draining), baseline stats, noise, leak-finding plan |
+| [05 DHW cylinders, expansion and tundish](docs/05-dhw-cylinders-expansion-and-tundish.md) | Outlet temperatures, inlet pressures, plumber work, tundish sensors |
+| [06 Demand monitoring (opto)](docs/06-demand-monitoring-opto.md) | BDR91 and switched-live inputs |
+| [07 OpenTherm and PID: summary](docs/07-opentherm-and-pid-plan.md) | Summary, roadmap and link to the control repo |
+| [08 Commissioning tracker](docs/08-commissioning-tracker.md) | Item-by-item status |
+| [09 Safety](docs/09-safety.md) | Mains, gas, unvented cylinders, pressure fittings |
+| [10 Understairs: UFH plant and circuits](docs/10-understairs-ufh-and-circuits.md) | UFH pump and cooker clamps, UFH temperatures and placement, HCC80R data via RAMSES-II, manifold pressure for leak isolation, floating-input lesson |
 
-## Roadmap
-- [x] Design and decision record
-- [x] Node hardware: D1 mini + DIYLESS shield (orientation proven from the PCB tracks)
-- [ ] Bench test: node online, OpenTherm library running, no boiler connected
-- [ ] Monitoring baseline (on/off control) captured for comparison
-- [ ] Boiler connection + changeover relays; first OpenTherm read-only session
-- [ ] Control live: weather compensation only, then PID trim
-- [ ] Tuning, commissioning tests, before/after report
-
-## Skills demonstrated (as built)
+## Skills demonstrated
 
 | Skill | Evidence |
 |---|---|
-| Control strategy design | Weather compensation + PID trim + DHW priority + anti-cycling |
-| Integration under constraints | Two zone controllers, one boiler; multiple demand paths |
-| Fail-safe design | Interlocked changeover, safe defaults, stale-input handling |
-| Protocol | OpenTherm master implementation |
-| Commissioning | Test plan with pass criteria; tuning log; before/after metrics |
+| Plant-room points list | 26 points across AI, DI, derived, network and alarm types |
+| Analogue signal conditioning | NTC dividers, 5 V→3.3 V dividers, CT bias and coupling, filtering |
+| Current-based plant state detection | Boiler state machine from load current + demand |
+| Pressure diagnostics | Leak decay-rate method; expansion-vessel health from inlet pressure |
+| Life-safety-adjacent monitoring | Tundish discharge detection; unvented-cylinder safety checks |
+| Isolation and segregation | 230 V opto inputs; mains vs low-voltage separation |
+| Controls design | OpenTherm master with PID, weather compensation, fail-safe interlock |
 
 📺 [The Control Cabinet on YouTube](https://www.youtube.com/channel/UC5Cupmz7vlfcodpCX7k8iuQ)
 
