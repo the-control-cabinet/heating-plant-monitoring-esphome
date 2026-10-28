@@ -17,4 +17,4 @@
 | 11 | Slow-leak diagnosis | ⏳ Baseline ≈0.035 bar/day | - | ⏳ Decay template | - | Doc 04 plan |
 | 12 | Understairs board (UFH pump, cooker, UFH temps) | ⏳ Clamps to fit at CU; probes to place | ✅ Flashed | ⏳ | ⏳ | Floating readings seen with nothing connected; add guards (doc 10) |
 | 14 | UFH manifold pressure (proposed) | ⏳ | ⏳ | ⏳ | ⏳ | Split-system leak isolation |
-| 13 | OpenTherm node (D1 mini + DIYLESS) + PID | ⏳ D1 mini on order; enclosure to print; changeover relays | ⏳ Skeleton | ⏳ | - | After the monitoring baseline |
+| 13 | OpenTherm node (D1 mini + DIYLESS) + PID | ⏳ D1 mini arrived, orientation proven, soldering pending; enclosure to adapt; changeover relays | ⏳ Skeleton | ⏳ | - | After the monitoring baseline |

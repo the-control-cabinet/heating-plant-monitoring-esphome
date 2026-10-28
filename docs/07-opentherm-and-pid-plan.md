@@ -37,7 +37,8 @@ This repo is step **A**: its baseline is what C and E are measured against.
 
 ## Roadmap
 - [x] Design record (see the control repo)
-- [x] Node hardware assembled: shield orientation proven from the PCB tracks
+- [x] Node hardware: shield orientation proven from the PCB tracks
+- [ ] Solder the shield to the D1 mini
 - [ ] Monitoring baseline (on/off) captured: **this repo's commissioning first**
 - [ ] Boiler connection + changeover; OpenTherm read-only session
 - [ ] Control live, PID tuning, before/after report (control repo docs 08-10)

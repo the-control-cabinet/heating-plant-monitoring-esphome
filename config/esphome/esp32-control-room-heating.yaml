@@ -24,13 +24,8 @@ esp32:
 logger:
   hardware_uart: UART0
   deassert_rts_dtr: true
+  level: INFO
 
-mqtt:
-  id: mqtt_client
-  broker: !secret mqtt_broker
-  username: !secret mqtt_username
-  password: !secret mqtt_password
-  keepalive: 60s
 
 api:
   encryption:
@@ -84,6 +79,9 @@ switch:
     id: plate_power
     internal: true
     restore_mode: ALWAYS_OFF
+
+debug:
+  update_interval: 10s
 
 sensor:
   # =========================================================
@@ -218,6 +216,14 @@ sensor:
 
   - platform: uptime
     name: "Control Room Uptime"
+
+  - platform: debug
+    free:
+      name: "Control Room Heap Free"
+    block:
+      name: "Control Room Heap Max Block"
+    loop_time:
+      name: "Control Room Loop Time"
 
 text_sensor:
   - platform: template

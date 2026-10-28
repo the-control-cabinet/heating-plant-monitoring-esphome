@@ -1,5 +1,8 @@
 # Changelog
 
+## [0.4.2] - 2026-10-28
+- Published YAMLs brought in line with the live boards (unused MQTT removed, INFO logging, debug sensors); OpenTherm node status corrected (orientation proven, soldering pending).
+
 ## [0.4.1] - 2026-10-28
 - Doc 07: delivery sequence A-F with links to the supervisory layer, optimum start/stop, PID rig and OpenTherm repos.
 

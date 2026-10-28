@@ -17,13 +17,8 @@ esp32:
 logger:
   hardware_uart: UART0
   deassert_rts_dtr: true
+  level: INFO
 
-mqtt:
-  id: mqtt_client
-  broker: !secret mqtt_broker
-  username: !secret mqtt_username
-  password: !secret mqtt_password
-  keepalive: 60s
 
 api:
   encryption:
@@ -51,6 +46,9 @@ interval:
       - component.update: cooker_current
       - delay: 1200ms
       - component.update: ufh_pump_current
+
+debug:
+  update_interval: 10s
 
 sensor:
   # ===========================================================
@@ -186,6 +184,14 @@ sensor:
 
   - platform: uptime
     name: "ESP32 Understairs Uptime"
+
+  - platform: debug
+    free:
+      name: "ESP32 Understairs Heap Free"
+    block:
+      name: "ESP32 Understairs Heap Max Block"
+    loop_time:
+      name: "ESP32 Understairs Loop Time"
 
 binary_sensor:
   - platform: status
