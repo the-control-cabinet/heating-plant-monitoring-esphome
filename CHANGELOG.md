@@ -1,5 +1,8 @@
 # Changelog
 
+## [0.4.1] - 2026-10-28
+- Doc 07: delivery sequence A-F with links to the supervisory layer, optimum start/stop, PID rig and OpenTherm repos.
+
 ## [0.4.0] - 2026-10-27
 - OpenTherm/PID design moved to its own repo (opentherm-boiler-control-esphome); doc 07 now a summary, roadmap and link; README status updated.
 

@@ -22,6 +22,19 @@ The control stage now has its **own repo**. This page keeps the summary and the 
 | System pressure | Transducer (OpenTherm may not report it) |
 | UFH plant state | Understairs board |
 
+## Delivery sequence
+
+| Step | What | Repo |
+|---|---|---|
+| **A** | Plant monitoring install + on/off **baseline** (2-4 weeks) | [Heating plant monitoring](https://github.com/the-control-cabinet/heating-plant-monitoring-esphome) |
+| **B** | **Supervisory layer:** HA + Node-RED platform, command authority, fail-safe patterns | [Supervisory layer](https://github.com/the-control-cabinet/ha-node-red-supervisory-layer) |
+| **C** | **Optimum start/stop** on today's on/off control (first function on B) | [Optimum start/stop](https://github.com/the-control-cabinet/optimum-start-stop-supervisory) |
+| **D** *(in parallel with A-C)* | **PID rig exercise** (+ interlocks), and the OpenTherm node **bench test** | [PID rig](https://github.com/the-control-cabinet/pid-anti-hunt-control-rig) |
+| **E** | **OpenTherm on the boiler:** read-only → weather comp → PID trim → preheat boost linked to C | [OpenTherm control](https://github.com/the-control-cabinet/opentherm-boiler-control-esphome) |
+| **F** | Before/after report: baseline → C → E | [Energy dashboard](https://github.com/the-control-cabinet/home-energy-dashboard) |
+
+This repo is step **A**: its baseline is what C and E are measured against.
+
 ## Roadmap
 - [x] Design record (see the control repo)
 - [x] Node hardware assembled: shield orientation proven from the PCB tracks
