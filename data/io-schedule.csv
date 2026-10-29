@@ -3,11 +3,11 @@ control-room,Boiler flow temperature,GPIO4,GPIO4,ADC1 analogue,3V3-10k-GPIO-NTC(
 control-room,Boiler return temperature,GPIO5,GPIO5,ADC1 analogue,as above,Installed - noisy,as above
 control-room,Boiler system pressure,GPIO1 (anchor GPIO2; bridge GPIO42),GPIO1,ADC1 analogue,sensor-10k-GPIO-20k-GND (2/3),Installed - zero to calibrate,0-5 bar 0.5-4.5 V 5 V supply
 control-room,Boiler supply current (SCT013-015),GPIO3 (cap anchor GPIO13),GPIO3,ADC1 analogue,3V3-10k-GPIO-10k-GND bias + 10 uF coupling,To install,On boiler PERMANENT LIVE; consider 3-5 turns for resolution
-control-room,Boiler demand (boiler switched live),GPIO6,GPIO14,Digital (opto),Hailege 8-ch AC opto (3.3 V logic) -> GPIO pull-up,To install,inverted: expected true - confirm
-control-room,Radiator heating demand (BDR91),GPIO7,GPIO18,Digital (opto),as above,To install,
-control-room,UFH demand (BDR91),GPIO15,GPIO15,Digital (opto),as above,To install,
-control-room,Cylinder left demand (BDR91),GPIO16,GPIO16,Digital (opto),as above,To install,
-control-room,Cylinder right demand (BDR91),GPIO17,GPIO17,Digital (opto),as above,To install,
+control-room,Boiler call (switched-live joint),GPIO6,GPIO14,Digital (opto),Hailege 8-ch AC opto (3.3 V logic) -> GPIO pull-up,To install,inverted: expected true - confirm
+control-room,Hot water enabled (TS715Si output; 6-way pos 3),GPIO7,GPIO18,Digital (opto),as above,To install,Re-scoped Oct 2026: radiator demand now from RAMSES-II
+control-room,Cylinder L stat passing (6-way pos 2),GPIO15,GPIO15,Digital (opto),as above,To install,Re-scoped Oct 2026
+control-room,Cylinder R stat passing (6-way pos 1),GPIO16,GPIO16,Digital (opto),as above,To install,Re-scoped Oct 2026
+control-room,Opto spare,GPIO17,GPIO17,Digital (opto),as above,Spare,
 control-room,Tundish plate power (pulsed),GPIO21,GPIO21,Digital out,3V3 to both plates 150 ms every 5 s,To install,Pulsed to limit electrolysis
 control-room,Tundish 1 sense,GPIO39,GPIO39,Digital in,2N7000 drain,To install,
 control-room,Tundish 2 sense,GPIO20,GPIO20,Digital in,2N7000 drain,To install,

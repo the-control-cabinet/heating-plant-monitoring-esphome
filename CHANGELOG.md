@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.5.0] - 2026-10-29
+- Doc 11: opto board installation from the junction box survey (four tap points, own clear-lid ABS enclosure, 3095Y tails, Wago taps, segregation, commissioning tests).
+- Opto inputs re-scoped: boiler call, timer output, cylinder L/R stat passing (relay states from RAMSES-II); I/O schedule, README points list and doc 06 updated. YAML entity names to follow at install.
+- Safety: cylinder high-limit cut-outs verified in series; isolation points (B6 boiler, B16 water heater) and induced-voltage note added.
+
 ## [0.4.2] - 2026-10-28
 - Published YAMLs brought in line with the live boards (unused MQTT removed, INFO logging, debug sensors); OpenTherm node status corrected (orientation proven, soldering pending).
 
