@@ -1,5 +1,8 @@
 # Changelog
 
+## [0.5.1] - 2026-10-31
+- Doc 11: enclosure internals (neutral distribution and earth Wagos in a printed mount).
+
 ## [0.5.0] - 2026-10-29
 - Doc 11: opto board installation from the junction box survey (four tap points, own clear-lid ABS enclosure, 3095Y tails, Wago taps, segregation, commissioning tests).
 - Opto inputs re-scoped: boiler call, timer output, cylinder L/R stat passing (relay states from RAMSES-II); I/O schedule, README points list and doc 06 updated. YAML entity names to follow at install.

@@ -50,6 +50,15 @@ flowchart LR
 | Logic cable to ESP32 | Mains-rated cores (insulated for the highest voltage in the enclosure) | Required where low-voltage wiring shares an enclosure with 230 V |
 | Junction box joints | Wago 221-413 / 221-415 at the four tapped joints | A tap adds a third core, which a choc block can't take properly |
 
+### Inside the enclosure
+| Item | Detail |
+|---|---|
+| Signal cores IN1-IN4 | Straight into the board's L1-L4 terminals |
+| Neutral distribution | **1× Wago 221-415:** the incoming blue plus four short blue links to N1-N4 |
+| Earth | **1× Wago 221-415** joining the opto cables' green/yellow cores (the board has no earth terminal; the box is ABS) |
+| Mount | One printed **2-slot mount for 5-way Wagos**, on the 230 V side, away from the logic outputs |
+| Logic outputs | Board terminals to the logic cable; never through the 230 V Wagos |
+
 ## 3. Install sequence
 1. Isolate the **Boiler B6 RCBO**, lock off, prove dead.
 2. Rebuild the four tapped joints in Wagos, one at a time, against the terminal map; label each.
