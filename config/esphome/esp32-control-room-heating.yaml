@@ -2,7 +2,8 @@
 # esp32-control-room-heating.yaml - boiler plant monitoring (CURRENT / WIP)
 # ESP32-S3-DevKitC-1 (16 MB), ESPHome, ESP-IDF
 # Status: written and flashed; field wiring partly installed (see README status table).
-#   - Boiler flow/return NTCs: installed, NOISY (fixes in docs/02)
+#   - Boiler flow/return NTCs: installed; median + moving-average filters applied (Nov 2026);
+#     100 nF capacitors on GPIO4/GPIO5 still to fit (docs/02)
 #   - Boiler pressure sensor: installed, zero to calibrate (docs/04)
 #   - Current clamp: to install on the boiler PERMANENT LIVE supply (docs/03)
 #   - Opto board (BDR91 + boiler switched lives): to install; `inverted:` unconfirmed (docs/06)
@@ -107,6 +108,14 @@ sensor:
     id: boiler_flow_temperature
     unit_of_measurement: "°C"
     accuracy_decimals: 1
+    # Ripple filters (Nov 2026): median removes ADC spikes, moving average smooths the rest
+    filters:
+      - median:
+          window_size: 5
+          send_every: 1
+      - sliding_window_moving_average:
+          window_size: 10
+          send_every: 1
     calibration:
       b_constant: 3977
       reference_temperature: 25°C
@@ -130,6 +139,14 @@ sensor:
     id: boiler_return_temperature
     unit_of_measurement: "°C"
     accuracy_decimals: 1
+    # Ripple filters (Nov 2026): median removes ADC spikes, moving average smooths the rest
+    filters:
+      - median:
+          window_size: 5
+          send_every: 1
+      - sliding_window_moving_average:
+          window_size: 10
+          send_every: 1
     calibration:
       b_constant: 3977
       reference_temperature: 25°C

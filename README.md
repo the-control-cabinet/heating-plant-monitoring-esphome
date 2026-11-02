@@ -12,7 +12,7 @@
 > - **temperatures** (NTC dividers)
 > - **pressures** (0.5-4.5 V transducers through 10k/20k dividers)
 > - **current** (SCT013 clamps with a bias network, banded into boiler states: Off, Idle, Pump, Ignition, Firing Low/High, Overrun, and a "firing without call" alarm)
-> - **demand** (230 V opto-isolated boiler switched live, timer output and cylinder stat outputs)
+> - **demand** (230 V opto-isolated boiler switched live, timer output, hot-water relays, valve drives, UFH and radiator relays)
 > - **leak detection** (pulsed tundish plates)
 >
 > **Built so far:** the firmware for both boards, the boiler pressure sensor and the flow/return probes.
@@ -34,7 +34,7 @@
 | Boiler flow/return NTCs | ✅ Installed · ⚠️ noisy, fix defined |
 | 10k/20k divider simplification | ⏳ Resistors in hand, YAML proposed |
 | Boiler current clamp | ⏳ Fit on the boiler's **permanent live supply**, calibrate, band |
-| Opto board (Hailege 8-ch; 4 inputs used, own enclosure) | ⏳ Materials in hand; install with the junction box tidy-up ([doc 11](docs/11-opto-board-installation.md)) |
+| Opto board (Hailege 8-ch; all 8 inputs, own enclosure, printed tray v2) | ⏳ Materials in hand; install with the junction box tidy-up ([doc 11](docs/11-opto-board-installation.md)) |
 | Cylinder hot-outlet NTCs ×2 | ⏳ Install, lag, calibrate |
 | Cylinder inlet pressures ×2 | ⏳ With the plumber |
 | Expansion vessels + relief valves | ⏳ Plumber |
@@ -59,7 +59,7 @@ flowchart TB
         T["Flow/return NTCs"]
         P["Boiler pressure"]
         I["Boiler current (SCT013)"]
-        O["4 × opto inputs<br/>(boiler call, timer, 2 × cylinder stat)"]
+        O["8 × opto inputs<br/>(boiler call, timer, HW relays,<br/>valve drives, UFH, radiator relay)"]
         DH["Cylinder outlet NTCs ×2<br/>inlet pressures ×2"]
         TD["Tundish plates ×2"]
     end
@@ -91,9 +91,9 @@ flowchart TB
 | 7 | Firing without call | derived | Alarm | State vs demand | With #5 and #8 |
 | 8 | Boiler call (switched-live joint) | CR GPIO14* | DI | Opto, 230 V | To install |
 | 9 | Hot water enabled (timer output) | CR GPIO18* | DI | Opto | To install |
-| 10 | Cylinder L stat passing | CR GPIO15 | DI | Opto | To install |
-| 11 | Cylinder R stat passing | CR GPIO16 | DI | Opto | To install |
-| 12 | Spare | CR GPIO17 | DI | Opto | Spare |
+| 10 | HW relay L output (IN3) | CR GPIO15 | DI | Opto | To install |
+| 11 | HW relay R output (IN4) | CR GPIO16 | DI | Opto | To install |
+| 12 | IN5-IN8: cylinder valve drives, UFH relay, radiator relay (after bypass) | CR GPIO17 + TBC | DI | Opto | To install |
 | 13 | Cylinder L hot-outlet temperature | CR GPIO8* | AI | NTC | To install |
 | 14 | Cylinder R hot-outlet temperature | CR GPIO9* | AI | NTC | To install |
 | 15 | Cylinder L inlet pressure | CR GPIO2* | AI | 0-150 psi (10.34 bar) | With plumber |

@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.6.0] - 2026-11-02
+- Doc 11: opto board re-scoped to all eight inputs at the planned Wagos (W1-W8); IN8 (radiator relay) waits for the TF/MF re-wire after the bypass; radiator demand inferred as IN1 on with IN5-IN7 off until then; interposing relay considered and rejected.
+- Printed tray v2 (STL + OpenSCAD) in hardware/opto-tray, with the v1 lessons; enclosure neutrals now three linked 221-415s in a 4-slot mount.
+- Control-room YAML: median + moving-average filters on the flow and return NTCs (100 nF capacitors still to fit).
+- I/O schedule: IN1-IN8 rows.
+
 ## [0.5.1] - 2026-10-31
 - Doc 11: enclosure internals (neutral distribution and earth Wagos in a printed mount).
 
