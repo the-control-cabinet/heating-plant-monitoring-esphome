@@ -1,6 +1,7 @@
 # =============================================================================
 # PROPOSED changes for esp32-control-room-heating (WIP, not yet flashed)
 # Merge into the current file once the hardware is fitted.
+# NOTE (Nov 2026): superseded by esp32-control-room-heating.yaml except the cylinder inlet pressures (GPIO2, GPIO10).
 #  1. Simplified 5 V -> 3.3 V dividers using 10k + 20k (frees the "anchor"/"bridge" pins)
 #  2. NTC noise filtering (multi-sample ADC + median + moving average)
 #  3. Two DHW outlet NTCs and two cylinder cold-inlet pressure sensors

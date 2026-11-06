@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.0] - 2026-11-06
+- Doc 02: flow/return noise traced to 330 kΩ top resistors (should be 3.3 kΩ), found by a powered voltage test; before/after graphs; NTC circuit corrected to 3.3 kΩ; standing-offset check (no offset applied yet).
+- Doc 04: ADC calibrated against a meter; pressure calibrated to the boiler gauge (3 points, linear fit); noise diagnosed as bursts on the sensor's 5 V supply; fast (diagnostic) and 1-minute main pressure sensors; graphs.
+- Doc 05: left outlet NTC installed and the first reheat (~12 kW, ~1 h); tundish sensors as built, commissioning faults (missing GND, swapped cables), droplet issue, two-sensitivity wet/running sensing with test switches; in-service detection of the weeping relief valve; photos.
+- Doc 01: as-built allocation, posts, ADC1 budget with the two inlet pressure sensors, board health.
+- Control-room YAML updated to the flashed version (3.3k NTCs, outlet NTCs, pressure calibration and filtering, tundish wet/running and test switches); I/O schedule, tracker and README status updated.
+
 ## [0.6.0] - 2026-11-02
 - Doc 11: opto board re-scoped to all eight inputs at the planned Wagos (W1-W8); IN8 (radiator relay) waits for the TF/MF re-wire after the bypass; radiator demand inferred as IN1 on with IN5-IN7 off until then; interposing relay considered and rejected.
 - Printed tray v2 (STL + OpenSCAD) in hardware/opto-tray, with the v1 lessons; enclosure neutrals now three linked 221-415s in a 4-slot mount.

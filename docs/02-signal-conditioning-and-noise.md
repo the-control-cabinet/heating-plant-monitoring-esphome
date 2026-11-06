@@ -6,11 +6,11 @@
 
 **NTC (temperature)**
 ```
-3V3 ── 10k ──┬── GPIO (ADC1)
-             ├── 100 nF ── GND        (add at the board)
-             └── NTC ── GND
+3V3 ── 3.3k ──┬── GPIO (ADC1)
+              ├── 100 nF ── GND        (leaded caps to fit)
+              └── NTC ── GND
 ```
-ESPHome converts the voltage to resistance (`resistance`, DOWNSTREAM, 10 kΩ), then to temperature (`ntc`, B = 3977, 10 kΩ at 25 °C).
+ESPHome converts the voltage to resistance (`resistance`, DOWNSTREAM, 3.3 kΩ), then to temperature (`ntc`, B = 3977, 10 kΩ at 25 °C). **3.3 kΩ, not 10 kΩ:** a 10k NTC is about 1.8 kΩ at 70 °C, so a 3.3 kΩ top resistor puts boiler temperatures (~1.1 V at 70 °C) in the ADC's most linear range.
 
 **5 V sensor (pressure) → 3.3 V ADC: new 10k/20k divider**
 ```
@@ -27,7 +27,17 @@ It replaces the three-resistor chain (10k + 10k + 10k, with an anchor pin and a 
 ```
 The clamp's AC output rides on the 1.65 V bias, so both half-cycles stay inside the ADC range. An earlier design without the bias network would have clipped the negative half-cycle; this was caught and fixed in design.
 
-## NTC noise: causes and fixes (boiler flow/return are noisy now)
+## The flow/return noise was a wrong resistor (fixed 3 Nov 2026)
+
+The flow and return readings were noisy and jumpy from installation. A **powered voltage test** at the ADC pins found the cause: the top resistors fitted were **330 kΩ, not 3.3 kΩ** (a colour-band misread). With 330 kΩ against a ~2 kΩ NTC, the pin sat at a few tens of mV, at the bottom of the ADC's range, where its own noise and non-linearity dominate. Fitting 3.3 kΩ (twin-entry ferrules with the NTC leads in IO4/IO5) gave clean readings immediately. The two inputs were also found swapped during the rework and corrected in YAML (flow = GPIO5, return = GPIO4).
+
+![Flow and return before the fix](images/ntc-flow-return-before-fix.png)
+
+![The step to clean readings at the fix (3 Nov evening)](images/ntc-and-pressure-at-fix-2026-11-03.png)
+
+**Standing-offset check (5 Nov, 03:30-06:30, boiler off):** the return read 0.52 → 0.25 °C above the flow, **shrinking** through the period, so part of it was the pipes still settling, not sensor offset. No offset is applied yet; recheck after a longer standing period. The true offset is at most ~0.25 °C, inside a 1% NTC's tolerance.
+
+## Other NTC noise causes and fixes
 
 | Likely cause | Fix | Priority |
 |---|---|---|

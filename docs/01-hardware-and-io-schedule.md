@@ -23,30 +23,35 @@ Both use encrypted API keys and credentials from `secrets.yaml`, MQTT keepalive 
 | **ADC2 (GPIO11-20) for analogue** | ADC2 is unusable while Wi-Fi is on. Those pins are fine for **digital** use |
 | **ADC1 = GPIO1-10** | The only ADC pins usable with Wi-Fi, so they're the scarce resource on this board |
 
-## Control room: current vs proposed allocation
+## Control room: allocation (as built, 6 Nov 2026)
 
-| Signal | Current | Proposed | Type | Status |
-|---|---|---|---|---|
-| Boiler flow temp (NTC) | GPIO4 | GPIO4 | ADC1 | Installed, noisy |
-| Boiler return temp (NTC) | GPIO5 | GPIO5 | ADC1 | Installed, noisy |
-| Boiler system pressure | GPIO1 (+ anchor GPIO2, bridge GPIO42) | **GPIO1** (10k/20k divider) | ADC1 | Installed, zero to calibrate |
-| Boiler supply current (SCT013-015) | GPIO3 (+ cap anchor GPIO13) | GPIO3 | ADC1 | To install |
-| Boiler demand (boiler switched live, opto) | GPIO6 | **GPIO14** | Digital | To install |
-| Radiator demand (BDR91, opto) | GPIO7 | **GPIO18** | Digital | To install |
-| UFH demand (BDR91, opto) | GPIO15 | GPIO15 | Digital | To install |
-| Cylinder left demand (BDR91, opto) | GPIO16 | GPIO16 | Digital | To install |
-| Cylinder right demand (BDR91, opto) | GPIO17 | GPIO17 | Digital | To install |
-| Tundish plate power (pulsed) | GPIO21 | GPIO21 | Digital out | To install |
-| Tundish 1 / 2 sense | GPIO39 / GPIO20 | same | Digital in | To install |
-| Cylinder left hot-outlet temp | - | **GPIO8** | ADC1 | To install |
-| Cylinder right hot-outlet temp | - | **GPIO9** | ADC1 | To install |
-| Cylinder left inlet pressure | - | **GPIO2** | ADC1 | With plumber |
-| Cylinder right inlet pressure | - | **GPIO10** | ADC1 | With plumber |
+| Signal | GPIO | Type | Status |
+|---|---|---|---|
+| Boiler system pressure | **GPIO1** (signal joint on post IO2, to move off-board) | ADC1 | ✅ Installed, calibrated to the gauge, filtered |
+| Cylinder left inlet pressure | **GPIO2** (once the IO2 post moves to a Wago) | ADC1 | With the plumber |
+| Boiler supply current (SCT013-015) | GPIO3 (capacitor on post IO13) | ADC1 | To fit on the boiler's permanent live |
+| Boiler return temp (NTC) | GPIO4 | ADC1 | ✅ Installed (3.3 kΩ) |
+| Boiler flow temp (NTC) | GPIO5 | ADC1 | ✅ Installed (3.3 kΩ) |
+| Opto: boiler demand / radiator demand | GPIO6 / GPIO7 | Digital | To install (can move to spare digital pins if an ADC pin is needed) |
+| Cylinder left hot-outlet temp | GPIO8 | ADC1 | ✅ Installed |
+| Cylinder right hot-outlet temp | GPIO9 | ADC1 | Wired; probe to strap on |
+| Cylinder right inlet pressure | **GPIO10** | ADC1 | With the plumber |
+| Opto: UFH / cylinder L / cylinder R | GPIO15 / 16 / 17 | Digital | To install |
+| Tundish right sense (MOSFET 1 drain) | GPIO39 | Digital in | ✅ Commissioned |
+| Tundish left sense (MOSFET 2 drain) | GPIO20 | Digital in | ✅ Commissioned |
+| Tundish plate power (pulsed) | GPIO21 | Digital out | ✅ Commissioned |
+| Tundish gate posts | IO38 (right), IO47 (left) | Posts (inputs only, internal pull-down switched by firmware) | ✅ |
+| Tundish MOSFET 1 posts | IO40 (gate), IO41 (source → GND) | Posts | ✅ |
 
-**Why the reshuffle:**
-- **20 kΩ resistors** turn the three-resistor divider (10k + 10k + 10k with an "anchor" and a "bridge" pin) into a simple **two-resistor 10k/20k divider**. The ratio is the same (2/3), but it frees two GPIOs per sensor.
-- **The opto inputs move off GPIO6/7** to digital-only pins, keeping every ADC1 pin for analogue signals.
-- The result is **8 analogue signals on ADC1** (GPIO1, 2, 3, 4, 5, 8, 9, 10), with GPIO6 and 7 left spare.
+**Posts:** unconfigured GPIO terminals used as wiring junctions (IO2, IO13, IO38, IO40, IO41, IO47). They must stay out of the YAML (IO38/IO47 are set only as inputs by the tundish firmware). IO2 is being freed for the left inlet sensor.
+
+**ADC1 budget:** with the two inlet sensors, all eight usable ADC1 pins (GPIO1, 2, 3, 4, 5, 8, 9, 10) are in use. Spare digital pins for the remaining opto inputs (IN6-IN8): GPIO11, 12, 14, 18, 42. Avoid GPIO19 (USB D-; GPIO20 is USB D+, so use only the UART port), 0/45/46, 35-37 and 48.
+
+**Each inlet pressure sensor:** one GPIO; signal → Wago joint → 10 kΩ → GPIO; 20 kΩ and 100 nF GPIO → GND; 10 µF + 100 nF across its 5 V/GND at the sensor. 5 V and GND distributed to all three pressure sensors from one Wago each. 0-150 psi (0-10.3 bar), 0.5-4.5 V: at most 3.0 V at the pin; ~1.1 V at 3 bar.
+
+**Board health after the changes:** heap flat at ~259 kB overnight (no leak), loop time 3-5 ms.
+
+![Heap free, flat](images/control-room-heap-free.png)
 
 ## Understairs board (firmware flashed, sensors to connect)
 

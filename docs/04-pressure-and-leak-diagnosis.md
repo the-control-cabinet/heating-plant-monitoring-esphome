@@ -3,8 +3,22 @@
 [← Back to README](../README.md)
 
 ## Sensor status
-- 0-5 bar transducer (0.5-4.5 V, G1/4) **installed** on the primary circuit.
-- **To do:** zero calibration, noise filtering, then leak diagnosis.
+- 0-80 psi (0-5.5 bar) transducer (0.5-4.5 V, G1/4, 5 V ratiometric) **installed** on the primary circuit; 10k/20k divider (measured ratio 0.664) to GPIO1, 100 nF at the pin.
+- **Calibrated to the boiler gauge** (3 points, 3-4 Nov 2026) and **filtered** (5 Nov). Next: the zero at the next drain-down, a test gauge, the 10 µF supply capacitor, then leak diagnosis.
+
+## Calibration done (3-4 Nov 2026)
+
+**ADC first:** a two-point calibration of the pin voltage against a meter (16 samples, 100 nF fitted). Rechecked hot: HA 0.972 V = meter 0.972 V.
+
+**Then pressure against the boiler's gauge:**
+
+| Gauge | HA (before) | Difference |
+|---|---|---|
+| 1.10 bar (cold) | 1.00 bar | 0.10 |
+| 1.60 bar (cold, after a top-up) | 1.42 bar | 0.18 |
+| 1.65 bar (hot) | 1.46 bar | 0.19 |
+
+A **straight line**: the first two points predicted 1.648 bar for the third. Best fit: gauge = 1.193 × HA − 0.093, all points within 0.002 bar, applied as a least-squares `calibrate_linear`. **Valid range checked: 1.0-1.65 bar only** (the zero waits for a drain-down; the gauge itself is unverified).
 
 ## Zero and span calibration (no draining needed)
 
@@ -32,8 +46,25 @@ Log the filtered pressure (and raw voltage) with a statistics sensor ([example](
 
 **Supply check:** these sensors are ratiometric to their **5 V supply**. Measure the 5 V at the sensor; if it's low or noisy, the reading shifts. Use a clean, decoupled 5 V.
 
-## Noise
-Same approach as the NTCs: 100 nF at the ADC pin, `samples: 16`, median, then a moving average. Pressure changes slowly, so a 5-10 s published value is plenty.
+## Noise (5-6 Nov 2026)
+
+**Two kinds of variation, only one of them noise:** with the heating running, swings of 0.05-0.2 bar follow the heating cycles (real expansion). Overnight, with everything off, there was **±0.02 bar fuzz** and occasional single dips of 0.05-0.1 bar.
+
+**Where it comes from:** the noise arrives in **bursts** (e.g. 02:00, 03:30, 05:00-05:35) while the flow/return NTCs, on the same ADC, stay smooth, and with all relays off and flow/return flat (no pump runs). So it isn't the ADC and it isn't real pressure: it enters through the sensor's own path, most likely **ripple on its 5 V supply** (the unregulated USB 5 V, passed straight through to a ratiometric sensor), from something switching elsewhere at night.
+
+![Pressure noise in bursts while the NTCs stay smooth](images/pressure-noise-bursts-vs-ntc-2026-11-05.png)
+
+**Filtering:** a fast path and a slow path, because noise that varies over seconds can only be averaged out over time:
+- **Boiler System Pressure (fast)**, diagnostic: 1 s readings, 7-reading sliding median (removes single-sample glitches), 5-reading average: responds in ~5-8 s, for pump and valve events.
+- **Boiler System Pressure**, main: a 1-minute average of the fast one, published every 10 s, for dashboards and alerts. (The `copy` platform inherits the source's diagnostic category; `entity_category: ""` keeps it in the main list.)
+
+A first attempt with oversampling and short windows gave **no visible improvement**, which is what led to the two-path design. Result: the overnight line roughly **three times tighter**.
+
+![Smoothing applied at 02:00](images/pressure-smoothing-applied-0200.png)
+
+![24 hours after: slow overnight cooling drift visible, heating swings real](images/pressure-24h-after-smoothing.png)
+
+**Still to do, one change at a time:** 10 µF (+100 nF) across the sensor's 5 V and GND at the sensor end; then, if needed, 1 µF instead of 100 nF at GPIO1; then a better USB supply for the ESP32.
 
 ## Slow-leak diagnosis plan
 

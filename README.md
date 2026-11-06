@@ -15,9 +15,9 @@
 > - **demand** (230 V opto-isolated boiler switched live, timer output, hot-water relays, valve drives, UFH and radiator relays)
 > - **leak detection** (pulsed tundish plates)
 >
-> **Built so far:** the firmware for both boards, the boiler pressure sensor and the flow/return probes.
+> **Built so far:** the firmware for both boards, the boiler pressure sensor (calibrated and filtered), the flow/return probes, the left cylinder's outlet probe and both tundish sensors.
 >
-> **In progress:** noise fixes and calibration, divider simplification, clamp/opto/tundish/cylinder installs, slow-leak diagnosis, and a plumber visit for the expansion vessels and inlet gauges.
+> **In progress:** the pressure sensor's supply decoupling, the clamp and opto installs, the right outlet probe, slow-leak diagnosis, and a plumber visit for the expansion vessels and inlet gauges.
 >
 > **Then:** OpenTherm with a DIYLESS shield and PID logic.
 
@@ -30,15 +30,15 @@
 | Area | Status |
 |---|---|
 | ESPHome firmware: control room + understairs | ✅ Both written and flashed |
-| Boiler pressure transducer | ✅ Installed · ⏳ zero by single-point offset against the mechanical gauge, noise, leak diagnosis (≈0.035 bar/day) |
-| Boiler flow/return NTCs | ✅ Installed · ⚠️ noisy, fix defined |
-| 10k/20k divider simplification | ⏳ Resistors in hand, YAML proposed |
+| Boiler pressure transducer | ✅ Installed, calibrated to the gauge (3 points), filtered (fast + 1-min) · ⏳ 10 µF at the sensor, zero at drain-down, leak diagnosis |
+| Boiler flow/return NTCs | ✅ Installed · noise fixed (330 kΩ fitted by mistake → 3.3 kΩ) |
+| 10k/20k divider simplification | ✅ Done · ⏳ IO2 post to a Wago (frees GPIO2) |
 | Boiler current clamp | ⏳ Fit on the boiler's **permanent live supply**, calibrate, band |
 | Opto board (Hailege 8-ch; all 8 inputs, own enclosure, printed tray v2) | ⏳ Materials in hand; install with the junction box tidy-up ([doc 11](docs/11-opto-board-installation.md)) |
-| Cylinder hot-outlet NTCs ×2 | ⏳ Install, lag, calibrate |
+| Cylinder hot-outlet NTCs ×2 | ✅ Left (first reheat: ~12 kW, ~1 h) · ⏳ right probe |
 | Cylinder inlet pressures ×2 | ⏳ With the plumber |
 | Expansion vessels + relief valves | ⏳ Plumber |
-| Tundish sensors ×2 | ⏳ Install |
+| Tundish sensors ×2 | ✅ Commissioned (wet + running sensing) · detected the weeping relief valve in service |
 | Understairs board: UFH pump + cooker clamps, UFH flow/return, (proposed) manifold pressure | ✅ Flashed · ⏳ sensors to connect (floating readings seen, guards to add) |
 | OpenTherm + PID | 📐 Designed in its own repo: [opentherm-boiler-control-esphome](https://github.com/the-control-cabinet/opentherm-boiler-control-esphome) · node hardware assembled |
 
