@@ -45,6 +45,21 @@
 
 Full tracker: [docs/08](docs/08-commissioning-tracker.md)
 
+## Findings so far
+
+| Finding | How it was found | Doc |
+|---|---|---|
+| **NTC noise was a 330 kΩ resistor** (should be 3.3 kΩ) | A powered voltage test on each divider | [02](docs/02-signal-conditioning-and-noise.md) |
+| **Clamp cable screen joined to its white core**, shorting the new bias node | Bias read 0 V after the rework | [13](docs/13-off-board-wiring.md) |
+| **Short cycling without a bypass**: 37 starts by mid-afternoon on a UFH-only day | Current-clamp states + flow/return | [Evohome A6](https://github.com/the-control-cabinet/evohome-heating-controls-ramses-integration/blob/main/docs/A6-pump-overrun-and-bypass.md) |
+| **Weeping relief valve** from failed expansion vessels, then **fix confirmed** (new vessels: knee at 3.5 bar, 3.8 bar peak, no tundish events) | Tundish plates + inlet gauges | [05](docs/05-dhw-cylinders-expansion-and-tundish.md) |
+| **A false 5 bar** from a pulled-out divider leg | Pin voltage exactly 1.5× its neighbour (the divider ratio) | [05](docs/05-dhw-cylinders-expansion-and-tundish.md#plumber-visit-and-commissioning-11-nov-2026) |
+| **Both PRVs settle at ~2.5 bar** although marked 3.5 bar, with mains at ~2.9 bar | Inlet gauges + the mains flow meter at 18:31 | [05](docs/05-dhw-cylinders-expansion-and-tundish.md#plumber-visit-and-commissioning-11-nov-2026) |
+| **Left/right swapped** on the inlet gauges and the outlet NTCs | A kitchen draw dipped one inlet and warmed the "other" outlet | [12](docs/12-control-room-wiring-schematic.md) |
+| **The outlet NTC lags at rest**; per-cylinder draw capture fixes the estimate | Draw tests on each side | [14](docs/14-hot-water-stratification.md) |
+| **The low CS92 pocket is adequate** (tops ~56-58 °C after reheats); legionella setpoint decision open | Captured tops vs probes | [14](docs/14-hot-water-stratification.md#is-the-low-probe-pocket-right-summary) |
+| **`relay_demand` isn't a hot water on/off signal**; `heat_demand` is | False alerts mid-reheat | [15](docs/15-alerts.md) |
+
 ## Architecture
 
 ```mermaid
@@ -95,10 +110,10 @@ flowchart TB
 | 10 | HW relay L output (IN3) | CR GPIO15 | DI | Opto | To install |
 | 11 | HW relay R output (IN4) | CR GPIO16 | DI | Opto | To install |
 | 12 | IN5-IN8: cylinder valve drives, UFH relay, radiator relay (after bypass) | CR GPIO17 / 11 / 12 / 42 | DI | Opto | Logic side ✅ · mains at rewire |
-| 13 | Cylinder L hot-outlet temperature | CR GPIO8 | AI | NTC | ✅ Live |
-| 14 | Cylinder R hot-outlet temperature | CR GPIO9 | AI | NTC | ✅ Live |
-| 15 | Cylinder L inlet pressure | CR GPIO2 | AI | 0-150 psi (10.34 bar) | ✅ Zeroed · span after plumber |
-| 16 | Cylinder R inlet pressure | CR GPIO1 | AI | 0-150 psi | ✅ Zeroed · span after plumber |
+| 13 | Cylinder L hot-outlet temperature | CR GPIO9 | AI | NTC (strap-on, lagged) | ✅ Live · left/right verified |
+| 14 | Cylinder R hot-outlet temperature | CR GPIO8 | AI | NTC (strap-on, lagged) | ✅ Live · left/right verified |
+| 15 | Cylinder L inlet pressure | CR GPIO1 | AI | 0-150 psi (10.34 bar) | ✅ Live, alerts on · ⏳ tyre-gauge span |
+| 16 | Cylinder R inlet pressure | CR GPIO2 | AI | 0-150 psi | ✅ Live, alerts on · ⏳ tyre-gauge span |
 | 17-18 | Tundish L / R wet + running | CR GPIO39 / 20 | DI | Pulsed plates, 2N7000 | ✅ Live |
 | 19 | Tundish events | derived | Counter | Persistent | ✅ Live |
 | 20 | UFH pump current / running | US GPIO10 | AI + derived | SCT013-005 (> 0.10 A = running) | Firmware ✅, clamp to fit |
@@ -107,7 +122,9 @@ flowchart TB
 | 24 | UFH manifold pressure | US GPIO1* | AI | 0-5 bar | 📐 Proposed (leak isolation) |
 | 25 | UFH zone heat demand ×6 | via RAMSES-II | Network | From the HCC80R | ✅ Live (Evohome repo) |
 | 26 | Board health (online, Wi-Fi, uptime) | both | Diagnostic | | Live |
-| 27-28 | Hot water available L / R | derived | Calc | Top + bottom temperatures ([doc 14](docs/14-hot-water-stratification.md)) | ✅ Live |
+| 27-28 | Hot water available L / R | derived | Calc | Top used (live or captured after each cylinder's own draw) + bottom probe, cold feed helper ([doc 14](docs/14-hot-water-stratification.md)) | ✅ Live (v3) |
+| 29 | Control-room ESP32 chip temperature | CR internal | Diagnostic | °C | ✅ Live (alert > 75 °C) |
+| 30 | Alerts | derived | Alarm | 23 automations, 3 commissioning gates ([doc 15](docs/15-alerts.md)) | ✅ Live |
 
 As built 11 Nov 2026: [doc 12](docs/12-control-room-wiring-schematic.md). CSV: [data/io-schedule.csv](data/io-schedule.csv)
 
@@ -121,7 +138,9 @@ As built 11 Nov 2026: [doc 12](docs/12-control-room-wiring-schematic.md). CSV: [
 - **NTC noise fix:** 100 nF at each ADC pin, twisted/shielded leads away from mains, `samples: 16` + median + moving average, decoupled 3V3, and probes lagged in.
 - **Boiler current ([docs/03](docs/03-boiler-current-and-states.md)):** clamp on the **permanent live**, with 3-5 turns for resolution. States are banded from current plus the demand input. Thresholds are set from a week of real data.
 - **Slow leak ([docs/04](docs/04-pressure-and-leak-diagnosis.md)):** compare pressure at the same cold condition daily, compute the decay rate, then isolate circuits one at a time. The PRV discharge, auto air vents and joints are checked; the boiler's expansion vessel is already ruled out.
-- **Cylinders and tundishes ([docs/05](docs/05-dhw-cylinders-expansion-and-tundish.md)):** the inlet pressure rise during reheat reveals expansion-vessel health. Tundish plates are pulsed (150 ms every 5 s) to limit electrolysis, debounced, and counted.
+- **Cylinders and tundishes ([docs/05](docs/05-dhw-cylinders-expansion-and-tundish.md)):** the inlet pressure trace reveals expansion-vessel health (a fast rise to the pre-charge, then a "knee" where the vessel takes over). Gauges sit between the PRV and the vessel, so they read the cylinder. Tundish plates are pulsed (150 ms every 5 s) to limit electrolysis, debounced, and counted.
+- **Hot water available ([docs/14](docs/14-hot-water-stratification.md)):** 0.4 × top + 0.6 × bottom, in litres at 40 °C. The top NTC lags at rest, so each cylinder detects its **own** draws from its outlet cooling and captures the top then; negative stratification is recognised as an artefact.
+- **Alerts ([docs/15](docs/15-alerts.md)):** one HA package; inputs not yet commissioned sit behind gates so they can't false-alarm; several alerts are FDD rules running live.
 - **Demand monitoring ([docs/06](docs/06-demand-monitoring-opto.md), [docs/11](docs/11-opto-board-installation.md)):** 230 V opto-isolation of the boiler switched live, the timer output and both cylinders' stat-passing points; relay states come from RAMSES-II.
 - **Understairs UFH plant ([docs/10](docs/10-understairs-ufh-and-circuits.md)):** the UFH pump and cooker clamps at the consumer unit, mixed-side flow/return ΔT, HCC80R zone demand via RAMSES-II, and a proposed manifold pressure sensor for split-system leak testing. The firmware is flashed, and a no-sensors-attached test showed floating inputs producing plausible values, a useful lesson.
 - **OpenTherm plan ([docs/07](docs/07-opentherm-and-pid-plan.md)):**
@@ -168,11 +187,13 @@ All credentials are `!secret` references.
 
 | Skill | Evidence |
 |---|---|
-| Plant-room points list | 26 points across AI, DI, derived, network and alarm types |
+| Plant-room points list | 30 points across AI, DI, derived, network, diagnostic and alarm types |
 | Analogue signal conditioning | NTC dividers, 5 V→3.3 V dividers, CT bias and coupling, filtering |
 | Current-based plant state detection | Boiler state machine from load current + demand |
 | Pressure diagnostics | Leak decay-rate method; expansion-vessel health from inlet pressure |
-| Life-safety-adjacent monitoring | Tundish discharge detection; unvented-cylinder safety checks |
+| Life-safety-adjacent monitoring | Tundish discharge detection; unvented-cylinder safety checks; a weeping relief valve detected, then the fix confirmed |
+| Commissioning | Point-to-point verification (left/right swaps found by a draw test); plausibility (a false 5 bar traced to a divider leg); span checks |
+| Alarm management | 23 alerts with commissioning gates, persistence and FDD mapping; false alarms traced to the wrong input and corrected |
 | Isolation and segregation | 230 V opto inputs; mains vs low-voltage separation |
 | Controls design | OpenTherm master with PID, weather compensation, fail-safe interlock |
 
