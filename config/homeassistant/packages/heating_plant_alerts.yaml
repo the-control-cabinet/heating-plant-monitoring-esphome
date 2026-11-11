@@ -253,7 +253,7 @@ automation:
             right {{ states('sensor.control_room_esp32_control_room_hot_water_cylinder_right_outlet_temperature') | float(0) | round(1) }} °C.
 
   - id: plant_alert_reheat_short
-    alias: "Plant alert: reheat finished below 55 °C"
+    alias: "Plant alert: reheat cut short (window closed)"
     mode: queued
     trigger:
       - platform: numeric_state
@@ -265,18 +265,22 @@ automation:
         below: 1
         id: right
     action:
-      - delay: "00:10:00"
+      # Wait for the probe's next reports to reach HA (they can be ~25 min apart via the gateway).
+      - delay: "00:30:00"
+      - variables:
+          probe: "{{ 'sensor.dhw_07_045307_temperature' if trigger.id == 'left' else 'sensor.dhw_07_040975_temperature' }}"
+          heater: "{{ 'water_heater.stored_hw_2' if trigger.id == 'left' else 'water_heater.stored_hw' }}"
+          setpoint: "{{ state_attr(heater, 'temperature') | float(58) }}"
       - condition: template
-        value_template: >
-          {% set e = 'sensor.control_room_esp32_control_room_hot_water_cylinder_' ~ trigger.id ~ '_outlet_temperature' %}
-          {{ has_value(e) and states(e) | float(0) < 55 }}
+        value_template: "{{ has_value(probe) and states(probe) | float(0) < setpoint - 4 }}"
       - service: notify.mobile_app_jamess_iphone
         data:
-          title: "Reheat finished short"
+          title: "Reheat cut short"
           message: >
-            The {{ trigger.id }} cylinder's reheat ended with its top at
-            {{ states('sensor.control_room_esp32_control_room_hot_water_cylinder_' ~ trigger.id ~ '_outlet_temperature') | float(0) | round(1) }} °C (target 58 °C).
-            The cylinder's own stat may be set too low.
+            The {{ trigger.id }} cylinder stopped heating with its probe at
+            {{ states(probe) | float(0) | round(1) }} °C (setpoint {{ setpoint | round(0) }} °C):
+            the hot water window probably closed before it was satisfied.
+            It will finish in the next window; lengthen the window if this recurs.
 
   - id: plant_alert_cylinder_overheat
     alias: "Plant alert: cylinder outlet above 70 °C"

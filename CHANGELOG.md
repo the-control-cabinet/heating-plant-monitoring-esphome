@@ -6,6 +6,9 @@
 - Left/right corrections: inlet gauges (IO1 left, IO2 right) and outlet NTCs (IO9 left, IO8 right), verified by a draw; YAML, I/O schedule, pin table and schematic updated.
 - Doc 14 and the hot water package v3: cold feed helper (14 °C), per-cylinder draw capture from each outlet's own cooling, stratification from the top used, the low probe pocket assessed, limits and next steps. New hot water and boiler plant cards.
 - Tracker and README status updated.
+- Alert "reheat finished below 55 °C" replaced by "reheat cut short (window closed)": bottom probe vs the hub's setpoint, 30 min after the reheat ends (the outlet NTC lags at rest).
+- Graphs: PRV settle (flow meter at 18:31), the vessel's knee during the reheat, the inlet dip that identified the left draw, hot water cards v3; PRV photo.
+- Photos: new vessels and their label (factory 2.7 bar, maximum 3.5 bar gas charge), inlet gauges and gauge box, tundish plates in place, the opto enclosure installed.
 
 ## [0.8.0] - 2026-11-11
 - Off-board rework of the control-room board: pressure dividers and filters moved into a junction box at each gauge; bus strip (5 V / GND); NTC resistors bridged between neighbouring terminals with IO10 as a 3V3 post; clamp bias on its own strip in the standard topology (doc 13).

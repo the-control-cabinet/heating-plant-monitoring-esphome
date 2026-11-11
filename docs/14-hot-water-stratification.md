@@ -48,7 +48,9 @@ Hot water can't sit stably below cooler water, so a **negative** "top − bottom
 
 Package: [config/homeassistant/packages/dhw_hot_water_available.yaml](../config/homeassistant/packages/dhw_hot_water_available.yaml) · card: [dashboards/hot-water-available-card.yaml](../config/homeassistant/dashboards/hot-water-available-card.yaml)
 
-![Hot water available card](images/hot-water-available-card-2026-11-11.png)
+![Hot water available card (v1)](images/hot-water-available-card-2026-11-11.png)
+
+![Hot water cards v3 after the evening reheat: estimate, top used, stratification, probe reading age, and the 24 h graphs with heat demand and mains flow](images/hot-water-cards-v3-2026-11-11.png)
 
 ### Is the low probe pocket right? (summary)
 

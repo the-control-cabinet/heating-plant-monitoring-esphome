@@ -26,7 +26,7 @@ Gates keep an unconnected or floating sensor from raising false alarms (the boil
 | Boiler | Called but not firing (lockout?) | IN1 on, boiler off/idle 15 min (opto) | - |
 | Hot water | Called but boiler not firing | Heat demand > 0 and boiler off/idle 15 min | F18 |
 | Hot water | Reheat over 90 minutes | Heat demand 90 min | F9 |
-| Hot water | Reheat finished below 55 °C | Top 10 min after heat demand drops | - |
+| Hot water | Reheat cut short (window closed) | Bottom probe > 4 K below the hub's setpoint, 30 min after heat demand drops | - |
 | Hot water | Cylinder outlet above 70 °C | 5 min | - |
 | Hot water | Weekly temperature not reached | Sunday 21:45: weekly max of each top below the target helper (60 °C) | - |
 | Hot water | Inlet pressure high / low / sensor | > 4.5 bar 2 min; < 2 bar 10 min; pin < 0.2 V | F19, F20 |
@@ -48,6 +48,7 @@ Existing automations kept separate: the RAMSES gateway down/restart/reconnect al
 
 - **Use `heat_demand`, not `relay_demand`, for the hot water zones.** Mid-reheat, both cylinders showed heat demand 100% and relay demand 0%; relay demand wandered (58, 42, 29 … %) with no reheat at all. Two false "reheat finished short" alerts came from the wrong sensor.
 - **Check the notify action name:** the phone's action is `notify.mobile_app_<device>`; a guessed name made every alert fail until corrected (HA raises a repair per automation).
+- **Check against the right sensor:** the first "reheat finished short" version used the outlet NTC, which lags at rest (51-52 °C with the cylinder at 57-60 °C), so it fired after every reheat. It now uses the bottom probe (the hub's own reading) against the hub's setpoint, which only trips when a window closes first.
 - **A time trigger fires only if HA is running at that minute:** the first digest was missed because HA was restarting at 21:30. *Run actions* confirmed the notification path.
 - **RAMSES values can lag:** a hub showed hot water off in its app ~8 min before HA saw it (gateway position), so short-persistence alerts on RAMSES values can be late or spurious until the gateway moves. The opto inputs, once live, give wired signals for the hot water alerts.
 - **Several restarts in a day** can lock the Evohome cloud integration out (login limits); prefer reloads where they suffice.

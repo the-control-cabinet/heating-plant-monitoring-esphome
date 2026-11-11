@@ -99,6 +99,21 @@ Each has its own debounce and counter (Wet Events, **Discharge Events**). Test s
 | Vessel pre-charge vs working pressure | With the cylinders at ~2.5 bar and the vessels at 3.5 bar, a reheat first rises uncushioned to 3.5 bar; then the vessel takes over (a clear "knee" on both sides). Peak 3.8 bar after a from-cold reheat, well below the 4.5 bar alert and the 6 bar ERV. Pre-charge to be matched to the working pressure once the PRVs are sorted |
 | Tundishes | **No wet events** during the first reheats with the new vessels |
 
+**Vessel label (Flomasta 24 L potable, WRAS):** factory gas charge **2.7 bar**, **maximum gas charge 3.5 bar**, maximum working pressure 10 bar, working temperature −10 to +70 °C. So the 3.5 bar pre-charge set on fitting is at the vessel's **maximum**, and the factory 2.7 bar is closer to the cylinders' actual working pressure (~2.5-2.9 bar): a point for the pre-charge decision once the PRVs are sorted.
+
+| | |
+|---|---|
+| ![Flomasta 24 L vessel](images/expansion-vessel-flomasta-24l-2026-11-11.jpg) | ![Vessel label: 2.7 bar factory, 3.5 bar maximum](images/expansion-vessel-flomasta-24l-label-2026-11-11.jpg) |
+| ![Inlet gauge on its tee, with the gauge box (divider) below](images/cylinder-inlet-gauge-and-box-2026-11-11.jpg) | ![Inlet gauge tee beside the T&P relief valve](images/cylinder-inlet-gauge-tee-and-tp-valve-2026-11-11.jpg) |
+| ![Tundish plate in the tundish's air gap](images/tundish-plate-in-tundish-2026-11-11.jpg) | ![Tundish plate, second cylinder](images/tundish-plate-in-tundish-2-2026-11-11.jpg) |
+
+**Graphs from the evening of 11 Nov:**
+
+| | |
+|---|---|
+| ![PRV marked pre-set 3.5 bar](images/cylinder-prv-preset-3-5-bar-2026-11-11.jpg) | ![18:31: a 1-1.5 L draw on the mains flow meter, with the matching mains pressure dip; the cylinder then settled at ~2.5 bar](images/mains-flow-draw-and-pressure-1831-2026-11-11.png) |
+| ![Left inlet during the reheat: a fast rise to ~3.4 bar, the vessel's knee, then dips during kitchen draws](images/left-inlet-reheat-knee-and-draws-2026-11-11.png) | ![22:17: the kitchen draw dips only the left inlet, settling the left/right question](images/inlet-dip-identifies-left-draw-2026-11-11.png) |
+
 **Span check (pending):** above 3.5 bar the vessel's air pressure equals the water pressure, so a tyre gauge on the Schrader valve near a reheat's peak checks the inlet gauge at ~4 bar (below 3.5 bar the air stays at the pre-charge, whatever the water does). A digital inflator (AstroAI L7, 0.05 bar resolution) is on order, to be sanity-checked against another gauge first.
 
 **Tundish water test (right):** wetting the right plate set *Right Wet* and *Right Running* (left stayed dry), confirming the naming. Water then lingered under the plate in the printed holder for over 30 minutes (gate post at 2.9 V of 3.27 V); lifting and drying it brought the post back to 0.30 V. Holder to be remounted steeper, cable from below, with a drain hole. With Test Mode on, sampling pauses and HA holds the last state.

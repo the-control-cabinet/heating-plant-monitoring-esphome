@@ -106,3 +106,4 @@ Files: [STL](../hardware/opto-tray/opto-board-tray-v2.stl) · [OpenSCAD source](
 - **Mains side:** cables A/B/C to the neutral and earth Wagos and L1-L8, connected at the junction-box rewire; then each input tested against a real demand.
 - **Input LEDs** light only with 230 V on that channel, so all are off until then (expected).
 
+![Opto enclosure installed and labelled, 11 Nov 2026](images/opto-enclosure-installed-2026-11-11.jpg)
