@@ -8,36 +8,98 @@ cards:
         min: 0
         max: 100
         needle: true
-        severity: {red: 0, yellow: 25, green: 50}
+        severity:
+          red: 0
+          yellow: 25
+          green: 50
       - type: gauge
         entity: sensor.right_cylinder_hot_water_charge
         name: Right cylinder
         min: 0
         max: 100
         needle: true
-        severity: {red: 0, yellow: 25, green: 50}
+        severity:
+          red: 0
+          yellow: 25
+          green: 50
   - type: entities
     title: Hot water available
+    show_header_toggle: false
     entities:
+      - type: section
+        label: Left cylinder
       - entity: sensor.left_cylinder_hot_water_available
-        name: Left (litres at 40 °C)
-      - {type: attribute, entity: sensor.left_cylinder_hot_water_available, attribute: average_temperature, name: Left average temperature, suffix: °C}
-      - {type: attribute, entity: sensor.left_cylinder_hot_water_available, attribute: stratification_k, name: Left top − bottom, suffix: K}
+        name: Available (litres at 40 °C)
+      - type: attribute
+        entity: sensor.left_cylinder_hot_water_available
+        attribute: average_temperature
+        name: Average temperature
+        suffix: °C
+      - type: attribute
+        entity: sensor.left_cylinder_hot_water_available
+        attribute: top_used
+        name: Top used (live or last draw)
+        suffix: °C
+      - type: attribute
+        entity: sensor.left_cylinder_hot_water_available
+        attribute: stratification_k
+        name: Stratification (+ = hotter at top)
+        suffix: K
+      - type: attribute
+        entity: sensor.left_cylinder_hot_water_available
+        attribute: bottom_reading_age_min
+        name: Bottom probe reading age
+        suffix: min
+      - type: section
+        label: Right cylinder
       - entity: sensor.right_cylinder_hot_water_available
-        name: Right (litres at 40 °C)
-      - {type: attribute, entity: sensor.right_cylinder_hot_water_available, attribute: average_temperature, name: Right average temperature, suffix: °C}
-      - {type: attribute, entity: sensor.right_cylinder_hot_water_available, attribute: stratification_k, name: Right top − bottom, suffix: K}
+        name: Available (litres at 40 °C)
+      - type: attribute
+        entity: sensor.right_cylinder_hot_water_available
+        attribute: average_temperature
+        name: Average temperature
+        suffix: °C
+      - type: attribute
+        entity: sensor.right_cylinder_hot_water_available
+        attribute: top_used
+        name: Top used (live or last draw)
+        suffix: °C
+      - type: attribute
+        entity: sensor.right_cylinder_hot_water_available
+        attribute: stratification_k
+        name: Stratification (+ = hotter at top)
+        suffix: K
+      - type: attribute
+        entity: sensor.right_cylinder_hot_water_available
+        attribute: bottom_reading_age_min
+        name: Bottom probe reading age
+        suffix: min
+      - type: divider
+      - entity: input_number.dhw_cold_feed_temperature
+        name: Cold feed temperature
   - type: history-graph
-    title: Cylinder top and bottom (24 h)
+    title: Cylinder top, bottom and demand (24 h)
     hours_to_show: 24
     entities:
-      - {entity: sensor.control_room_esp32_control_room_hot_water_cylinder_left_outlet_temperature, name: Left top}
-      - {entity: sensor.dhw_07_045307_temperature, name: Left bottom}
-      - {entity: sensor.control_room_esp32_control_room_hot_water_cylinder_right_outlet_temperature, name: Right top}
-      - {entity: sensor.dhw_07_040975_temperature, name: Right bottom}
+      - entity: sensor.control_room_esp32_control_room_hot_water_cylinder_left_outlet_temperature
+        name: Left top
+      - entity: sensor.dhw_07_045307_temperature
+        name: Left bottom
+      - entity: sensor.control_room_esp32_control_room_hot_water_cylinder_right_outlet_temperature
+        name: Right top
+      - entity: sensor.dhw_07_040975_temperature
+        name: Right bottom
+      - entity: sensor.stored_hw_heat_demand_2
+        name: Left heat demand
+      - entity: sensor.stored_hw_heat_demand
+        name: Right heat demand
+      - entity: sensor.utility_room_esp32_utility_room_mains_water_flow
+        name: Mains flow (draws)
   - type: history-graph
     title: Hot water available (24 h)
     hours_to_show: 24
     entities:
-      - {entity: sensor.left_cylinder_hot_water_available, name: Left}
-      - {entity: sensor.right_cylinder_hot_water_available, name: Right}
+      - entity: sensor.left_cylinder_hot_water_available
+        name: Left
+      - entity: sensor.right_cylinder_hot_water_available
+        name: Right

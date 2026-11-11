@@ -1,0 +1,105 @@
+type: vertical-stack
+cards:
+  - type: entities
+    title: Boiler plant
+    show_header_toggle: false
+    entities:
+      - entity: sensor.control_room_esp32_control_room_boiler_electrical_state
+        name: State
+      - entity: sensor.control_room_esp32_control_room_boiler_current
+        name: Current
+      - entity: sensor.control_room_esp32_control_room_boiler_flow_temperature
+        name: Flow
+      - entity: sensor.control_room_esp32_control_room_boiler_return_temperature
+        name: Return
+      - entity: sensor.control_room_esp32_control_room_boiler_dt_flow_return
+        name: ΔT (flow − return)
+      - entity: sensor.control_room_esp32_control_room_boiler_system_pressure
+        name: System pressure
+      - type: divider
+      - entity: sensor.boiler_firing_time_today
+        name: Firing time today
+      - entity: sensor.boiler_starts_today
+        name: Starts today
+      - entity: sensor.boiler_starts_last_hour
+        name: Starts last hour
+      - entity: sensor.control_room_esp32_control_room_control_room_esp32_temperature
+        name: ESP32 chip temperature
+  - type: grid
+    columns: 2
+    square: false
+    cards:
+      - type: history-graph
+        title: Current and state
+        hours_to_show: 6
+        entities:
+          - entity: sensor.control_room_esp32_control_room_boiler_current
+            name: Current
+          - entity: sensor.control_room_esp32_control_room_boiler_electrical_state
+            name: State
+      - type: history-graph
+        title: Flow, return and pressure
+        hours_to_show: 6
+        entities:
+          - entity: sensor.control_room_esp32_control_room_boiler_flow_temperature
+            name: Flow
+          - entity: sensor.control_room_esp32_control_room_boiler_return_temperature
+            name: Return
+          - entity: sensor.control_room_esp32_control_room_boiler_system_pressure
+            name: Pressure
+  - type: entities
+    title: Hot water cylinders
+    show_header_toggle: false
+    entities:
+      - type: section
+        label: Left cylinder (left side of house)
+      - entity: sensor.stored_hw_heat_demand_2
+        name: Heat demand
+      - entity: sensor.control_room_esp32_control_room_hot_water_cylinder_left_outlet_temperature
+        name: Top (outlet NTC)
+      - entity: sensor.dhw_07_045307_temperature
+        name: Bottom (Evohome probe)
+      - entity: sensor.control_room_esp32_control_room_cylinder_left_inlet_pressure
+        name: Inlet pressure
+      - entity: binary_sensor.control_room_esp32_control_room_tundish_left_wet
+        name: Tundish wet
+      - entity: binary_sensor.control_room_esp32_control_room_tundish_left_running
+        name: Tundish running
+      - type: section
+        label: Right cylinder (right side of house)
+      - entity: sensor.stored_hw_heat_demand
+        name: Heat demand
+      - entity: sensor.control_room_esp32_control_room_hot_water_cylinder_right_outlet_temperature
+        name: Top (outlet NTC)
+      - entity: sensor.dhw_07_040975_temperature
+        name: Bottom (Evohome probe)
+      - entity: sensor.control_room_esp32_control_room_cylinder_right_inlet_pressure
+        name: Inlet pressure
+      - entity: binary_sensor.control_room_esp32_control_room_tundish_right_wet
+        name: Tundish wet
+      - entity: binary_sensor.control_room_esp32_control_room_tundish_right_running
+        name: Tundish running
+  - type: grid
+    columns: 2
+    square: false
+    cards:
+      - type: history-graph
+        title: Cylinder temperatures
+        hours_to_show: 24
+        entities:
+          - entity: sensor.control_room_esp32_control_room_hot_water_cylinder_left_outlet_temperature
+            name: Left top
+          - entity: sensor.dhw_07_045307_temperature
+            name: Left bottom
+          - entity: sensor.control_room_esp32_control_room_hot_water_cylinder_right_outlet_temperature
+            name: Right top
+          - entity: sensor.dhw_07_040975_temperature
+            name: Right bottom
+      - type: history-graph
+        title: Cylinder inlet pressures
+        hours_to_show: 24
+        entities:
+          - entity: sensor.control_room_esp32_control_room_cylinder_left_inlet_pressure
+            name: Left
+          - entity: sensor.control_room_esp32_control_room_cylinder_right_inlet_pressure
+            name: Right

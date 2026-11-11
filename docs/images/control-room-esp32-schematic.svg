@@ -131,7 +131,7 @@
 <rect x="30" y="655" width="330" height="120" rx="8" fill="#fff" stroke="#2471a3" stroke-width="1.2" />
 <text x="40" y="675" font-family="Arial,Helvetica,sans-serif" font-size="13" font-weight="bold" text-anchor="start" fill="#2471a3">Cylinder outlet NTCs</text>
 <text x="40" y="695" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#333">Strap-on, pasted, lagged (B 3977)</text>
-<text x="40" y="712" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#333">A-wire to IO8 (L) / IO9 (R) + 3.3k leg</text>
+<text x="40" y="712" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#333">A-wire to IO9 (L) / IO8 (R) + 3.3k leg</text>
 <text x="40" y="729" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#333">3.3k other legs → IO10 post (3V3)</text>
 <text x="40" y="746" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#333">B-wires: twin ferrule → right-side GND</text>
 <polyline points="360,705 566,678" fill="none" stroke="#2471a3" stroke-width="1.4" />
@@ -162,7 +162,7 @@
 <text x="1050" y="130" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#333">Ausla 0-150 psi, 0.5-4.5 V, 5 V supply</text>
 <text x="1050" y="147" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#333">Divider + filter in each gauge box</text>
 <text x="1050" y="164" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#333">Cable: brown 5 V · blue signal · braid GND</text>
-<text x="1050" y="181" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#333">Left blue → IO2 · Right blue → IO1</text>
+<text x="1050" y="181" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#333">Left blue → IO1 · Right blue → IO2</text>
 <text x="1050" y="198" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#333">Brown → 5 V bus · braid → GND bus</text>
 <text x="1050" y="215" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#333">Zero (room pressure): L 0.487 V, R 0.482 V</text>
 <polyline points="1040,165 960,165 834,306" fill="none" stroke="#2471a3" stroke-width="1.4" />

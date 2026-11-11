@@ -3,10 +3,10 @@ control-room,Boiler flow temperature,GPIO4,ADC1 analogue,3V3(2)-3.3k-GPIO-NTC(10
 control-room,Boiler return temperature,GPIO5,ADC1 analogue,as above,Installed - meter-checked,IO5 1.98 V = 41.6 C vs HA 41.8
 control-room,Boiler system pressure,GPIO6,ADC1 analogue,10k/20k + 100nF in the boiler gauge box,Moving - gauge box to build,Was GPIO1 with an IO2 anchor; ADC calibration to re-check on GPIO6
 control-room,Boiler supply current (SCT013-015),GPIO3,ADC1 analogue,Standard topology: 10k/10k bias node + 10uF to GND; clamp between bias (white) and IO3 (red),Installed - bias verified 1.65 V,Screen is joined to white inside the clamp cable: insulated (it shorted the bias to GND)
-control-room,Cylinder left cold-inlet pressure,GPIO2,ADC1 analogue,10k/20k + 100nF in the gauge box,Wired - zeroed (0.487 V),Brown 5 V bus / blue signal / braid GND bus
-control-room,Cylinder right cold-inlet pressure,GPIO1,ADC1 analogue,as above,Wired - zeroed (0.482 V),Extension (1 m 18 AWG twin x2) to follow
-control-room,Cylinder left hot outlet temperature,GPIO8,ADC1 analogue,3.3k from IO10 post-GPIO-NTC-GND,Installed - meter-checked,1.872 V = 45.0 C vs HA 44.8
-control-room,Cylinder right hot outlet temperature,GPIO9,ADC1 analogue,as above,Installed - meter-checked,1.724 V = 49.6 C vs HA 49.9
+control-room,Cylinder left cold-inlet pressure,GPIO1,ADC1 analogue,10k/20k + 100nF in the gauge box,Live - verified 11 Nov 2026,Swapped from GPIO2 to match the fitted gauge; zero 0.482 V (measured on GPIO1); confirmed by a kitchen (left) draw dip; ~2.9 bar trapped after refill then ~2.5 bar PRV settle
+control-room,Cylinder right cold-inlet pressure,GPIO2,ADC1 analogue,as above,Live - verified 11 Nov 2026,Zero 0.487 V (measured on GPIO2); settles ~2.5 bar after a draw like the left
+control-room,Cylinder left hot outlet temperature,GPIO9,ADC1 analogue,3.3k from IO10 post-GPIO-NTC-GND,Installed - verified 11 Nov 2026,Swapped from GPIO8: a kitchen (left) draw warmed the IO8 NTC while the left inlet dipped
+control-room,Cylinder right hot outlet temperature,GPIO8,ADC1 analogue,as above,Installed - verified 11 Nov 2026,Right draw captured on IO8 (55.0 C)
 control-room,3V3 post (cylinder NTC 3.3k),IO10,Post,Wire from 3V3 + both 3.3k legs,In use,Keep out of the YAML
 control-room,IN1 Boiler call (W7),GPIO14,Digital (opto),Hailege 8-ch AC opto (VCC 3.3 V),Logic side wired - mains side at rewire,
 control-room,IN2 Hot water timer (W3),GPIO18,Digital (opto),as above,as above,Timer still gates hot water
@@ -17,8 +17,8 @@ control-room,IN6 Cyl R valve drive (W1),GPIO11,Digital (opto),as above,as above,
 control-room,IN7 UFH relay (W4),GPIO12,Digital (opto),as above,as above,
 control-room,IN8 Radiator relay (W8),GPIO42,Digital (opto),as above,After bypass,Live once TF/MF heads re-wired
 control-room,Tundish plate power (pulsed),GPIO21,Digital out,Both plate A cores (twin ferrule),Commissioned,150 ms every 5 s
-control-room,Tundish left sense,GPIO39,Digital in,MOSFET 1: gate IO40 linked to post IO38 (plate B + 2.2M); source IO41 to GND,Commissioned - re-terminated 10 Nov,Left plate now on IO38; water test to confirm naming
-control-room,Tundish right sense,GPIO20,Digital in,MOSFET 2: gate IO19 wired from post IO47 (plate B + 2.2M); source GND,Commissioned - re-terminated 10 Nov,Right plate now on IO47
+control-room,Tundish left sense,GPIO39,Digital in,MOSFET 1: gate IO40 linked to post IO38 (plate B + 2.2M); source IO41 to GND,Commissioned - naming confirmed 11 Nov,Left plate on IO38
+control-room,Tundish right sense,GPIO20,Digital in,MOSFET 2: gate IO19 wired from post IO47 (plate B + 2.2M); source GND,Commissioned - water test 11 Nov,Right plate on IO47; wetting it set Right Wet + Running
 control-room,Spare / reserved,GPIO7 / IO13 / IO46 / IO45 / IO0 / IO35-37 / IO48,-,-,-,GPIO7 spare ADC1; IO13 free; IO46/IO45/IO0 strapping; IO35-37 PSRAM; IO48 LED
 understairs,Cooker circuit current (SCT013-030),GPIO2,ADC1 analogue,bias + coupling cap,Firmware flashed - clamp to fit at CU,On > 1.0 A
 understairs,UFH pump current (SCT013-005),GPIO10,ADC1 analogue,bias + coupling cap,Firmware flashed - clamp to fit,Running > 0.10 A

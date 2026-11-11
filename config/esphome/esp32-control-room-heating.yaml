@@ -27,9 +27,9 @@ substitutions:
   inlet_full_scale_bar: "10.342"
   inlet_left_divider_ratio: "0.667"
   inlet_right_divider_ratio: "0.667"
-  inlet_left_zero_v: "0.487"     # 11 Nov 2026: mean of 1.5 h at room pressure (0.47-0.50 swing)
+  inlet_left_zero_v: "0.482"     # 11 Nov 2026: mean of 1.5 h at room pressure, measured on GPIO1 (now LEFT)
   # Revisit both zeros once the 470 uF is fitted across the 5 V and GND buses.
-  inlet_right_zero_v: "0.482"    # 11 Nov 2026: mean of 1.5 h at room pressure (0.468-0.496 swing)
+  inlet_right_zero_v: "0.487"    # 11 Nov 2026: mean of 1.5 h at room pressure, measured on GPIO2 (now RIGHT)
 
 esphome:
   name: esp32-control-room-heating
@@ -291,9 +291,10 @@ sensor:
         return {};
       return id(boiler_flow_temperature).state - id(boiler_return_temperature).state;
 
-  # Cylinder hot-outlet NTCs: 3V3 -> 3.3k -> IO8 (left, fitted) / IO9 (right, probe to fit) -> NTC -> GND
+  # Cylinder hot-outlet NTCs: 3.3k from the IO10 post -> IO9 (LEFT) / IO8 (RIGHT) -> NTC -> GND
+  # Swapped 11 Nov 2026: a kitchen (left cylinder) draw dipped the left inlet and warmed the IO8 NTC.
   - platform: adc
-    pin: GPIO8
+    pin: GPIO9
     id: cyl_left_outlet_adc
     attenuation: 12db
     samples: 16
@@ -324,7 +325,7 @@ sensor:
           send_every: 1
 
   - platform: adc
-    pin: GPIO9
+    pin: GPIO8
     id: cyl_right_outlet_adc
     attenuation: 12db
     samples: 16
@@ -455,11 +456,11 @@ sensor:
   # Cylinder cold-inlet pressures (Ausla 0-150 PSI), 10 Nov 2026 layout:
   #   at each gauge: 10k series + 20k + 100 nF to GND (divider and filter in the gauge's box);
   #   cable: brown 5 V (bus), blue signal (straight to the GPIO), braid GND (bus).
-  #   LEFT -> GPIO2, RIGHT -> GPIO1. Zero both at room pressure (substitutions above).
+  #   LEFT -> GPIO1, RIGHT -> GPIO2 (swapped 11 Nov to match the fitted gauges). Zeros above.
   # Same filtering as the boiler sensor: fast (diagnostic, ~5-8 s) + 1-min main.
   # =========================================================
   - platform: adc
-    pin: GPIO2
+    pin: GPIO1
     id: inlet_left_pin_v
     name: "Inlet (Left) Pressure Pin Voltage"
     entity_category: diagnostic
@@ -513,7 +514,7 @@ sensor:
           send_every: 5
 
   - platform: adc
-    pin: GPIO1
+    pin: GPIO2
     id: inlet_right_pin_v
     name: "Inlet (Right) Pressure Pin Voltage"
     entity_category: diagnostic
@@ -591,6 +592,12 @@ sensor:
   - platform: wifi_signal
     name: "Control Room WiFi Signal"
     update_interval: 60s
+
+  - platform: internal_temperature
+    name: "Control Room ESP32 Temperature"
+    id: esp_internal_temp
+    update_interval: 60s
+    entity_category: diagnostic
 
   - platform: uptime
     name: "Control Room Uptime"

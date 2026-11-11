@@ -15,9 +15,9 @@
 > - **demand** (230 V opto-isolated boiler switched live, timer output, hot-water relays, valve drives, UFH and radiator relays)
 > - **leak detection** (pulsed tundish plates)
 >
-> **Built so far:** both boards' firmware; boiler flow/return, system pressure (calibrated), current and banded states; both cylinder outlet temperatures and inlet pressure gauges (zeroed); both tundish sensors; the opto enclosure (logic side); and an off-board rewiring of the control-room board ([full schematic](docs/12-control-room-wiring-schematic.md)).
+> **Built so far:** both boards' firmware; boiler flow/return, system pressure (calibrated), current and banded states; both cylinders' outlet temperatures and inlet pressures (live, left/right verified), a per-cylinder "hot water available" estimate, and both tundish sensors (water-tested); the opto enclosure (logic side); an off-board rewiring of the control-room board ([full schematic](docs/12-control-room-wiring-schematic.md)); and a 23-rule alerts package ([doc 15](docs/15-alerts.md)).
 >
-> **In progress:** the boiler gauge box, cylinder inlet span checks after the plumber's visit (new vessels and relief valves), the opto board's mains side at the junction-box rewire, slow-leak diagnosis.
+> **In progress:** the boiler gauge box, the inlet span check (tyre gauge), the PRVs settling at ~2.5 bar, the opto board's mains side at the junction-box rewire, slow-leak diagnosis, and the legionella setpoint decision.
 >
 > **Then:** OpenTherm with a DIYLESS shield and PID logic.
 
@@ -35,10 +35,11 @@
 | Boiler flow/return NTCs | ✅ Installed, meter-checked (11 Nov) |
 | Boiler current clamp | ✅ Fitted, ±3% vs meter, states retuned · bias fault (screen joined to white) found and fixed · ⏳ 3 turns |
 | Opto board (8 inputs, own enclosure) | ✅ Enclosure and logic side ([schematic](docs/11-opto-board-installation.md#5-as-built-enclosure-schematic-and-status-10-nov-2026)) · ⏳ mains side at the rewire |
-| Cylinder hot-outlet NTCs ×2 | ✅ Both fitted and meter-checked · stratification and "hot water available" ([doc 14](docs/14-hot-water-stratification.md)) |
-| Cylinder inlet pressures ×2 | ✅ Wired and zeroed · ⏳ span check after the plumber |
-| Expansion vessels + relief valves | ⏳ Plumber (11 Nov) |
-| Tundish sensors ×2 | ✅ Commissioned, re-terminated 10 Nov · ⏳ water test |
+| Cylinder hot-outlet NTCs ×2 | ✅ Fitted, meter-checked, left/right verified · "hot water available" v3 with per-cylinder draw capture ([doc 14](docs/14-hot-water-stratification.md)) |
+| Cylinder inlet pressures ×2 | ✅ Live, left/right verified, alerts on · ⏳ tyre-gauge span check |
+| Expansion vessels | ✅ Replaced 11 Nov (24 L, 3.5 bar), peak 3.8 bar on reheat · ⏳ PRVs settle ~2.5 bar ([doc 05](docs/05-dhw-cylinders-expansion-and-tundish.md#plumber-visit-and-commissioning-11-nov-2026)) |
+| Tundish sensors ×2 | ✅ Commissioned, water-tested (naming confirmed), no wet events with the new vessels |
+| Alerts | ✅ 23-rule package live ([doc 15](docs/15-alerts.md)) |
 | Understairs board: UFH pump + cooker clamps, UFH flow/return, (proposed) manifold pressure | ✅ Flashed · ⏳ sensors to connect |
 | OpenTherm + PID | 📐 Designed in its own repo: [opentherm-boiler-control-esphome](https://github.com/the-control-cabinet/opentherm-boiler-control-esphome) · node hardware assembled |
 
@@ -136,7 +137,9 @@ As built 11 Nov 2026: [doc 12](docs/12-control-room-wiring-schematic.md). CSV: [
 | [`config/esphome/esp32-control-room-heating.yaml`](config/esphome/esp32-control-room-heating.yaml) | Current control-room firmware: NTCs, pressure, clamp + state machine, opto inputs, tundishes |
 | [`config/esphome/esp32-control-room-heating-proposed.yaml`](config/esphome/esp32-control-room-heating-proposed.yaml) | Proposed: 10k/20k dividers, noise filters, cylinder NTCs and pressures, opto pin moves |
 | [`config/esphome/understairs-monitor.yaml`](config/esphome/understairs-monitor.yaml) | UFH pump and cooker clamps, UFH manifold NTCs |
-| [`config/homeassistant/plant-alerts.example.yaml`](config/homeassistant/plant-alerts.example.yaml) | Low pressure, tundish discharge, firing without call, cylinder overpressure |
+| [`config/homeassistant/packages/heating_plant_alerts.yaml`](config/homeassistant/packages/heating_plant_alerts.yaml) | Alerts package: 23 automations, commissioning gates, derived sensors ([doc 15](docs/15-alerts.md)) |
+| [`config/homeassistant/packages/dhw_hot_water_available.yaml`](config/homeassistant/packages/dhw_hot_water_available.yaml) | Hot water available v3: per-cylinder draw capture, cold-feed helper ([doc 14](docs/14-hot-water-stratification.md)) |
+| [`config/homeassistant/dashboards/`](config/homeassistant/dashboards/) | Boiler plant card (with the cylinders) and hot water card |
 | [`config/homeassistant/pressure-statistics.example.yaml`](config/homeassistant/pressure-statistics.example.yaml) | Noise floor (1 h std dev), mean, 7-day change |
 
 All credentials are `!secret` references.
@@ -157,7 +160,8 @@ All credentials are `!secret` references.
 | [11 Opto board installation](docs/11-opto-board-installation.md) | Tap points from the junction box survey, enclosure, wiring, commissioning tests |
 | [12 Control-room wiring schematic](docs/12-control-room-wiring-schematic.md) | Full as-built drawing, pin table, power-up checks |
 | [13 Off-board wiring](docs/13-off-board-wiring.md) | Gauge boxes, bus strip, posts, clamp strip and the screen fault |
-| [14 Stratification and hot water available](docs/14-hot-water-stratification.md) | Top/bottom temperatures, estimate, Centre Store settings |
+| [14 Stratification and hot water available](docs/14-hot-water-stratification.md) | Top/bottom temperatures, estimate v3 (per-cylinder draw capture), probe position, Centre Store settings |
+| [15 Alerts](docs/15-alerts.md) | The alerts package: switches, 23 alerts, FDD mapping, commissioning lessons |
 | [10 Understairs: UFH plant and circuits](docs/10-understairs-ufh-and-circuits.md) | UFH pump and cooker clamps, UFH temperatures and placement, HCC80R data via RAMSES-II, manifold pressure for leak isolation, floating-input lesson |
 
 ## Skills demonstrated

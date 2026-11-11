@@ -19,19 +19,21 @@ The complete as-built wiring of the control-room board after the off-board rewor
 | Terminal | Use | Terminal | Use |
 |---|---|---|---|
 | 3V3 (1) | Opto VCC + clamp-strip 3V3 feed | GND | GND |
-| 3V3 (2) | Flow + return 3.3k | IO1 | Cylinder R gauge (blue) |
-| IO4 | Flow NTC + 3.3k | IO2 | Cylinder L gauge (blue) |
+| 3V3 (2) | Flow + return 3.3k | IO1 | Cylinder L gauge (blue) |
+| IO4 | Flow NTC + 3.3k | IO2 | Cylinder R gauge (blue) |
 | IO5 | Return NTC + 3.3k | IO42 | Opto IN8 (radiator relay) |
 | IO6 | Boiler gauge signal | IO41 | MOSFET 1 source (→ GND) |
 | IO7 | Spare ADC1 | IO40 | MOSFET 1 gate |
 | IO15 / IO16 / IO17 / IO18 | Opto IN3 / IN4 / IN5 / IN2 | IO39 | Tundish L sense |
-| IO8 | Cylinder L outlet NTC + 3.3k | IO38 | Gate post: L plate B + 2.2 MΩ |
+| IO8 | Cylinder R outlet NTC + 3.3k | IO38 | Gate post: L plate B + 2.2 MΩ |
 | IO3 | Clamp red (signal) | IO47 | Gate post: R plate B + 2.2 MΩ |
-| IO9 | Cylinder R outlet NTC + 3.3k | IO21 | Tundish plate power |
+| IO9 | Cylinder L outlet NTC + 3.3k | IO21 | Tundish plate power |
 | IO10 | **Post:** 3V3 for the cylinder NTCs | IO20 | Tundish R sense |
 | IO11 / IO12 / IO14 | Opto IN6 / IN7 / IN1 | IO19 | MOSFET 2 gate |
 | 5V | 5 V bus | GND (×2) | GND, cylinder NTC B-wires |
 | GND | Boiler NTC B-wires | IO13, IO46, IO45, IO0, IO35-37, IO48 | Free, strapping, PSRAM, LED |
+
+**Left/right verified 11 Nov 2026:** the inlet gauges (IO1 left, IO2 right) and the outlet NTCs (IO9 left, IO8 right) were found swapped against their labels after the plumber's visit and corrected in the YAML. A kitchen draw (left cylinder) dipped the left inlet and warmed the IO8 NTC, which settled it; the tundishes were confirmed by a water test.
 
 CSV: [data/io-schedule.csv](../data/io-schedule.csv)
 

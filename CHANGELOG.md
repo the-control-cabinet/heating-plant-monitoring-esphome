@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.0] - 2026-11-11 (evening)
+- New doc 15 and config/homeassistant/packages/heating_plant_alerts.yaml: 23 alerts with commissioning gates, FDD mapping and lessons (heat demand, not relay demand, for hot water; notify action name; RAMSES lag); replaces plant-alerts.example.yaml. ESP32 chip temperature sensor added.
+- Doc 05: plumber visit (24 L vessels at 3.5 bar, gauges between PRV and vessel), a false 5 bar from a loose divider leg, PRVs settling at ~2.5 bar, the vessels' knee and 3.8 bar peak, tundish water test and lingering water.
+- Left/right corrections: inlet gauges (IO1 left, IO2 right) and outlet NTCs (IO9 left, IO8 right), verified by a draw; YAML, I/O schedule, pin table and schematic updated.
+- Doc 14 and the hot water package v3: cold feed helper (14 °C), per-cylinder draw capture from each outlet's own cooling, stratification from the top used, the low probe pocket assessed, limits and next steps. New hot water and boiler plant cards.
+- Tracker and README status updated.
+
 ## [0.8.0] - 2026-11-11
 - Off-board rework of the control-room board: pressure dividers and filters moved into a junction box at each gauge; bus strip (5 V / GND); NTC resistors bridged between neighbouring terminals with IO10 as a 3V3 post; clamp bias on its own strip in the standard topology (doc 13).
 - New doc 12: full as-built schematic (SVG), pin table and power-up checks; new opto enclosure schematic (doc 11 §5).

@@ -1,0 +1,610 @@
+# Heating plant alerts: phone notifications for the control-room ESP32,
+# the cylinders and the Evohome zones.
+# Switches: pressure and opto alerts stay off until each is commissioned
+# (and can be turned off during plumbing work).
+# Cylinder mapping (heat demand = 100 while that cylinder is calling): sensor.stored_hw_heat_demand = RIGHT cylinder,
+#                   sensor.stored_hw_heat_demand_2 = LEFT cylinder (relay demand is NOT an on/off DHW signal).
+
+input_boolean:
+  alerts_boiler_pressure:
+    name: "Alerts: boiler pressure"
+    icon: mdi:gauge
+  alerts_cylinder_pressure:
+    name: "Alerts: cylinder inlet pressures"
+    icon: mdi:gauge
+  alerts_opto_inputs:
+    name: "Alerts: opto demand inputs"
+    icon: mdi:flash
+
+input_number:
+  alerts_weekly_dhw_target:
+    name: "Weekly hot water target"
+    min: 50
+    max: 70
+    step: 1
+    initial: 60
+    unit_of_measurement: "°C"
+    icon: mdi:thermometer-check
+
+sensor:
+  - platform: history_stats
+    name: "Boiler starts last hour"
+    unique_id: boiler_starts_last_hour
+    entity_id: binary_sensor.control_room_esp32_control_room_boiler_state_ignition_attempt
+    state: "on"
+    type: count
+    end: "{{ now() }}"
+    duration:
+      hours: 1
+
+  - platform: statistics
+    name: "Boiler pressure change 24h"
+    unique_id: boiler_pressure_change_24h
+    entity_id: sensor.control_room_esp32_control_room_boiler_system_pressure
+    state_characteristic: change
+    max_age:
+      hours: 24
+    sampling_size: 3000
+    precision: 3
+
+template:
+  - trigger:
+      - platform: state
+        entity_id: sensor.control_room_esp32_control_room_hot_water_cylinder_left_outlet_temperature
+      - platform: time
+        at: "22:00:00"
+        id: reset
+    sensor:
+      - name: "Left cylinder outlet weekly max"
+        unique_id: left_cylinder_outlet_weekly_max
+        unit_of_measurement: "°C"
+        state: >
+          {% set now_v = states('sensor.control_room_esp32_control_room_hot_water_cylinder_left_outlet_temperature') | float(0) %}
+          {% set prev = this.state | float(0) if this.state not in ['unknown', 'unavailable'] else 0 %}
+          {% if trigger.id == 'reset' and now().weekday() == 6 %}{{ now_v | round(1) }}
+          {% else %}{{ [prev, now_v] | max | round(1) }}{% endif %}
+
+  - trigger:
+      - platform: state
+        entity_id: sensor.control_room_esp32_control_room_hot_water_cylinder_right_outlet_temperature
+      - platform: time
+        at: "22:00:00"
+        id: reset
+    sensor:
+      - name: "Right cylinder outlet weekly max"
+        unique_id: right_cylinder_outlet_weekly_max
+        unit_of_measurement: "°C"
+        state: >
+          {% set now_v = states('sensor.control_room_esp32_control_room_hot_water_cylinder_right_outlet_temperature') | float(0) %}
+          {% set prev = this.state | float(0) if this.state not in ['unknown', 'unavailable'] else 0 %}
+          {% if trigger.id == 'reset' and now().weekday() == 6 %}{{ now_v | round(1) }}
+          {% else %}{{ [prev, now_v] | max | round(1) }}{% endif %}
+
+automation:
+  # ---------- Boiler ----------
+  - id: plant_alert_short_cycling
+    alias: "Plant alert: boiler short cycling"
+    mode: single
+    trigger:
+      - platform: numeric_state
+        entity_id: sensor.boiler_starts_last_hour
+        above: 6
+    action:
+      - service: notify.mobile_app_jamess_iphone
+        data:
+          title: "Boiler short cycling"
+          message: >
+            {{ states('sensor.boiler_starts_last_hour') }} starts in the last hour
+            (flow {{ states('sensor.control_room_esp32_control_room_boiler_flow_temperature') | float(0) | round(1) }} °C,
+            return {{ states('sensor.control_room_esp32_control_room_boiler_return_temperature') | float(0) | round(1) }} °C).
+            Likely low flow: only the UFH zone open, no bypass.
+      - delay: "01:00:00"
+
+  - id: plant_alert_flow_overheat
+    alias: "Plant alert: boiler flow above 80 °C"
+    mode: single
+    trigger:
+      - platform: numeric_state
+        entity_id: sensor.control_room_esp32_control_room_boiler_flow_temperature
+        above: 80
+        for: "00:02:00"
+    action:
+      - service: notify.mobile_app_jamess_iphone
+        data:
+          title: "Boiler flow overheating"
+          message: >
+            Flow {{ states('sensor.control_room_esp32_control_room_boiler_flow_temperature') | float(0) | round(1) }} °C
+            for 2 minutes. Check the boiler and pump.
+
+  - id: plant_alert_boiler_pressure
+    alias: "Plant alert: boiler pressure"
+    mode: single
+    trigger:
+      - platform: numeric_state
+        entity_id: sensor.control_room_esp32_control_room_boiler_system_pressure
+        below: 0.8
+        for: "00:10:00"
+        id: low
+      - platform: numeric_state
+        entity_id: sensor.control_room_esp32_control_room_boiler_system_pressure
+        above: 2.5
+        for: "00:05:00"
+        id: high
+      - platform: numeric_state
+        entity_id: sensor.control_room_esp32_control_room_boiler_pressure_pin_voltage
+        below: 0.2
+        for: "00:05:00"
+        id: sensor
+    condition:
+      - condition: state
+        entity_id: input_boolean.alerts_boiler_pressure
+        state: "on"
+    action:
+      - service: notify.mobile_app_jamess_iphone
+        data:
+          title: "Boiler pressure"
+          message: >
+            {% if trigger.id == 'low' %}Low: {{ states('sensor.control_room_esp32_control_room_boiler_system_pressure') | float(0) | round(2) }} bar. Top up to about 1.3 bar cold.
+            {% elif trigger.id == 'high' %}High: {{ states('sensor.control_room_esp32_control_room_boiler_system_pressure') | float(0) | round(2) }} bar, heading towards the 3 bar relief valve.
+            {% else %}Sensor fault: pin voltage below 0.2 V (disconnected?).{% endif %}
+
+  - id: plant_alert_pressure_decay
+    alias: "Plant alert: boiler pressure falling (24 h)"
+    mode: single
+    trigger:
+      - platform: time
+        at: "05:00:00"
+    condition:
+      - condition: state
+        entity_id: input_boolean.alerts_boiler_pressure
+        state: "on"
+      - condition: numeric_state
+        entity_id: sensor.boiler_pressure_change_24h
+        below: -0.1
+    action:
+      - service: notify.mobile_app_jamess_iphone
+        data:
+          title: "Boiler pressure falling"
+          message: >
+            System pressure fell {{ states('sensor.boiler_pressure_change_24h') | float(0) | abs | round(2) }} bar
+            in 24 hours (now {{ states('sensor.control_room_esp32_control_room_boiler_system_pressure') | float(0) | round(2) }} bar, cold).
+            Faster than the usual slow loss: check for a leak or a weeping relief valve.
+
+  - id: plant_alert_firing_without_call
+    alias: "Plant alert: boiler firing without a call"
+    mode: single
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.control_room_esp32_control_room_firing_without_call
+        to: "on"
+        for: "00:02:00"
+    condition:
+      - condition: state
+        entity_id: input_boolean.alerts_opto_inputs
+        state: "on"
+    action:
+      - service: notify.mobile_app_jamess_iphone
+        data:
+          title: "Boiler firing without a call"
+          message: "Firing for 2 minutes with no boiler call on IN1. Check the switched live, BDR91s and boiler."
+
+  - id: plant_alert_boiler_lockout
+    alias: "Plant alert: boiler called but not firing (lockout?)"
+    mode: single
+    trigger:
+      - platform: template
+        value_template: >
+          {{ is_state('binary_sensor.control_room_esp32_control_room_opto_in1_boiler_call', 'on')
+             and (is_state('binary_sensor.control_room_esp32_control_room_boiler_state_off', 'on')
+                  or is_state('binary_sensor.control_room_esp32_control_room_boiler_state_idle', 'on')) }}
+        for: "00:15:00"
+    condition:
+      - condition: state
+        entity_id: input_boolean.alerts_opto_inputs
+        state: "on"
+    action:
+      - service: notify.mobile_app_jamess_iphone
+        data:
+          title: "Boiler lockout suspected"
+          message: "The boiler has had a call (IN1) for 15 minutes without firing. Check the boiler display for a fault code (e.g. L-codes) and reset if needed."
+
+  # ---------- Hot water ----------
+  - id: plant_alert_hot_water_not_firing
+    alias: "Plant alert: hot water called but boiler not firing"
+    mode: single
+    trigger:
+      - platform: template
+        value_template: >
+          {{ (states('sensor.stored_hw_heat_demand') | float(0) > 0
+              or states('sensor.stored_hw_heat_demand_2') | float(0) > 0)
+             and (is_state('binary_sensor.control_room_esp32_control_room_boiler_state_off', 'on')
+                  or is_state('binary_sensor.control_room_esp32_control_room_boiler_state_idle', 'on')) }}
+        for: "00:15:00"
+    action:
+      - service: notify.mobile_app_jamess_iphone
+        data:
+          title: "Hot water called, boiler not firing"
+          message: >
+            A cylinder relay has been on for 15 minutes with no firing.
+            Left relay {{ states('sensor.stored_hw_heat_demand_2') }}%, right {{ states('sensor.stored_hw_heat_demand') }}%.
+            Cylinder stat cut off, overheat cut-out tripped, timer off, or boiler lockout.
+
+  - id: plant_alert_reheat_too_long
+    alias: "Plant alert: cylinder reheat over 90 minutes"
+    mode: single
+    trigger:
+      - platform: numeric_state
+        entity_id: sensor.stored_hw_heat_demand_2
+        above: 0
+        for: "01:30:00"
+        id: left
+      - platform: numeric_state
+        entity_id: sensor.stored_hw_heat_demand
+        above: 0
+        for: "01:30:00"
+        id: right
+    action:
+      - service: notify.mobile_app_jamess_iphone
+        data:
+          title: "Cylinder reheat over 90 minutes"
+          message: >
+            The {{ trigger.id }} cylinder has been calling for 90 minutes.
+            Outlets: left {{ states('sensor.control_room_esp32_control_room_hot_water_cylinder_left_outlet_temperature') | float(0) | round(1) }} °C,
+            right {{ states('sensor.control_room_esp32_control_room_hot_water_cylinder_right_outlet_temperature') | float(0) | round(1) }} °C.
+
+  - id: plant_alert_reheat_short
+    alias: "Plant alert: reheat finished below 55 °C"
+    mode: queued
+    trigger:
+      - platform: numeric_state
+        entity_id: sensor.stored_hw_heat_demand_2
+        below: 1
+        id: left
+      - platform: numeric_state
+        entity_id: sensor.stored_hw_heat_demand
+        below: 1
+        id: right
+    action:
+      - delay: "00:10:00"
+      - condition: template
+        value_template: >
+          {% set e = 'sensor.control_room_esp32_control_room_hot_water_cylinder_' ~ trigger.id ~ '_outlet_temperature' %}
+          {{ has_value(e) and states(e) | float(0) < 55 }}
+      - service: notify.mobile_app_jamess_iphone
+        data:
+          title: "Reheat finished short"
+          message: >
+            The {{ trigger.id }} cylinder's reheat ended with its top at
+            {{ states('sensor.control_room_esp32_control_room_hot_water_cylinder_' ~ trigger.id ~ '_outlet_temperature') | float(0) | round(1) }} °C (target 58 °C).
+            The cylinder's own stat may be set too low.
+
+  - id: plant_alert_cylinder_overheat
+    alias: "Plant alert: cylinder outlet above 70 °C"
+    mode: single
+    trigger:
+      - platform: numeric_state
+        entity_id:
+          - sensor.control_room_esp32_control_room_hot_water_cylinder_left_outlet_temperature
+          - sensor.control_room_esp32_control_room_hot_water_cylinder_right_outlet_temperature
+        above: 70
+        for: "00:05:00"
+    action:
+      - service: notify.mobile_app_jamess_iphone
+        data:
+          title: "Cylinder overheating"
+          message: >
+            {{ trigger.to_state.name }} is {{ trigger.to_state.state | float(0) | round(1) }} °C.
+            The cylinder stat may have failed: the overheat cut-out is the last line of protection.
+
+  - id: plant_alert_weekly_60
+    alias: "Plant alert: weekly hot water temperature not reached"
+    mode: single
+    trigger:
+      - platform: time
+        at: "21:45:00"
+    condition:
+      - condition: time
+        weekday: sun
+      - condition: template
+        value_template: >
+          {% set t = states('input_number.alerts_weekly_dhw_target') | float(60) %}
+          {{ states('sensor.left_cylinder_outlet_weekly_max') | float(0) < t
+             or states('sensor.right_cylinder_outlet_weekly_max') | float(0) < t }}
+    action:
+      - service: notify.mobile_app_jamess_iphone
+        data:
+          title: "Weekly hot water temperature"
+          message: >
+            This week's peaks: left {{ states('sensor.left_cylinder_outlet_weekly_max') }} °C,
+            right {{ states('sensor.right_cylinder_outlet_weekly_max') }} °C
+            (target {{ states('input_number.alerts_weekly_dhw_target') | int }} °C).
+            Consider a weekly high-temperature reheat.
+
+  - id: plant_alert_cylinder_pressure
+    alias: "Plant alert: cylinder inlet pressure"
+    mode: single
+    trigger:
+      - platform: numeric_state
+        entity_id:
+          - sensor.control_room_esp32_control_room_cylinder_left_inlet_pressure
+          - sensor.control_room_esp32_control_room_cylinder_right_inlet_pressure
+        above: 4.5
+        for: "00:02:00"
+        id: high
+      - platform: numeric_state
+        entity_id:
+          - sensor.control_room_esp32_control_room_cylinder_left_inlet_pressure
+          - sensor.control_room_esp32_control_room_cylinder_right_inlet_pressure
+        below: 2.0
+        for: "00:10:00"
+        id: low
+      - platform: numeric_state
+        entity_id:
+          - sensor.control_room_esp32_control_room_inlet_left_pressure_pin_voltage
+          - sensor.control_room_esp32_control_room_inlet_right_pressure_pin_voltage
+        below: 0.2
+        for: "00:05:00"
+        id: sensor
+    condition:
+      - condition: state
+        entity_id: input_boolean.alerts_cylinder_pressure
+        state: "on"
+    action:
+      - service: notify.mobile_app_jamess_iphone
+        data:
+          title: "Cylinder inlet pressure"
+          message: >
+            {% if trigger.id == 'high' %}{{ trigger.to_state.name }}: {{ trigger.to_state.state | float(0) | round(2) }} bar. Above 4.5 bar: the expansion vessel may be losing its 3.5 bar pre-charge.
+            {% elif trigger.id == 'low' %}{{ trigger.to_state.name }}: {{ trigger.to_state.state | float(0) | round(2) }} bar. Below 2 bar: supply or pressure-reducing valve problem.
+            {% else %}{{ trigger.to_state.name }} below 0.2 V: gauge disconnected?{% endif %}
+
+  # ---------- Opto demand checks (after the junction-box rewire) ----------
+  - id: plant_alert_timer_blocking_hot_water
+    alias: "Plant alert: hot water timer blocking a call"
+    mode: single
+    trigger:
+      - platform: template
+        value_template: >
+          {{ (states('sensor.stored_hw_heat_demand') | float(0) > 0
+              or states('sensor.stored_hw_heat_demand_2') | float(0) > 0)
+             and is_state('binary_sensor.control_room_esp32_control_room_opto_in2_hot_water_timer', 'off') }}
+        for: "00:05:00"
+    condition:
+      - condition: state
+        entity_id: input_boolean.alerts_opto_inputs
+        state: "on"
+    action:
+      - service: notify.mobile_app_jamess_iphone
+        data:
+          title: "Hot water timer off"
+          message: "Evohome is calling for hot water but the Danfoss timer output (IN2) is off. Set the TS715Si back to permanent ON."
+
+  - id: plant_alert_relay_not_switching
+    alias: "Plant alert: hot water relay commanded but output off"
+    mode: single
+    trigger:
+      - platform: template
+        value_template: >
+          {{ states('sensor.stored_hw_heat_demand_2') | float(0) > 0
+             and is_state('binary_sensor.control_room_esp32_control_room_opto_in2_hot_water_timer', 'on')
+             and is_state('binary_sensor.control_room_esp32_control_room_opto_in3_hw_relay_left', 'off') }}
+        for: "00:05:00"
+        id: left
+      - platform: template
+        value_template: >
+          {{ states('sensor.stored_hw_heat_demand') | float(0) > 0
+             and is_state('binary_sensor.control_room_esp32_control_room_opto_in2_hot_water_timer', 'on')
+             and is_state('binary_sensor.control_room_esp32_control_room_opto_in4_hw_relay_right', 'off') }}
+        for: "00:05:00"
+        id: right
+    condition:
+      - condition: state
+        entity_id: input_boolean.alerts_opto_inputs
+        state: "on"
+    action:
+      - service: notify.mobile_app_jamess_iphone
+        data:
+          title: "Hot water relay not switching"
+          message: "The {{ trigger.id }} cylinder's BDR91 is commanded on (RAMSES) but its output is off. Check the relay (RF link, LED, power)."
+
+  - id: plant_alert_stat_not_passing
+    alias: "Plant alert: cylinder stat not passing"
+    mode: single
+    trigger:
+      - platform: template
+        value_template: >
+          {{ is_state('binary_sensor.control_room_esp32_control_room_opto_in3_hw_relay_left', 'on')
+             and is_state('binary_sensor.control_room_esp32_control_room_opto_in5_cylinder_left_valve_drive', 'off') }}
+        for: "00:10:00"
+        id: left
+      - platform: template
+        value_template: >
+          {{ is_state('binary_sensor.control_room_esp32_control_room_opto_in4_hw_relay_right', 'on')
+             and is_state('binary_sensor.control_room_esp32_control_room_opto_in6_cylinder_right_valve_drive', 'off') }}
+        for: "00:10:00"
+        id: right
+    condition:
+      - condition: state
+        entity_id: input_boolean.alerts_opto_inputs
+        state: "on"
+    action:
+      - service: notify.mobile_app_jamess_iphone
+        data:
+          title: "Cylinder stat not passing"
+          message: >
+            The {{ trigger.id }} cylinder's relay is on but its valve isn't being driven: the cylinder stat is
+            satisfied below the Evohome setpoint, or the overheat cut-out has tripped.
+
+  - id: plant_alert_valve_no_boiler_call
+    alias: "Plant alert: valve open but no boiler call"
+    mode: single
+    trigger:
+      - platform: template
+        value_template: >
+          {{ (is_state('binary_sensor.control_room_esp32_control_room_opto_in5_cylinder_left_valve_drive', 'on')
+              or is_state('binary_sensor.control_room_esp32_control_room_opto_in6_cylinder_right_valve_drive', 'on')
+              or is_state('binary_sensor.control_room_esp32_control_room_opto_in7_ufh_relay', 'on'))
+             and is_state('binary_sensor.control_room_esp32_control_room_opto_in1_boiler_call', 'off') }}
+        for: "00:05:00"
+    condition:
+      - condition: state
+        entity_id: input_boolean.alerts_opto_inputs
+        state: "on"
+    action:
+      - service: notify.mobile_app_jamess_iphone
+        data:
+          title: "Valve open, no boiler call"
+          message: "A zone valve is being driven but the boiler call (IN1) is off: check that valve's end switch and the switched-live wiring."
+
+  # ---------- Sensors and boards ----------
+  - id: plant_alert_implausible_ntc
+    alias: "Plant alert: temperature probe fault"
+    mode: single
+    trigger:
+      - platform: template
+        value_template: >
+          {% set ids = ['sensor.control_room_esp32_control_room_boiler_flow_temperature',
+                        'sensor.control_room_esp32_control_room_boiler_return_temperature',
+                        'sensor.control_room_esp32_control_room_hot_water_cylinder_left_outlet_temperature',
+                        'sensor.control_room_esp32_control_room_hot_water_cylinder_right_outlet_temperature'] %}
+          {{ ids | select('has_value') | map('states') | map('float') | select('lt', -10) | list | count > 0
+             or ids | select('has_value') | map('states') | map('float') | select('gt', 110) | list | count > 0 }}
+        for: "00:05:00"
+    action:
+      - service: notify.mobile_app_jamess_iphone
+        data:
+          title: "Temperature probe fault"
+          message: >
+            A probe reads below −10 °C or above 110 °C (open or shorted).
+            Flow {{ states('sensor.control_room_esp32_control_room_boiler_flow_temperature') }},
+            return {{ states('sensor.control_room_esp32_control_room_boiler_return_temperature') }},
+            left outlet {{ states('sensor.control_room_esp32_control_room_hot_water_cylinder_left_outlet_temperature') }},
+            right outlet {{ states('sensor.control_room_esp32_control_room_hot_water_cylinder_right_outlet_temperature') }}.
+
+  - id: plant_alert_board_offline
+    alias: "Plant alert: control-room ESP32 offline"
+    mode: single
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.control_room_esp32_control_room_control_room_online
+        to: "off"
+        for: "00:05:00"
+      - platform: state
+        entity_id: binary_sensor.control_room_esp32_control_room_control_room_online
+        to: "unavailable"
+        for: "00:05:00"
+    action:
+      - service: notify.mobile_app_jamess_iphone
+        data:
+          title: "Control-room ESP32 offline"
+          message: "No contact for 5 minutes: boiler, cylinder and tundish monitoring is down."
+
+  - id: plant_alert_esp32_overheat
+    alias: "Plant alert: control-room ESP32 too warm"
+    mode: single
+    trigger:
+      - platform: template
+        value_template: >
+          {{ states.sensor | selectattr('entity_id', 'search', '^sensor\.control_room.*esp32_temperature$')
+             | map(attribute='state') | map('float', 0) | select('gt', 75) | list | count > 0 }}
+        for: "00:10:00"
+    action:
+      - service: notify.mobile_app_jamess_iphone
+        data:
+          title: "Control-room ESP32 too warm"
+          message: >
+            Chip temperature {{ states.sensor | selectattr('entity_id', 'search', '^sensor\.control_room.*esp32_temperature$')
+               | map(attribute='state') | first }} °C for 10 minutes (normal 40-55 °C).
+            Check the enclosure's ventilation, the 3.3 V regulator and for a short on the board.
+
+  # ---------- Zones ----------
+  - id: plant_alert_zone_frost
+    alias: "Plant alert: a zone below 5.5 °C"
+    mode: single
+    trigger:
+      - platform: template
+        value_template: >
+          {{ states.climate | selectattr('attributes.current_temperature', 'defined')
+             | selectattr('attributes.current_temperature', 'number')
+             | selectattr('attributes.current_temperature', 'lt', 5.5) | list | count > 0 }}
+        for: "00:10:00"
+    action:
+      - service: notify.mobile_app_jamess_iphone
+        data:
+          title: "Zone below 5.5 °C"
+          message: >
+            {{ states.climate | selectattr('attributes.current_temperature', 'defined')
+               | selectattr('attributes.current_temperature', 'number')
+               | selectattr('attributes.current_temperature', 'lt', 5.5)
+               | map(attribute='name') | join(', ') }}
+
+  - id: plant_alert_zone_stuck
+    alias: "Plant alert: zone calling but not warming"
+    mode: single
+    trigger:
+      - platform: template
+        value_template: >
+          {% set ns = namespace(n=0) %}
+          {% for z in states.climate if z.attributes.heat_demand is defined
+               and z.attributes.current_temperature is number and z.attributes.temperature is number %}
+            {% set d = z.attributes.heat_demand | float(0) %}
+            {% set d = d * 100 if d <= 1 else d %}
+            {% if d >= 95 and z.attributes.current_temperature < z.attributes.temperature - 1 %}
+              {% set ns.n = ns.n + 1 %}
+            {% endif %}
+          {% endfor %}
+          {{ ns.n > 0 }}
+        for: "02:00:00"
+    action:
+      - service: notify.mobile_app_jamess_iphone
+        data:
+          title: "Zone calling but not warming"
+          message: >
+            {% set ns = namespace(z=[]) %}
+            {% for z in states.climate if z.attributes.heat_demand is defined
+                 and z.attributes.current_temperature is number and z.attributes.temperature is number %}
+              {% set d = z.attributes.heat_demand | float(0) %}
+              {% set d = d * 100 if d <= 1 else d %}
+              {% if d >= 95 and z.attributes.current_temperature < z.attributes.temperature - 1 %}
+                {% set ns.z = ns.z + [z.name ~ ' ' ~ z.attributes.current_temperature ~ '/' ~ z.attributes.temperature ~ ' °C'] %}
+              {% endif %}
+            {% endfor %}
+            Full demand for 2 hours, still more than 1 °C below setpoint: {{ ns.z | join(', ') }}.
+            Check actuators, bindings or valves.
+
+  - id: plant_alert_heating_batteries
+    alias: "Plant alert: Evohome device battery low"
+    mode: single
+    trigger:
+      - platform: template
+        value_template: >
+          {{ states.binary_sensor | selectattr('entity_id', 'search', '^binary_sensor\.(thm|trv|dhw)_.*_battery$')
+             | selectattr('state', 'eq', 'on') | list | count > 0 }}
+        for: "01:00:00"
+    action:
+      - service: notify.mobile_app_jamess_iphone
+        data:
+          title: "Evohome battery low"
+          message: >
+            {{ states.binary_sensor | selectattr('entity_id', 'search', '^binary_sensor\.(thm|trv|dhw)_.*_battery$')
+               | selectattr('state', 'eq', 'on') | map(attribute='name') | join(', ') }}
+
+  # ---------- Daily digest ----------
+  - id: plant_daily_digest
+    alias: "Plant: daily heating digest"
+    mode: single
+    trigger:
+      - platform: time
+        at: "21:30:00"
+    action:
+      - service: notify.mobile_app_jamess_iphone
+        data:
+          title: "Heating today"
+          message: >
+            Boiler: {{ states('sensor.boiler_starts_today') }} starts, {{ states('sensor.boiler_firing_time_today') | float(0) | round(1) }} h firing.
+            Cylinders (top): left {{ states('sensor.control_room_esp32_control_room_hot_water_cylinder_left_outlet_temperature') | float(0) | round(1) }} °C,
+            right {{ states('sensor.control_room_esp32_control_room_hot_water_cylinder_right_outlet_temperature') | float(0) | round(1) }} °C.
+            Tundish discharge events: left {{ states('sensor.control_room_esp32_control_room_tundish_left_discharge_events') | int(0) }},
+            right {{ states('sensor.control_room_esp32_control_room_tundish_right_discharge_events') | int(0) }}.
+            {% if is_state('input_boolean.alerts_boiler_pressure', 'on') %}System pressure {{ states('sensor.control_room_esp32_control_room_boiler_system_pressure') | float(0) | round(2) }} bar ({{ states('sensor.boiler_pressure_change_24h') | float(0) | round(2) }} in 24 h).{% endif %}
+            {% if is_state('input_boolean.alerts_cylinder_pressure', 'on') %}Inlets: left {{ states('sensor.control_room_esp32_control_room_cylinder_left_inlet_pressure') | float(0) | round(2) }}, right {{ states('sensor.control_room_esp32_control_room_cylinder_right_inlet_pressure') | float(0) | round(2) }} bar.{% endif %}

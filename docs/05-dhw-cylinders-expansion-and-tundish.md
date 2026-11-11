@@ -82,7 +82,28 @@ Each has its own debounce and counter (Wet Events, **Discharge Events**). Test s
 
 **Why it matters:** a tundish discharge is the visible symptom of an unvented-cylinder safety device operating: a failed expansion vessel, an overpressure, or an overheat. It should never be ignored.
 
-## Alerts (examples in `config/homeassistant/`)
+## Plumber visit and commissioning, 11 Nov 2026
+
+**Work done:** both expansion vessels replaced (**Flomasta 24 L**, potable, pre-charged **3.5 bar**); the expansion relief valves kept (judged not worth replacing); both inlet gauges fitted **between the PRV and the vessel**, so each reads its cylinder's pressure. Cylinders drained down, refilled and re-pressurised.
+
+**Draining an unvented cylinder:** closing the cold inlet and opening hot taps only **de-pressurises** it; water stops once air can't get in. Draining needs the drain cock with a hose to a lower point and a hot tap open to admit air. For a vessel or valve swap, isolating and de-pressurising is usually enough.
+
+**Readings and findings**
+
+| Finding | Detail |
+|---|---|
+| Static pressure | Both cylinders ~2.85-2.9 bar after the refill, against the utility mains sensor's 2.98 bar (height and tolerance) |
+| A false 5 bar | One gauge box's 20k leg had pulled out of its Wago: the pin read 1.52 V, exactly 1.5× the other side (the divider ratio), i.e. ~2.9 bar undivided. Re-seated: 1.0 V. Tug-test every ferrule after work near the boxes |
+| Gauges and outlet NTCs swapped | Both pairs were left/right swapped on the ESP32; found by a kitchen (left) draw that dipped the left inlet and warmed the other NTC; corrected in the YAML (inlets IO1 L / IO2 R, outlets IO9 L / IO8 R) |
+| PRVs settle at ~2.5 bar | After the first draw each cylinder settled at **~2.5 bar** and stayed (flow meter showed no flow), though the PRVs are marked **"pre-set 3.5 bar"** and the mains is ~2.9 bar. Both sides alike. Suspects: scaled strainers or worn cartridges (9 years old). A full-flow kitchen draw dropped the left to 2.1 bar. Plumber's next visit: clean the strainers or replace the cartridges |
+| Vessel pre-charge vs working pressure | With the cylinders at ~2.5 bar and the vessels at 3.5 bar, a reheat first rises uncushioned to 3.5 bar; then the vessel takes over (a clear "knee" on both sides). Peak 3.8 bar after a from-cold reheat, well below the 4.5 bar alert and the 6 bar ERV. Pre-charge to be matched to the working pressure once the PRVs are sorted |
+| Tundishes | **No wet events** during the first reheats with the new vessels |
+
+**Span check (pending):** above 3.5 bar the vessel's air pressure equals the water pressure, so a tyre gauge on the Schrader valve near a reheat's peak checks the inlet gauge at ~4 bar (below 3.5 bar the air stays at the pre-charge, whatever the water does). A digital inflator (AstroAI L7, 0.05 bar resolution) is on order, to be sanity-checked against another gauge first.
+
+**Tundish water test (right):** wetting the right plate set *Right Wet* and *Right Running* (left stayed dry), confirming the naming. Water then lingered under the plate in the printed holder for over 30 minutes (gate post at 2.9 V of 3.27 V); lifting and drying it brought the post back to 0.30 V. Holder to be remounted steeper, cable from below, with a drain hole. With Test Mode on, sampling pauses and HA holds the last state.
+
+## Alerts (superseded by the alerts package, [doc 15](15-alerts.md))
 - Tundish wet → immediate phone alert.
 - Cylinder inlet pressure above a threshold → expansion/relief check.
 - Hot outlet never reaches 60 °C in 7 days → Legionella reminder.
