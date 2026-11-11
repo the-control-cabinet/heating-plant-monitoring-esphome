@@ -1,0 +1,123 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1300" height="900" viewBox="0 0 1300 900">
+<rect width="1300" height="900" fill="#fff"/>
+<text x="650.0" y="32" font-family="Arial,Helvetica,sans-serif" font-size="20" font-weight="bold" text-anchor="middle" fill="#222">Opto enclosure: Hailege 8-channel AC opto board (heating demand monitor)</text>
+<text x="650.0" y="54" font-family="Arial,Helvetica,sans-serif" font-size="12" font-weight="normal" text-anchor="middle" fill="#555">Mains side (230 V AC) on the left, logic side (3.3 V) on the right; the board is the isolation barrier. Mains side wired at the junction-box rewire.</text>
+<rect x="330" y="80" width="640" height="660" rx="12" fill="#fbfcfd" stroke="#333" stroke-width="1.2"/>
+<text x="650" y="104" font-family="Arial,Helvetica,sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#222">Clear-lid ABS enclosure · printed tray v2</text>
+<rect x="520" y="140" width="260" height="520" rx="8" fill="#eef7ee" stroke="#2e7d32" stroke-width="1.2"/>
+<text x="650" y="165" font-family="Arial,Helvetica,sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#2e7d32">Opto board (8 ch)</text>
+<text x="650" y="183" font-family="Arial,Helvetica,sans-serif" font-size="11" font-weight="normal" text-anchor="middle" fill="#2e7d32">isolation barrier</text>
+<line x1="650" y1="195" x2="650" y2="650" stroke="#2e7d32" stroke-width="1.5" stroke-dasharray="6 4"/>
+<rect x="528" y="206" width="112" height="28" rx="4" fill="#fff" stroke="#c0392b" stroke-width="1.2"/>
+<text x="584" y="224" font-family="Arial,Helvetica,sans-serif" font-size="11" font-weight="bold" text-anchor="middle" fill="#c0392b">L1 · N1</text>
+<rect x="660" y="206" width="112" height="28" rx="4" fill="#fff" stroke="#2471a3" stroke-width="1.2"/>
+<text x="716" y="224" font-family="Arial,Helvetica,sans-serif" font-size="11" font-weight="bold" text-anchor="middle" fill="#2471a3">IN1</text>
+<text x="20" y="224" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#c0392b">W7: Boiler call</text>
+<polyline points="170,220 528,220" fill="none" stroke="#c0392b" stroke-width="1.3"/>
+<polyline points="772,220 860,220" fill="none" stroke="#2471a3" stroke-width="1.3"/>
+<rect x="860" y="209" width="40" height="22" rx="3" fill="#fff3e0" stroke="#e67e22" stroke-width="1.2"/>
+<text x="880" y="224" font-family="Arial,Helvetica,sans-serif" font-size="9" font-weight="bold" text-anchor="middle" fill="#e67e22">2W</text>
+<polyline points="900,220 1100,220" fill="none" stroke="#2471a3" stroke-width="1.3"/>
+<text x="1110" y="224" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#2471a3">IO14  (Boiler call)</text>
+<rect x="528" y="258" width="112" height="28" rx="4" fill="#fff" stroke="#c0392b" stroke-width="1.2"/>
+<text x="584" y="276" font-family="Arial,Helvetica,sans-serif" font-size="11" font-weight="bold" text-anchor="middle" fill="#c0392b">L2 · N2</text>
+<rect x="660" y="258" width="112" height="28" rx="4" fill="#fff" stroke="#2471a3" stroke-width="1.2"/>
+<text x="716" y="276" font-family="Arial,Helvetica,sans-serif" font-size="11" font-weight="bold" text-anchor="middle" fill="#2471a3">IN2</text>
+<text x="20" y="276" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#c0392b">W3: Hot water timer</text>
+<polyline points="170,272 528,272" fill="none" stroke="#c0392b" stroke-width="1.3"/>
+<polyline points="772,272 860,272" fill="none" stroke="#2471a3" stroke-width="1.3"/>
+<rect x="860" y="261" width="40" height="22" rx="3" fill="#fff3e0" stroke="#e67e22" stroke-width="1.2"/>
+<text x="880" y="276" font-family="Arial,Helvetica,sans-serif" font-size="9" font-weight="bold" text-anchor="middle" fill="#e67e22">2W</text>
+<polyline points="900,272 1100,272" fill="none" stroke="#2471a3" stroke-width="1.3"/>
+<text x="1110" y="276" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#2471a3">IO18  (Hot water timer)</text>
+<rect x="528" y="310" width="112" height="28" rx="4" fill="#fff" stroke="#c0392b" stroke-width="1.2"/>
+<text x="584" y="328" font-family="Arial,Helvetica,sans-serif" font-size="11" font-weight="bold" text-anchor="middle" fill="#c0392b">L3 · N3</text>
+<rect x="660" y="310" width="112" height="28" rx="4" fill="#fff" stroke="#2471a3" stroke-width="1.2"/>
+<text x="716" y="328" font-family="Arial,Helvetica,sans-serif" font-size="11" font-weight="bold" text-anchor="middle" fill="#2471a3">IN3</text>
+<text x="20" y="328" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#c0392b">W6: HW relay L</text>
+<polyline points="170,324 528,324" fill="none" stroke="#c0392b" stroke-width="1.3"/>
+<polyline points="772,324 860,324" fill="none" stroke="#2471a3" stroke-width="1.3"/>
+<rect x="860" y="313" width="40" height="22" rx="3" fill="#fff3e0" stroke="#e67e22" stroke-width="1.2"/>
+<text x="880" y="328" font-family="Arial,Helvetica,sans-serif" font-size="9" font-weight="bold" text-anchor="middle" fill="#e67e22">2W</text>
+<polyline points="900,324 1100,324" fill="none" stroke="#2471a3" stroke-width="1.3"/>
+<text x="1110" y="328" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#2471a3">IO15  (HW relay L)</text>
+<rect x="528" y="362" width="112" height="28" rx="4" fill="#fff" stroke="#c0392b" stroke-width="1.2"/>
+<text x="584" y="380" font-family="Arial,Helvetica,sans-serif" font-size="11" font-weight="bold" text-anchor="middle" fill="#c0392b">L4 · N4</text>
+<rect x="660" y="362" width="112" height="28" rx="4" fill="#fff" stroke="#2471a3" stroke-width="1.2"/>
+<text x="716" y="380" font-family="Arial,Helvetica,sans-serif" font-size="11" font-weight="bold" text-anchor="middle" fill="#2471a3">IN4</text>
+<text x="20" y="380" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#c0392b">W5: HW relay R</text>
+<polyline points="170,376 528,376" fill="none" stroke="#c0392b" stroke-width="1.3"/>
+<polyline points="772,376 860,376" fill="none" stroke="#2471a3" stroke-width="1.3"/>
+<rect x="860" y="365" width="40" height="22" rx="3" fill="#fff3e0" stroke="#e67e22" stroke-width="1.2"/>
+<text x="880" y="380" font-family="Arial,Helvetica,sans-serif" font-size="9" font-weight="bold" text-anchor="middle" fill="#e67e22">2W</text>
+<polyline points="900,376 1100,376" fill="none" stroke="#2471a3" stroke-width="1.3"/>
+<text x="1110" y="380" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#2471a3">IO16  (HW relay R)</text>
+<rect x="528" y="414" width="112" height="28" rx="4" fill="#fff" stroke="#c0392b" stroke-width="1.2"/>
+<text x="584" y="432" font-family="Arial,Helvetica,sans-serif" font-size="11" font-weight="bold" text-anchor="middle" fill="#c0392b">L5 · N5</text>
+<rect x="660" y="414" width="112" height="28" rx="4" fill="#fff" stroke="#2471a3" stroke-width="1.2"/>
+<text x="716" y="432" font-family="Arial,Helvetica,sans-serif" font-size="11" font-weight="bold" text-anchor="middle" fill="#2471a3">IN5</text>
+<text x="20" y="432" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#c0392b">W2: Cyl L valve drive</text>
+<polyline points="170,428 528,428" fill="none" stroke="#c0392b" stroke-width="1.3"/>
+<polyline points="772,428 860,428" fill="none" stroke="#2471a3" stroke-width="1.3"/>
+<rect x="860" y="417" width="40" height="22" rx="3" fill="#fff3e0" stroke="#e67e22" stroke-width="1.2"/>
+<text x="880" y="432" font-family="Arial,Helvetica,sans-serif" font-size="9" font-weight="bold" text-anchor="middle" fill="#e67e22">2W</text>
+<polyline points="900,428 1100,428" fill="none" stroke="#2471a3" stroke-width="1.3"/>
+<text x="1110" y="432" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#2471a3">IO17  (Cyl L valve drive)</text>
+<rect x="528" y="466" width="112" height="28" rx="4" fill="#fff" stroke="#c0392b" stroke-width="1.2"/>
+<text x="584" y="484" font-family="Arial,Helvetica,sans-serif" font-size="11" font-weight="bold" text-anchor="middle" fill="#c0392b">L6 · N6</text>
+<rect x="660" y="466" width="112" height="28" rx="4" fill="#fff" stroke="#2471a3" stroke-width="1.2"/>
+<text x="716" y="484" font-family="Arial,Helvetica,sans-serif" font-size="11" font-weight="bold" text-anchor="middle" fill="#2471a3">IN6</text>
+<text x="20" y="484" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#c0392b">W1: Cyl R valve drive</text>
+<polyline points="170,480 528,480" fill="none" stroke="#c0392b" stroke-width="1.3"/>
+<polyline points="772,480 860,480" fill="none" stroke="#2471a3" stroke-width="1.3"/>
+<rect x="860" y="469" width="40" height="22" rx="3" fill="#fff3e0" stroke="#e67e22" stroke-width="1.2"/>
+<text x="880" y="484" font-family="Arial,Helvetica,sans-serif" font-size="9" font-weight="bold" text-anchor="middle" fill="#e67e22">2W</text>
+<polyline points="900,480 1100,480" fill="none" stroke="#2471a3" stroke-width="1.3"/>
+<text x="1110" y="484" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#2471a3">IO11  (Cyl R valve drive)</text>
+<rect x="528" y="518" width="112" height="28" rx="4" fill="#fff" stroke="#c0392b" stroke-width="1.2"/>
+<text x="584" y="536" font-family="Arial,Helvetica,sans-serif" font-size="11" font-weight="bold" text-anchor="middle" fill="#c0392b">L7 · N7</text>
+<rect x="660" y="518" width="112" height="28" rx="4" fill="#fff" stroke="#2471a3" stroke-width="1.2"/>
+<text x="716" y="536" font-family="Arial,Helvetica,sans-serif" font-size="11" font-weight="bold" text-anchor="middle" fill="#2471a3">IN7</text>
+<text x="20" y="536" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#c0392b">W4: UFH relay</text>
+<polyline points="170,532 528,532" fill="none" stroke="#c0392b" stroke-width="1.3"/>
+<polyline points="772,532 860,532" fill="none" stroke="#2471a3" stroke-width="1.3"/>
+<rect x="860" y="521" width="40" height="22" rx="3" fill="#fff3e0" stroke="#e67e22" stroke-width="1.2"/>
+<text x="880" y="536" font-family="Arial,Helvetica,sans-serif" font-size="9" font-weight="bold" text-anchor="middle" fill="#e67e22">2W</text>
+<polyline points="900,532 1100,532" fill="none" stroke="#2471a3" stroke-width="1.3"/>
+<text x="1110" y="536" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#2471a3">IO12  (UFH relay)</text>
+<rect x="528" y="570" width="112" height="28" rx="4" fill="#fff" stroke="#c0392b" stroke-width="1.2"/>
+<text x="584" y="588" font-family="Arial,Helvetica,sans-serif" font-size="11" font-weight="bold" text-anchor="middle" fill="#c0392b">L8 · N8</text>
+<rect x="660" y="570" width="112" height="28" rx="4" fill="#fff" stroke="#2471a3" stroke-width="1.2"/>
+<text x="716" y="588" font-family="Arial,Helvetica,sans-serif" font-size="11" font-weight="bold" text-anchor="middle" fill="#2471a3">IN8</text>
+<text x="20" y="588" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#c0392b">W8: Rads relay</text>
+<polyline points="170,584 528,584" fill="none" stroke="#c0392b" stroke-width="1.3"/>
+<polyline points="772,584 860,584" fill="none" stroke="#2471a3" stroke-width="1.3"/>
+<rect x="860" y="573" width="40" height="22" rx="3" fill="#fff3e0" stroke="#e67e22" stroke-width="1.2"/>
+<text x="880" y="588" font-family="Arial,Helvetica,sans-serif" font-size="9" font-weight="bold" text-anchor="middle" fill="#e67e22">2W</text>
+<polyline points="900,584 1100,584" fill="none" stroke="#2471a3" stroke-width="1.3"/>
+<text x="1110" y="588" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#2471a3">IO42  (Rads relay)</text>
+<rect x="350" y="640" width="150" height="90" rx="6" fill="#fff" stroke="#555" stroke-width="1.2"/>
+<text x="425" y="660" font-family="Arial,Helvetica,sans-serif" font-size="11" font-weight="bold" text-anchor="middle" fill="#222">Neutral Wagos (221-415)</text>
+<text x="360" y="680" font-family="Arial,Helvetica,sans-serif" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">1: N1-N3 (cable A blue)</text>
+<text x="360" y="696" font-family="Arial,Helvetica,sans-serif" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">2: N4-N6 (cable B blue)</text>
+<text x="360" y="712" font-family="Arial,Helvetica,sans-serif" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">3: N7-N8 (cable C blue)</text>
+<polyline points="500,690 520,690 520,620" fill="none" stroke="#2c3e50" stroke-width="1.2" stroke-dasharray="4 3"/>
+<rect x="180" y="640" width="150" height="90" rx="6" fill="#fff" stroke="#27ae60" stroke-width="1.2"/>
+<text x="255" y="660" font-family="Arial,Helvetica,sans-serif" font-size="11" font-weight="bold" text-anchor="middle" fill="#27ae60">Earth Wago 4</text>
+<text x="190" y="680" font-family="Arial,Helvetica,sans-serif" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">3 × G/Y from</text>
+<text x="190" y="696" font-family="Arial,Helvetica,sans-serif" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">cables A, B, C</text>
+<text x="190" y="712" font-family="Arial,Helvetica,sans-serif" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">(bonded, no board link)</text>
+<text x="20" y="175" font-family="Arial,Helvetica,sans-serif" font-size="12" font-weight="bold" text-anchor="start" fill="#c0392b">From junction box W points (3095Y 5-core):</text>
+<text x="20" y="193" font-family="Arial,Helvetica,sans-serif" font-size="10.5" font-weight="normal" text-anchor="start" fill="#c0392b">A: IN1-IN3 (brown/black/grey) · B: IN4-IN6 · C: IN7-IN8 + spare</text>
+<rect x="780" y="640" width="170" height="90" rx="6" fill="#fff" stroke="#e67e22" stroke-width="1.2"/>
+<text x="865" y="660" font-family="Arial,Helvetica,sans-serif" font-size="11" font-weight="bold" text-anchor="middle" fill="#e67e22">Logic header</text>
+<text x="790" y="680" font-family="Arial,Helvetica,sans-serif" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">VCC → ESP 3V3 (1)</text>
+<text x="790" y="696" font-family="Arial,Helvetica,sans-serif" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">GND → ESP GND bus</text>
+<text x="790" y="712" font-family="Arial,Helvetica,sans-serif" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">IN1-8: Dupont → Wago</text>
+<text x="1110" y="193" font-family="Arial,Helvetica,sans-serif" font-size="12" font-weight="bold" text-anchor="start" fill="#2471a3">To ESP32 (multicore):</text>
+<rect x="20" y="770" width="1260" height="110" rx="8" fill="#fafafa" stroke="#999" stroke-width="1.2" stroke-dasharray="6 4"/>
+<text x="35" y="795" font-family="Arial,Helvetica,sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#222">VCC must be 3.3 V (not 5 V): the outputs connect straight to ESP32 pins, pulled up to VCC when off. Verified: all eight inputs read 3.3 V idle.</text>
+<text x="35" y="817" font-family="Arial,Helvetica,sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#222">Each input LED lights only with 230 V on that channel. Mains side: brown/black/grey cores to L1-L8, each cable's blue to its neutral Wago; earth bonded.</text>
+<text x="35" y="839" font-family="Arial,Helvetica,sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#222">Isolate the heating circuit at its MCB/fused spur, lock off and prove dead before opening. Live inputs come from the heating junction box, not this box.</text>
+<text x="35" y="861" font-family="Arial,Helvetica,sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#222">Labels: channel numbers on the lid edge, the IN1-IN8 list on top (IN5 = DHW tank valve drive LEFT, IN6 = RIGHT).</text>
+</svg>

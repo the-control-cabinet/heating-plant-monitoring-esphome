@@ -5,7 +5,7 @@
 [![YouTube](https://img.shields.io/badge/YouTube-The%20Control%20Cabinet-red?logo=youtube)](https://www.youtube.com/channel/UC5Cupmz7vlfcodpCX7k8iuQ)
 [![Portfolio](https://img.shields.io/badge/Portfolio-the--control--cabinet-24292f?logo=github)](https://github.com/the-control-cabinet)
 ![ESPHome](https://img.shields.io/badge/ESPHome-ESP32--S3-000000)
-![Signals](https://img.shields.io/badge/Points-26%20across%202%20boards-blue)
+![Signals](https://img.shields.io/badge/Points-28%20across%202%20boards-blue)
 ![Status](https://img.shields.io/badge/Status-Work%20in%20progress-orange)
 
 > **The short version:** a plant-room points list built from scratch:
@@ -15,9 +15,9 @@
 > - **demand** (230 V opto-isolated boiler switched live, timer output, hot-water relays, valve drives, UFH and radiator relays)
 > - **leak detection** (pulsed tundish plates)
 >
-> **Built so far:** the firmware for both boards, the boiler pressure sensor (calibrated and filtered), the flow/return probes, the left cylinder's outlet probe and both tundish sensors.
+> **Built so far:** both boards' firmware; boiler flow/return, system pressure (calibrated), current and banded states; both cylinder outlet temperatures and inlet pressure gauges (zeroed); both tundish sensors; the opto enclosure (logic side); and an off-board rewiring of the control-room board ([full schematic](docs/12-control-room-wiring-schematic.md)).
 >
-> **In progress:** the pressure sensor's supply decoupling, the clamp and opto installs, the right outlet probe, slow-leak diagnosis, and a plumber visit for the expansion vessels and inlet gauges.
+> **In progress:** the boiler gauge box, cylinder inlet span checks after the plumber's visit (new vessels and relief valves), the opto board's mains side at the junction-box rewire, slow-leak diagnosis.
 >
 > **Then:** OpenTherm with a DIYLESS shield and PID logic.
 
@@ -30,16 +30,16 @@
 | Area | Status |
 |---|---|
 | ESPHome firmware: control room + understairs | ✅ Both written and flashed |
-| Boiler pressure transducer | ✅ Installed, calibrated to the gauge (3 points), filtered (fast + 1-min) · ⏳ 10 µF at the sensor, zero at drain-down, leak diagnosis |
-| Boiler flow/return NTCs | ✅ Installed · noise fixed (330 kΩ fitted by mistake → 3.3 kΩ) |
-| 10k/20k divider simplification | ✅ Done · ⏳ IO2 post to a Wago (frees GPIO2) |
-| Boiler current clamp | ⏳ Fit on the boiler's **permanent live supply**, calibrate, band |
-| Opto board (Hailege 8-ch; all 8 inputs, own enclosure, printed tray v2) | ⏳ Materials in hand; install with the junction box tidy-up ([doc 11](docs/11-opto-board-installation.md)) |
-| Cylinder hot-outlet NTCs ×2 | ✅ Left (first reheat: ~12 kW, ~1 h) · ⏳ right probe |
-| Cylinder inlet pressures ×2 | ⏳ With the plumber |
-| Expansion vessels + relief valves | ⏳ Plumber |
-| Tundish sensors ×2 | ✅ Commissioned (wet + running sensing) · detected the weeping relief valve in service |
-| Understairs board: UFH pump + cooker clamps, UFH flow/return, (proposed) manifold pressure | ✅ Flashed · ⏳ sensors to connect (floating readings seen, guards to add) |
+| Control-room wiring | ✅ Off-board rework (gauge boxes, bus strip, posts, clamp strip): [schematic](docs/12-control-room-wiring-schematic.md) |
+| Boiler pressure transducer | ✅ Calibrated to the gauge (3 points), filtered · ⏳ gauge box, move to GPIO6, re-check |
+| Boiler flow/return NTCs | ✅ Installed, meter-checked (11 Nov) |
+| Boiler current clamp | ✅ Fitted, ±3% vs meter, states retuned · bias fault (screen joined to white) found and fixed · ⏳ 3 turns |
+| Opto board (8 inputs, own enclosure) | ✅ Enclosure and logic side ([schematic](docs/11-opto-board-installation.md#5-as-built-enclosure-schematic-and-status-10-nov-2026)) · ⏳ mains side at the rewire |
+| Cylinder hot-outlet NTCs ×2 | ✅ Both fitted and meter-checked · stratification and "hot water available" ([doc 14](docs/14-hot-water-stratification.md)) |
+| Cylinder inlet pressures ×2 | ✅ Wired and zeroed · ⏳ span check after the plumber |
+| Expansion vessels + relief valves | ⏳ Plumber (11 Nov) |
+| Tundish sensors ×2 | ✅ Commissioned, re-terminated 10 Nov · ⏳ water test |
+| Understairs board: UFH pump + cooker clamps, UFH flow/return, (proposed) manifold pressure | ✅ Flashed · ⏳ sensors to connect |
 | OpenTherm + PID | 📐 Designed in its own repo: [opentherm-boiler-control-esphome](https://github.com/the-control-cabinet/opentherm-boiler-control-esphome) · node hardware assembled |
 
 Full tracker: [docs/08](docs/08-commissioning-tracker.md)
@@ -82,32 +82,33 @@ flowchart TB
 
 | # | Point | Board / GPIO | Type | Range / scaling | Status |
 |---|---|---|---|---|---|
-| 1 | Boiler flow temperature | CR GPIO4 | AI | NTC 10k B3977 | Installed (noisy) |
-| 2 | Boiler return temperature | CR GPIO5 | AI | NTC 10k B3977 | Installed (noisy) |
-| 3 | Boiler ΔT | derived | Calc | Flow − return | Live once 1-2 are clean |
-| 4 | Boiler system pressure | CR GPIO1 | AI | 0-5 bar, 0.5-4.5 V, ÷0.667 | Installed (zero to set) |
-| 5 | Boiler supply current | CR GPIO3 | AI | SCT013-015, 15 A/V | To install |
-| 6 | Boiler electrical state | derived | Multi-state | Current bands + demand | With #5 |
+| 1 | Boiler flow temperature | CR GPIO4 | AI | NTC 10k B3977 | ✅ Installed, meter-checked |
+| 2 | Boiler return temperature | CR GPIO5 | AI | NTC 10k B3977 | ✅ Installed, meter-checked |
+| 3 | Boiler ΔT | derived | Calc | Flow − return | ✅ Live |
+| 4 | Boiler system pressure | CR GPIO6 | AI | 0-80 psi, 0.5-4.5 V, ÷0.667 (in the gauge box) | ✅ Calibrated · moving to GPIO6 |
+| 5 | Boiler supply current | CR GPIO3 | AI | SCT013-015, 15 A/V | ✅ Live |
+| 6 | Boiler electrical state | derived | Multi-state | Current bands + demand | ✅ Live (Overrun/Pre-Purge need IN1) |
 | 7 | Firing without call | derived | Alarm | State vs demand | With #5 and #8 |
-| 8 | Boiler call (switched-live joint) | CR GPIO14* | DI | Opto, 230 V | To install |
-| 9 | Hot water enabled (timer output) | CR GPIO18* | DI | Opto | To install |
+| 8 | Boiler call (switched-live joint) | CR GPIO14 | DI | Opto, 230 V | Logic side ✅ · mains at rewire |
+| 9 | Hot water enabled (timer output) | CR GPIO18 | DI | Opto | Logic side ✅ · mains at rewire |
 | 10 | HW relay L output (IN3) | CR GPIO15 | DI | Opto | To install |
 | 11 | HW relay R output (IN4) | CR GPIO16 | DI | Opto | To install |
-| 12 | IN5-IN8: cylinder valve drives, UFH relay, radiator relay (after bypass) | CR GPIO17 + TBC | DI | Opto | To install |
-| 13 | Cylinder L hot-outlet temperature | CR GPIO8* | AI | NTC | To install |
-| 14 | Cylinder R hot-outlet temperature | CR GPIO9* | AI | NTC | To install |
-| 15 | Cylinder L inlet pressure | CR GPIO2* | AI | 0-150 psi (10.34 bar) | With plumber |
-| 16 | Cylinder R inlet pressure | CR GPIO10* | AI | 0-150 psi | With plumber |
-| 17-18 | Tundish 1 / 2 wet | CR GPIO39 / 20 | DI | Pulsed plates, 2N7000 | To install |
-| 19 | Tundish events | derived | Counter | Persistent | With 17-18 |
+| 12 | IN5-IN8: cylinder valve drives, UFH relay, radiator relay (after bypass) | CR GPIO17 / 11 / 12 / 42 | DI | Opto | Logic side ✅ · mains at rewire |
+| 13 | Cylinder L hot-outlet temperature | CR GPIO8 | AI | NTC | ✅ Live |
+| 14 | Cylinder R hot-outlet temperature | CR GPIO9 | AI | NTC | ✅ Live |
+| 15 | Cylinder L inlet pressure | CR GPIO2 | AI | 0-150 psi (10.34 bar) | ✅ Zeroed · span after plumber |
+| 16 | Cylinder R inlet pressure | CR GPIO1 | AI | 0-150 psi | ✅ Zeroed · span after plumber |
+| 17-18 | Tundish L / R wet + running | CR GPIO39 / 20 | DI | Pulsed plates, 2N7000 | ✅ Live |
+| 19 | Tundish events | derived | Counter | Persistent | ✅ Live |
 | 20 | UFH pump current / running | US GPIO10 | AI + derived | SCT013-005 (> 0.10 A = running) | Firmware ✅, clamp to fit |
 | 21-22 | UFH flow / return (mixed side) + ΔT | US GPIO4 / 5 | AI | NTC | Firmware ✅, placement to decide |
 | 23 | Cooker circuit current / on | US GPIO2 | AI + derived | SCT013-030 (> 1.0 A = on) | Firmware ✅, clamp to fit |
 | 24 | UFH manifold pressure | US GPIO1* | AI | 0-5 bar | 📐 Proposed (leak isolation) |
 | 25 | UFH zone heat demand ×6 | via RAMSES-II | Network | From the HCC80R | ✅ Live (Evohome repo) |
 | 26 | Board health (online, Wi-Fi, uptime) | both | Diagnostic | | Live |
+| 27-28 | Hot water available L / R | derived | Calc | Top + bottom temperatures ([doc 14](docs/14-hot-water-stratification.md)) | ✅ Live |
 
-\* proposed allocation after the divider rework ([docs/01](docs/01-hardware-and-io-schedule.md)). CSV: [data/io-schedule.csv](data/io-schedule.csv)
+As built 11 Nov 2026: [doc 12](docs/12-control-room-wiring-schematic.md). CSV: [data/io-schedule.csv](data/io-schedule.csv)
 
 ## Key design points
 
@@ -154,6 +155,9 @@ All credentials are `!secret` references.
 | [08 Commissioning tracker](docs/08-commissioning-tracker.md) | Item-by-item status |
 | [09 Safety](docs/09-safety.md) | Mains, gas, unvented cylinders, pressure fittings |
 | [11 Opto board installation](docs/11-opto-board-installation.md) | Tap points from the junction box survey, enclosure, wiring, commissioning tests |
+| [12 Control-room wiring schematic](docs/12-control-room-wiring-schematic.md) | Full as-built drawing, pin table, power-up checks |
+| [13 Off-board wiring](docs/13-off-board-wiring.md) | Gauge boxes, bus strip, posts, clamp strip and the screen fault |
+| [14 Stratification and hot water available](docs/14-hot-water-stratification.md) | Top/bottom temperatures, estimate, Centre Store settings |
 | [10 Understairs: UFH plant and circuits](docs/10-understairs-ufh-and-circuits.md) | UFH pump and cooker clamps, UFH temperatures and placement, HCC80R data via RAMSES-II, manifold pressure for leak isolation, floating-input lesson |
 
 ## Skills demonstrated

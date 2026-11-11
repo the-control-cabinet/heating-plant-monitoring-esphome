@@ -1,25 +1,27 @@
-board,signal,gpio_current,gpio_proposed,type,circuit,status,notes
-control-room,Boiler flow temperature,GPIO5,GPIO5,ADC1 analogue,3V3-3.3k-GPIO-NTC(10k B3977)-GND (+100nF to fit),Installed,330k found and replaced with 3.3k 3 Nov 2026; IO4/IO5 swapped in YAML
-control-room,Boiler return temperature,GPIO4,GPIO4,ADC1 analogue,as above,Installed,as above
-control-room,Boiler system pressure,GPIO1 (post IO2),GPIO1,ADC1 analogue,sensor-10k-GPIO-20k-GND + 100nF,Installed - calibrated to gauge,0-80 psi 0.5-4.5 V 5 V; 3-point gauge calibration; fast + 1-min main; 10 uF at sensor to fit
-control-room,Boiler supply current (SCT013-015),GPIO3 (cap anchor GPIO13),GPIO3,ADC1 analogue,3V3-10k-GPIO-10k-GND bias + 10 uF coupling,To install,On boiler PERMANENT LIVE; consider 3-5 turns for resolution
-control-room,IN1 Boiler call (switched-live joint W7),GPIO6,GPIO14,Digital (opto),Hailege 8-ch AC opto (3.3 V logic) -> GPIO pull-up,To install,inverted: expected true - confirm
-control-room,IN2 Hot water timer output (W3),GPIO7,GPIO18,Digital (opto),as above,To install,Timer still gates hot water
-control-room,IN3 HW relay L output / cyl L stat feed (W6),GPIO15,GPIO15,Digital (opto),as above,To install,Relay on with IN3 off = stat satisfied or cut-out tripped
-control-room,IN4 HW relay R output / cyl R stat feed (W5),GPIO16,GPIO16,Digital (opto),as above,To install,As IN3
-control-room,IN5 Cyl L valve drive (W2),GPIO17,GPIO17,Digital (opto),as above,To install,Stat passing and valve driven
-control-room,IN6 Cyl R valve drive (W1),,TBC,Digital (opto),as above,To install,GPIO to allocate
-control-room,IN7 UFH relay output / UF valve drive (W4),,TBC,Digital (opto),as above,To install,GPIO to allocate
-control-room,IN8 Radiator relay output (W8),,TBC,Digital (opto),as above,After bypass,Live only once TF/MF re-wired; IN1 on with IN5-7 off = radiators calling until then
-control-room,Tundish plate power (pulsed),GPIO21,GPIO21,Digital out,3V3 to both plates 150 ms every 5 s,Commissioned 5 Nov 2026,Both plate A cores in a twin ferrule
-control-room,Tundish left sense (t1),GPIO20,GPIO20,Digital in,2N7000 drain; gate post IO47 + 2.2M to GND,Commissioned 5 Nov 2026,Wet + running (internal pull-down on IO47)
-control-room,Tundish right sense (t2),GPIO39,GPIO39,Digital in,2N7000 drain; gate IO40 linked to post IO38 + 2.2M to GND; source IO41 to GND,Commissioned 5 Nov 2026,Wet + running (internal pull-down on IO38)
-control-room,Cylinder left hot outlet temperature,GPIO8,GPIO8,ADC1 analogue,3V3-3.3k-GPIO-NTC(10k B3977)-GND,Installed 4 Nov 2026,"Strap-on, pasted, lagged"
-control-room,Cylinder right hot outlet temperature,GPIO9,GPIO9,ADC1 analogue,as above,Wired - probe to fit,
-control-room,Cylinder left cold-inlet pressure,-,GPIO2,ADC1 analogue,sensor-10k-GPIO-20k-GND,To install (with plumber),Ausla 0-150 psi G1/4 5 V 0.5-4.5 V
-control-room,Cylinder right cold-inlet pressure,-,GPIO10,ADC1 analogue,as above,To install (with plumber),
-understairs,Cooker circuit current (SCT013-030),GPIO2,GPIO2,ADC1 analogue,bias + coupling cap,Firmware flashed - clamp to fit at CU,On > 1.0 A
-understairs,UFH pump current (SCT013-005),GPIO10 (anchor GPIO12),GPIO10,ADC1 analogue,bias + coupling cap,Firmware flashed - clamp to fit,Running > 0.10 A
-understairs,UFH flow temperature (mixed side),GPIO4,GPIO4,ADC1 analogue,NTC divider + 100nF,Firmware flashed - placement to decide,Steel pipework after mixing valve
-understairs,UFH return temperature,GPIO5,GPIO5,ADC1 analogue,NTC divider + 100nF,Firmware flashed - placement to decide,
-understairs,UFH manifold pressure (proposed),-,GPIO1,ADC1 analogue,sensor-10k-GPIO1-20k-GND,Proposed,Leak isolation of the UFH circuit
+board,signal,gpio,type,circuit,status,notes
+control-room,Boiler flow temperature,GPIO4,ADC1 analogue,3V3(2)-3.3k-GPIO-NTC(10k B3977)-GND,Installed - meter-checked 11 Nov 2026,Flow/return swapped to match the re-wiring (10 Nov); IO4 1.20 V = 67.6 C vs HA 68.2
+control-room,Boiler return temperature,GPIO5,ADC1 analogue,as above,Installed - meter-checked,IO5 1.98 V = 41.6 C vs HA 41.8
+control-room,Boiler system pressure,GPIO6,ADC1 analogue,10k/20k + 100nF in the boiler gauge box,Moving - gauge box to build,Was GPIO1 with an IO2 anchor; ADC calibration to re-check on GPIO6
+control-room,Boiler supply current (SCT013-015),GPIO3,ADC1 analogue,Standard topology: 10k/10k bias node + 10uF to GND; clamp between bias (white) and IO3 (red),Installed - bias verified 1.65 V,Screen is joined to white inside the clamp cable: insulated (it shorted the bias to GND)
+control-room,Cylinder left cold-inlet pressure,GPIO2,ADC1 analogue,10k/20k + 100nF in the gauge box,Wired - zeroed (0.487 V),Brown 5 V bus / blue signal / braid GND bus
+control-room,Cylinder right cold-inlet pressure,GPIO1,ADC1 analogue,as above,Wired - zeroed (0.482 V),Extension (1 m 18 AWG twin x2) to follow
+control-room,Cylinder left hot outlet temperature,GPIO8,ADC1 analogue,3.3k from IO10 post-GPIO-NTC-GND,Installed - meter-checked,1.872 V = 45.0 C vs HA 44.8
+control-room,Cylinder right hot outlet temperature,GPIO9,ADC1 analogue,as above,Installed - meter-checked,1.724 V = 49.6 C vs HA 49.9
+control-room,3V3 post (cylinder NTC 3.3k),IO10,Post,Wire from 3V3 + both 3.3k legs,In use,Keep out of the YAML
+control-room,IN1 Boiler call (W7),GPIO14,Digital (opto),Hailege 8-ch AC opto (VCC 3.3 V),Logic side wired - mains side at rewire,
+control-room,IN2 Hot water timer (W3),GPIO18,Digital (opto),as above,as above,Timer still gates hot water
+control-room,IN3 HW relay L (W6),GPIO15,Digital (opto),as above,as above,
+control-room,IN4 HW relay R (W5),GPIO16,Digital (opto),as above,as above,
+control-room,IN5 Cyl L valve drive (W2),GPIO17,Digital (opto),as above,as above,
+control-room,IN6 Cyl R valve drive (W1),GPIO11,Digital (opto),as above,as above,
+control-room,IN7 UFH relay (W4),GPIO12,Digital (opto),as above,as above,
+control-room,IN8 Radiator relay (W8),GPIO42,Digital (opto),as above,After bypass,Live once TF/MF heads re-wired
+control-room,Tundish plate power (pulsed),GPIO21,Digital out,Both plate A cores (twin ferrule),Commissioned,150 ms every 5 s
+control-room,Tundish left sense,GPIO39,Digital in,MOSFET 1: gate IO40 linked to post IO38 (plate B + 2.2M); source IO41 to GND,Commissioned - re-terminated 10 Nov,Left plate now on IO38; water test to confirm naming
+control-room,Tundish right sense,GPIO20,Digital in,MOSFET 2: gate IO19 wired from post IO47 (plate B + 2.2M); source GND,Commissioned - re-terminated 10 Nov,Right plate now on IO47
+control-room,Spare / reserved,GPIO7 / IO13 / IO46 / IO45 / IO0 / IO35-37 / IO48,-,-,-,GPIO7 spare ADC1; IO13 free; IO46/IO45/IO0 strapping; IO35-37 PSRAM; IO48 LED
+understairs,Cooker circuit current (SCT013-030),GPIO2,ADC1 analogue,bias + coupling cap,Firmware flashed - clamp to fit at CU,On > 1.0 A
+understairs,UFH pump current (SCT013-005),GPIO10,ADC1 analogue,bias + coupling cap,Firmware flashed - clamp to fit,Running > 0.10 A
+understairs,UFH flow temperature (mixed side),GPIO4,ADC1 analogue,NTC divider,Firmware flashed - placement to decide,
+understairs,UFH return temperature,GPIO5,ADC1 analogue,NTC divider,Firmware flashed - placement to decide,
+understairs,UFH manifold pressure (proposed),GPIO1,ADC1 analogue,divider,Proposed,Leak isolation of the UFH circuit

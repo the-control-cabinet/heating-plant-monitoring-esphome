@@ -1,0 +1,245 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="1640" viewBox="0 0 1400 1640">
+<rect width="1400" height="1640" fill="#ffffff"/>
+<text x="700.0" y="34" font-family="Arial,Helvetica,sans-serif" font-size="22" font-weight="bold" text-anchor="middle" fill="#222">Control-room ESP32-S3: as-built wiring (11 Nov 2026)</text>
+<text x="700.0" y="56" font-family="Arial,Helvetica,sans-serif" font-size="12" font-weight="normal" text-anchor="middle" fill="#555">All off-board junctions in Wagos; every ESP32 terminal takes one ferrule (or one ferrule + one component leg). Colours: red 5 V, orange 3.3 V, grey GND, blue signal.</text>
+<rect x="560" y="80" width="280" height="1150" rx="10" fill="#f4f6f8" stroke="#333" stroke-width="1.2" />
+<text x="700.0" y="104" font-family="Arial,Helvetica,sans-serif" font-size="15" font-weight="bold" text-anchor="middle" fill="#222">ESP32-S3 DevKitC-1</text>
+<text x="700.0" y="122" font-family="Arial,Helvetica,sans-serif" font-size="11" font-weight="normal" text-anchor="middle" fill="#666">(screw-terminal breakout)</text>
+<rect x="566" y="136" width="64" height="24" rx="4" fill="#fff" stroke="#e67e22" stroke-width="1.2" />
+<text x="598" y="153" font-family="Arial,Helvetica,sans-serif" font-size="11" font-weight="bold" text-anchor="middle" fill="#e67e22">3V3 (1)</text>
+<rect x="566" y="184" width="64" height="24" rx="4" fill="#fff" stroke="#e67e22" stroke-width="1.2" />
+<text x="598" y="201" font-family="Arial,Helvetica,sans-serif" font-size="11" font-weight="bold" text-anchor="middle" fill="#e67e22">3V3 (2)</text>
+<rect x="566" y="232" width="64" height="24" rx="4" fill="#fff" stroke="#999" stroke-width="1.2" />
+<text x="598" y="249" font-family="Arial,Helvetica,sans-serif" font-size="11" font-weight="bold" text-anchor="middle" fill="#777">RST</text>
+<rect x="566" y="280" width="64" height="24" rx="4" fill="#fff" stroke="#2471a3" stroke-width="1.2" />
+<text x="598" y="297" font-family="Arial,Helvetica,sans-serif" font-size="11" font-weight="bold" text-anchor="middle" fill="#2471a3">IO4</text>
+<rect x="566" y="328" width="64" height="24" rx="4" fill="#fff" stroke="#2471a3" stroke-width="1.2" />
+<text x="598" y="345" font-family="Arial,Helvetica,sans-serif" font-size="11" font-weight="bold" text-anchor="middle" fill="#2471a3">IO5</text>
+<rect x="566" y="376" width="64" height="24" rx="4" fill="#fff" stroke="#2471a3" stroke-width="1.2" />
+<text x="598" y="393" font-family="Arial,Helvetica,sans-serif" font-size="11" font-weight="bold" text-anchor="middle" fill="#2471a3">IO6</text>
+<rect x="566" y="424" width="64" height="24" rx="4" fill="#fff" stroke="#999" stroke-width="1.2" />
+<text x="598" y="441" font-family="Arial,Helvetica,sans-serif" font-size="11" font-weight="bold" text-anchor="middle" fill="#777">IO7</text>
+<rect x="566" y="472" width="64" height="24" rx="4" fill="#fff" stroke="#2471a3" stroke-width="1.2" />
+<text x="598" y="489" font-family="Arial,Helvetica,sans-serif" font-size="11" font-weight="bold" text-anchor="middle" fill="#2471a3">IO15</text>
+<rect x="566" y="520" width="64" height="24" rx="4" fill="#fff" stroke="#2471a3" stroke-width="1.2" />
+<text x="598" y="537" font-family="Arial,Helvetica,sans-serif" font-size="11" font-weight="bold" text-anchor="middle" fill="#2471a3">IO16</text>
+<rect x="566" y="568" width="64" height="24" rx="4" fill="#fff" stroke="#2471a3" stroke-width="1.2" />
+<text x="598" y="585" font-family="Arial,Helvetica,sans-serif" font-size="11" font-weight="bold" text-anchor="middle" fill="#2471a3">IO17</text>
+<rect x="566" y="616" width="64" height="24" rx="4" fill="#fff" stroke="#2471a3" stroke-width="1.2" />
+<text x="598" y="633" font-family="Arial,Helvetica,sans-serif" font-size="11" font-weight="bold" text-anchor="middle" fill="#2471a3">IO18</text>
+<rect x="566" y="664" width="64" height="24" rx="4" fill="#fff" stroke="#2471a3" stroke-width="1.2" />
+<text x="598" y="681" font-family="Arial,Helvetica,sans-serif" font-size="11" font-weight="bold" text-anchor="middle" fill="#2471a3">IO8</text>
+<rect x="566" y="712" width="64" height="24" rx="4" fill="#fff" stroke="#2471a3" stroke-width="1.2" />
+<text x="598" y="729" font-family="Arial,Helvetica,sans-serif" font-size="11" font-weight="bold" text-anchor="middle" fill="#2471a3">IO3</text>
+<rect x="566" y="760" width="64" height="24" rx="4" fill="#fff" stroke="#999" stroke-width="1.2" />
+<text x="598" y="777" font-family="Arial,Helvetica,sans-serif" font-size="11" font-weight="bold" text-anchor="middle" fill="#777">IO46</text>
+<rect x="566" y="808" width="64" height="24" rx="4" fill="#fff" stroke="#2471a3" stroke-width="1.2" />
+<text x="598" y="825" font-family="Arial,Helvetica,sans-serif" font-size="11" font-weight="bold" text-anchor="middle" fill="#2471a3">IO9</text>
+<rect x="566" y="856" width="64" height="24" rx="4" fill="#fff" stroke="#e67e22" stroke-width="1.2" />
+<text x="598" y="873" font-family="Arial,Helvetica,sans-serif" font-size="11" font-weight="bold" text-anchor="middle" fill="#e67e22">IO10</text>
+<rect x="566" y="904" width="64" height="24" rx="4" fill="#fff" stroke="#2471a3" stroke-width="1.2" />
+<text x="598" y="921" font-family="Arial,Helvetica,sans-serif" font-size="11" font-weight="bold" text-anchor="middle" fill="#2471a3">IO11</text>
+<rect x="566" y="952" width="64" height="24" rx="4" fill="#fff" stroke="#2471a3" stroke-width="1.2" />
+<text x="598" y="969" font-family="Arial,Helvetica,sans-serif" font-size="11" font-weight="bold" text-anchor="middle" fill="#2471a3">IO12</text>
+<rect x="566" y="1000" width="64" height="24" rx="4" fill="#fff" stroke="#999" stroke-width="1.2" />
+<text x="598" y="1017" font-family="Arial,Helvetica,sans-serif" font-size="11" font-weight="bold" text-anchor="middle" fill="#777">IO13</text>
+<rect x="566" y="1048" width="64" height="24" rx="4" fill="#fff" stroke="#2471a3" stroke-width="1.2" />
+<text x="598" y="1065" font-family="Arial,Helvetica,sans-serif" font-size="11" font-weight="bold" text-anchor="middle" fill="#2471a3">IO14</text>
+<rect x="566" y="1096" width="64" height="24" rx="4" fill="#fff" stroke="#c0392b" stroke-width="1.2" />
+<text x="598" y="1113" font-family="Arial,Helvetica,sans-serif" font-size="11" font-weight="bold" text-anchor="middle" fill="#c0392b">5V</text>
+<rect x="566" y="1144" width="64" height="24" rx="4" fill="#fff" stroke="#7f8c8d" stroke-width="1.2" />
+<text x="598" y="1161" font-family="Arial,Helvetica,sans-serif" font-size="11" font-weight="bold" text-anchor="middle" fill="#7f8c8d">GND</text>
+<rect x="770" y="136" width="64" height="24" rx="4" fill="#fff" stroke="#7f8c8d" stroke-width="1.2" />
+<text x="802" y="153" font-family="Arial,Helvetica,sans-serif" font-size="11" font-weight="bold" text-anchor="middle" fill="#7f8c8d">GND</text>
+<rect x="770" y="188" width="64" height="24" rx="4" fill="#fff" stroke="#999" stroke-width="1.2" />
+<text x="802" y="205" font-family="Arial,Helvetica,sans-serif" font-size="11" font-weight="bold" text-anchor="middle" fill="#777">TX</text>
+<rect x="770" y="240" width="64" height="24" rx="4" fill="#fff" stroke="#999" stroke-width="1.2" />
+<text x="802" y="257" font-family="Arial,Helvetica,sans-serif" font-size="11" font-weight="bold" text-anchor="middle" fill="#777">RX</text>
+<rect x="770" y="292" width="64" height="24" rx="4" fill="#fff" stroke="#2471a3" stroke-width="1.2" />
+<text x="802" y="309" font-family="Arial,Helvetica,sans-serif" font-size="11" font-weight="bold" text-anchor="middle" fill="#2471a3">IO1</text>
+<rect x="770" y="344" width="64" height="24" rx="4" fill="#fff" stroke="#2471a3" stroke-width="1.2" />
+<text x="802" y="361" font-family="Arial,Helvetica,sans-serif" font-size="11" font-weight="bold" text-anchor="middle" fill="#2471a3">IO2</text>
+<rect x="770" y="396" width="64" height="24" rx="4" fill="#fff" stroke="#2471a3" stroke-width="1.2" />
+<text x="802" y="413" font-family="Arial,Helvetica,sans-serif" font-size="11" font-weight="bold" text-anchor="middle" fill="#2471a3">IO42</text>
+<rect x="770" y="448" width="64" height="24" rx="4" fill="#fff" stroke="#7f8c8d" stroke-width="1.2" />
+<text x="802" y="465" font-family="Arial,Helvetica,sans-serif" font-size="11" font-weight="bold" text-anchor="middle" fill="#7f8c8d">IO41</text>
+<rect x="770" y="500" width="64" height="24" rx="4" fill="#fff" stroke="#2471a3" stroke-width="1.2" />
+<text x="802" y="517" font-family="Arial,Helvetica,sans-serif" font-size="11" font-weight="bold" text-anchor="middle" fill="#2471a3">IO40</text>
+<rect x="770" y="552" width="64" height="24" rx="4" fill="#fff" stroke="#2471a3" stroke-width="1.2" />
+<text x="802" y="569" font-family="Arial,Helvetica,sans-serif" font-size="11" font-weight="bold" text-anchor="middle" fill="#2471a3">IO39</text>
+<rect x="770" y="604" width="64" height="24" rx="4" fill="#fff" stroke="#2471a3" stroke-width="1.2" />
+<text x="802" y="621" font-family="Arial,Helvetica,sans-serif" font-size="11" font-weight="bold" text-anchor="middle" fill="#2471a3">IO38</text>
+<rect x="770" y="656" width="64" height="24" rx="4" fill="#fff" stroke="#999" stroke-width="1.2" />
+<text x="802" y="673" font-family="Arial,Helvetica,sans-serif" font-size="11" font-weight="bold" text-anchor="middle" fill="#777">IO37-35</text>
+<rect x="770" y="708" width="64" height="24" rx="4" fill="#fff" stroke="#999" stroke-width="1.2" />
+<text x="802" y="725" font-family="Arial,Helvetica,sans-serif" font-size="11" font-weight="bold" text-anchor="middle" fill="#777">IO0</text>
+<rect x="770" y="760" width="64" height="24" rx="4" fill="#fff" stroke="#999" stroke-width="1.2" />
+<text x="802" y="777" font-family="Arial,Helvetica,sans-serif" font-size="11" font-weight="bold" text-anchor="middle" fill="#777">IO45</text>
+<rect x="770" y="812" width="64" height="24" rx="4" fill="#fff" stroke="#999" stroke-width="1.2" />
+<text x="802" y="829" font-family="Arial,Helvetica,sans-serif" font-size="11" font-weight="bold" text-anchor="middle" fill="#777">IO48</text>
+<rect x="770" y="864" width="64" height="24" rx="4" fill="#fff" stroke="#2471a3" stroke-width="1.2" />
+<text x="802" y="881" font-family="Arial,Helvetica,sans-serif" font-size="11" font-weight="bold" text-anchor="middle" fill="#2471a3">IO47</text>
+<rect x="770" y="916" width="64" height="24" rx="4" fill="#fff" stroke="#2471a3" stroke-width="1.2" />
+<text x="802" y="933" font-family="Arial,Helvetica,sans-serif" font-size="11" font-weight="bold" text-anchor="middle" fill="#2471a3">IO21</text>
+<rect x="770" y="968" width="64" height="24" rx="4" fill="#fff" stroke="#2471a3" stroke-width="1.2" />
+<text x="802" y="985" font-family="Arial,Helvetica,sans-serif" font-size="11" font-weight="bold" text-anchor="middle" fill="#2471a3">IO20</text>
+<rect x="770" y="1020" width="64" height="24" rx="4" fill="#fff" stroke="#2471a3" stroke-width="1.2" />
+<text x="802" y="1037" font-family="Arial,Helvetica,sans-serif" font-size="11" font-weight="bold" text-anchor="middle" fill="#2471a3">IO19</text>
+<rect x="770" y="1072" width="64" height="24" rx="4" fill="#fff" stroke="#7f8c8d" stroke-width="1.2" />
+<text x="802" y="1089" font-family="Arial,Helvetica,sans-serif" font-size="11" font-weight="bold" text-anchor="middle" fill="#7f8c8d">GND</text>
+<rect x="770" y="1124" width="64" height="24" rx="4" fill="#fff" stroke="#7f8c8d" stroke-width="1.2" />
+<text x="802" y="1141" font-family="Arial,Helvetica,sans-serif" font-size="11" font-weight="bold" text-anchor="middle" fill="#7f8c8d">GND</text>
+<rect x="30" y="90" width="330" height="120" rx="8" fill="#fff" stroke="#e67e22" stroke-width="1.2" />
+<text x="40" y="110" font-family="Arial,Helvetica,sans-serif" font-size="13" font-weight="bold" text-anchor="start" fill="#e67e22">3.3 V distribution</text>
+<text x="40" y="130" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#333">3V3 (1): twin ferrule = opto board VCC +</text>
+<text x="40" y="147" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#333">  clamp-strip 3V3 Wago feed</text>
+<text x="40" y="164" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#333">3V3 (2): flow + return 3.3k top legs</text>
+<text x="40" y="181" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#333">IO10 post: wire from 3V3 + both cyl 3.3k</text>
+<polyline points="360,150 566,150" fill="none" stroke="#e67e22" stroke-width="1.4" />
+<polyline points="360,170 566,198" fill="none" stroke="#e67e22" stroke-width="1.4" />
+<rect x="30" y="225" width="330" height="120" rx="8" fill="#fff" stroke="#2471a3" stroke-width="1.2" />
+<text x="40" y="245" font-family="Arial,Helvetica,sans-serif" font-size="13" font-weight="bold" text-anchor="start" fill="#2471a3">Boiler flow / return NTCs</text>
+<text x="40" y="265" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#333">Strap-on, 10k @25 °C, B 3977, lagged</text>
+<text x="40" y="282" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#333">A-wire to IO4 (flow) / IO5 (return) + 3.3k</text>
+<text x="40" y="299" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#333">  from the same terminal up to 3V3 (2)</text>
+<text x="40" y="316" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#333">B-wires: twin ferrule → left GND</text>
+<polyline points="360,275 566,294" fill="none" stroke="#2471a3" stroke-width="1.4" />
+<polyline points="360,300 566,342" fill="none" stroke="#2471a3" stroke-width="1.4" />
+<rect x="30" y="360" width="330" height="110" rx="8" fill="#fff" stroke="#2471a3" stroke-width="1.2" />
+<text x="40" y="380" font-family="Arial,Helvetica,sans-serif" font-size="13" font-weight="bold" text-anchor="start" fill="#2471a3">Boiler pressure (gauge box B)</text>
+<text x="40" y="400" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#333">0-80 psi, 0.5-4.5 V, 5 V supply</text>
+<text x="40" y="417" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#333">10k/20k + 100 nF in the gauge box</text>
+<text x="40" y="434" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#333">Signal core → IO6 (≤3 V at the pin)</text>
+<text x="40" y="451" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#333">5 V core / GND core → bus strip</text>
+<polyline points="360,415 566,390" fill="none" stroke="#2471a3" stroke-width="1.4" />
+<rect x="30" y="485" width="330" height="155" rx="8" fill="#fff" stroke="#2471a3" stroke-width="1.2" />
+<text x="40" y="505" font-family="Arial,Helvetica,sans-serif" font-size="13" font-weight="bold" text-anchor="start" fill="#2471a3">Opto enclosure (logic side, 3.3 V)</text>
+<text x="40" y="525" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#333">Dupont leads → 2-way Wagos → ELV cores</text>
+<text x="40" y="542" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#333">IN1 boiler call → IO14</text>
+<text x="40" y="559" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#333">IN2 hot water timer → IO18</text>
+<text x="40" y="576" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#333">IN3 / IN4 HW relay L / R → IO15 / IO16</text>
+<text x="40" y="593" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#333">IN5 / IN6 cyl L / R valve drive → IO17 / IO11</text>
+<text x="40" y="610" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#333">IN7 UFH relay → IO12 · IN8 rads relay → IO42</text>
+<text x="40" y="627" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#333">VCC → 3V3 (1) · GND → GND bus</text>
+<polyline points="360,560 480,560 566,486" fill="none" stroke="#2471a3" stroke-width="1" />
+<polyline points="360,570 480,570 566,534" fill="none" stroke="#2471a3" stroke-width="1" />
+<polyline points="360,580 480,580 566,582" fill="none" stroke="#2471a3" stroke-width="1" />
+<polyline points="360,590 480,590 566,630" fill="none" stroke="#2471a3" stroke-width="1" />
+<polyline points="360,600 480,600 566,918" fill="none" stroke="#2471a3" stroke-width="1" />
+<polyline points="360,610 480,610 566,966" fill="none" stroke="#2471a3" stroke-width="1" />
+<polyline points="360,620 480,620 566,1062" fill="none" stroke="#2471a3" stroke-width="1" />
+<rect x="30" y="655" width="330" height="120" rx="8" fill="#fff" stroke="#2471a3" stroke-width="1.2" />
+<text x="40" y="675" font-family="Arial,Helvetica,sans-serif" font-size="13" font-weight="bold" text-anchor="start" fill="#2471a3">Cylinder outlet NTCs</text>
+<text x="40" y="695" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#333">Strap-on, pasted, lagged (B 3977)</text>
+<text x="40" y="712" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#333">A-wire to IO8 (L) / IO9 (R) + 3.3k leg</text>
+<text x="40" y="729" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#333">3.3k other legs → IO10 post (3V3)</text>
+<text x="40" y="746" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#333">B-wires: twin ferrule → right-side GND</text>
+<polyline points="360,705 566,678" fill="none" stroke="#2471a3" stroke-width="1.4" />
+<polyline points="360,730 566,822" fill="none" stroke="#2471a3" stroke-width="1.4" />
+<rect x="30" y="790" width="330" height="175" rx="8" fill="#fff" stroke="#16a085" stroke-width="1.2" />
+<text x="40" y="810" font-family="Arial,Helvetica,sans-serif" font-size="13" font-weight="bold" text-anchor="start" fill="#16a085">Current clamp strip (3 × 221-413)</text>
+<text x="40" y="830" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#333">SCT013-015 on boiler permanent live</text>
+<text x="40" y="847" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#333">3V3 Wago: feed · opto VCC · 10k top</text>
+<text x="40" y="864" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#333">Bias node: 10k top + 10k bottom ·</text>
+<text x="40" y="881" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#333">  10 µF (+) twinned with clamp WHITE</text>
+<text x="40" y="898" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#333">GND Wago: 10k bottom · 10 µF (−) · GND wire</text>
+<text x="40" y="915" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#333">Clamp RED → IO3 directly (≈1.65 V bias)</text>
+<text x="40" y="932" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#333">Screen: insulated (joined to white in cable)</text>
+<polyline points="360,880 566,726" fill="none" stroke="#16a085" stroke-width="1.4" />
+<rect x="30" y="980" width="330" height="160" rx="8" fill="#fff" stroke="#c0392b" stroke-width="1.2" />
+<text x="40" y="1000" font-family="Arial,Helvetica,sans-serif" font-size="13" font-weight="bold" text-anchor="start" fill="#c0392b">Bus strip (2 × 221-413, one mount)</text>
+<text x="40" y="1020" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#333">5 V bus: ESP 5V + boiler 5 V · L + R brown ·</text>
+<text x="40" y="1037" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#333">  470 µF (+) [to fit]</text>
+<text x="40" y="1054" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#333">GND bus: ESP GND + boiler GND · L + R braid ·</text>
+<text x="40" y="1071" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#333">  link to GND extension (+470 µF − later)</text>
+<text x="40" y="1088" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#333">GND extension: tundish screens, clamp,</text>
+<text x="40" y="1105" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#333">  opto GND</text>
+<text x="40" y="1122" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#333">Feeds the three pressure sensors only</text>
+<polyline points="360,1060 566,1110" fill="none" stroke="#c0392b" stroke-width="1.4" />
+<polyline points="360,1090 566,1158" fill="none" stroke="#7f8c8d" stroke-width="1.4" />
+<rect x="1040" y="90" width="330" height="150" rx="8" fill="#fff" stroke="#2471a3" stroke-width="1.2" />
+<text x="1050" y="110" font-family="Arial,Helvetica,sans-serif" font-size="13" font-weight="bold" text-anchor="start" fill="#2471a3">Cylinder inlet gauges (boxes L / R)</text>
+<text x="1050" y="130" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#333">Ausla 0-150 psi, 0.5-4.5 V, 5 V supply</text>
+<text x="1050" y="147" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#333">Divider + filter in each gauge box</text>
+<text x="1050" y="164" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#333">Cable: brown 5 V · blue signal · braid GND</text>
+<text x="1050" y="181" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#333">Left blue → IO2 · Right blue → IO1</text>
+<text x="1050" y="198" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#333">Brown → 5 V bus · braid → GND bus</text>
+<text x="1050" y="215" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#333">Zero (room pressure): L 0.487 V, R 0.482 V</text>
+<polyline points="1040,165 960,165 834,306" fill="none" stroke="#2471a3" stroke-width="1.4" />
+<polyline points="1040,190 970,190 834,358" fill="none" stroke="#2471a3" stroke-width="1.4" />
+<rect x="1040" y="260" width="330" height="100" rx="8" fill="#fff" stroke="#2471a3" stroke-width="1.2" />
+<text x="1050" y="280" font-family="Arial,Helvetica,sans-serif" font-size="13" font-weight="bold" text-anchor="start" fill="#2471a3">Opto IN8</text>
+<text x="1050" y="300" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#333">Radiator relay (W8) → IO42</text>
+<text x="1050" y="317" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#333">Live once the TF/MF heads are re-wired</text>
+<text x="1050" y="334" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#333">(after the bypass is fitted)</text>
+<polyline points="1040,310 834,410" fill="none" stroke="#2471a3" stroke-width="1.4" />
+<rect x="1040" y="380" width="330" height="190" rx="8" fill="#fff" stroke="#8e44ad" stroke-width="1.2" />
+<text x="1050" y="400" font-family="Arial,Helvetica,sans-serif" font-size="13" font-weight="bold" text-anchor="start" fill="#8e44ad">Tundish LEFT (MOSFET 1, 2N7000)</text>
+<text x="1050" y="420" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#333">Plate B core → IO38 (gate post)</text>
+<text x="1050" y="437" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#333">  + link IO38 → IO40 (gate)</text>
+<text x="1050" y="454" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#333">  + 2.2 MΩ IO38 → GND (beside ferrule)</text>
+<text x="1050" y="471" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#333">Source → IO41 (linked to GND)</text>
+<text x="1050" y="488" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#333">Drain → IO39 (sense, YAML "Left")</text>
+<text x="1050" y="505" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#333">Plate A core → IO21 (twin with R)</text>
+<text x="1050" y="522" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#333">Firmware pull-down on GPIO38 = "running"</text>
+<text x="1050" y="539" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#333">Screen → GND extension</text>
+<polyline points="1040,470 1000,470 834,462" fill="none" stroke="#8e44ad" stroke-width="1" />
+<polyline points="1040,470 1000,470 834,514" fill="none" stroke="#8e44ad" stroke-width="1" />
+<polyline points="1040,470 1000,470 834,566" fill="none" stroke="#8e44ad" stroke-width="1" />
+<polyline points="1040,470 1000,470 834,618" fill="none" stroke="#8e44ad" stroke-width="1" />
+<rect x="1040" y="590" width="330" height="190" rx="8" fill="#fff" stroke="#8e44ad" stroke-width="1.2" />
+<text x="1050" y="610" font-family="Arial,Helvetica,sans-serif" font-size="13" font-weight="bold" text-anchor="start" fill="#8e44ad">Tundish RIGHT (MOSFET 2, 2N7000)</text>
+<text x="1050" y="630" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#333">Plate B core → IO47 (gate post)</text>
+<text x="1050" y="647" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#333">  + gate wire IO47 → IO19 (gate)</text>
+<text x="1050" y="664" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#333">  + 2.2 MΩ IO47 → GND (beside ferrule)</text>
+<text x="1050" y="681" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#333">Source → GND · Drain → IO20</text>
+<text x="1050" y="698" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#333">  (sense, YAML "Right")</text>
+<text x="1050" y="715" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#333">Plate A core → IO21 (twin with L)</text>
+<text x="1050" y="732" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#333">Firmware pull-down on GPIO47 = "running"</text>
+<text x="1050" y="749" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#333">Screen → GND extension</text>
+<polyline points="1040,690 1000,690 834,878" fill="none" stroke="#8e44ad" stroke-width="1" />
+<polyline points="1040,690 1000,690 834,930" fill="none" stroke="#8e44ad" stroke-width="1" />
+<polyline points="1040,690 1000,690 834,982" fill="none" stroke="#8e44ad" stroke-width="1" />
+<polyline points="1040,690 1000,690 834,1034" fill="none" stroke="#8e44ad" stroke-width="1" />
+<rect x="1040" y="800" width="330" height="130" rx="8" fill="#fff" stroke="#7f8c8d" stroke-width="1.2" />
+<text x="1050" y="820" font-family="Arial,Helvetica,sans-serif" font-size="13" font-weight="bold" text-anchor="start" fill="#7f8c8d">Not used / reserved</text>
+<text x="1050" y="840" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#333">IO7: spare ADC1 · IO13: free (old clamp post)</text>
+<text x="1050" y="857" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#333">IO46, IO45, IO0: boot strapping pins</text>
+<text x="1050" y="874" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#333">IO35-37: PSRAM (unusable) · IO48: LED</text>
+<text x="1050" y="891" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-weight="normal" text-anchor="start" fill="#333">TX/RX: serial</text>
+<rect x="30" y="1250" width="1340" height="370" rx="10" fill="#fbfbfb" stroke="#999" stroke-width="1.2" stroke-dasharray="6 4"/>
+<text x="50" y="1278" font-family="Arial,Helvetica,sans-serif" font-size="15" font-weight="bold" text-anchor="start" fill="#222">Detail circuits</text>
+<rect x="50" y="1295" width="420" height="300" rx="8" fill="#fff" stroke="#2471a3" stroke-width="1.2" />
+<text x="60" y="1318" font-family="Arial,Helvetica,sans-serif" font-size="13" font-weight="bold" text-anchor="start" fill="#2471a3">Gauge box (×3: boiler, cyl L, cyl R)</text>
+<text x="60" y="1345" font-family="Arial,Helvetica,sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#222">5 V Wago: sensor +5 V · cable 5 V</text>
+<text x="60" y="1371" font-family="Arial,Helvetica,sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#222">Wago 1: sensor signal · 10k</text>
+<text x="60" y="1397" font-family="Arial,Helvetica,sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#222">Wago 2: twin (10k + signal core) ·</text>
+<text x="60" y="1423" font-family="Arial,Helvetica,sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#222">        twin (20k + 100 nF)</text>
+<text x="60" y="1449" font-family="Arial,Helvetica,sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#222">GND Wago: twin (sensor GND + braid) ·</text>
+<text x="60" y="1475" font-family="Arial,Helvetica,sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#222">        twin (20k + 100 nF)</text>
+<text x="60" y="1501" font-family="Arial,Helvetica,sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#222">Pin = sensor × 0.667 (≤3.0 V)</text>
+<text x="60" y="1527" font-family="Arial,Helvetica,sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#222">Zero ≈ 0.48 V normalised (4.69 V supply)</text>
+<text x="60" y="1553" font-family="Arial,Helvetica,sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#222">Supply decoupling: 470 µF at the bus strip</text>
+<rect x="490" y="1295" width="420" height="300" rx="8" fill="#fff" stroke="#2471a3" stroke-width="1.2" />
+<text x="500" y="1318" font-family="Arial,Helvetica,sans-serif" font-size="13" font-weight="bold" text-anchor="start" fill="#2471a3">NTC divider (×4)</text>
+<text x="500" y="1345" font-family="Arial,Helvetica,sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#222">3V3 → 3.3 kΩ → GPIO → NTC → GND</text>
+<text x="500" y="1371" font-family="Arial,Helvetica,sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#222">V = 3.3 × R_ntc / (3300 + R_ntc)</text>
+<text x="500" y="1397" font-family="Arial,Helvetica,sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#222">20 °C ≈ 2.6 V · 45 °C ≈ 1.87 V</text>
+<text x="500" y="1423" font-family="Arial,Helvetica,sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#222">50 °C ≈ 1.72 V · 68 °C ≈ 1.2 V</text>
+<text x="500" y="1449" font-family="Arial,Helvetica,sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#222">Meter check 11 Nov: IO8 1.872 V = 45.0 °C</text>
+<text x="500" y="1475" font-family="Arial,Helvetica,sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#222">  (HA 44.8) · IO9 1.724 V = 49.6 °C (HA 49.9)</text>
+<text x="500" y="1501" font-family="Arial,Helvetica,sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#222">IO4 1.20 V = 67.6 °C (HA 68.2)</text>
+<text x="500" y="1527" font-family="Arial,Helvetica,sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#222">IO5 1.98 V = 41.6 °C (HA 41.8)</text>
+<text x="500" y="1553" font-family="Arial,Helvetica,sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#222">ESPHome: resistance (DOWNSTREAM) + ntc B3977</text>
+<rect x="930" y="1295" width="420" height="300" rx="8" fill="#fff" stroke="#16a085" stroke-width="1.2" />
+<text x="940" y="1318" font-family="Arial,Helvetica,sans-serif" font-size="13" font-weight="bold" text-anchor="start" fill="#16a085">Clamp bias (standard topology)</text>
+<text x="940" y="1345" font-family="Arial,Helvetica,sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#222">3V3 → 10k → BIAS → 10k → GND</text>
+<text x="940" y="1371" font-family="Arial,Helvetica,sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#222">10 µF from BIAS to GND (holds 1.65 V)</text>
+<text x="940" y="1397" font-family="Arial,Helvetica,sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#222">Clamp between BIAS (white) and IO3 (red)</text>
+<text x="940" y="1423" font-family="Arial,Helvetica,sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#222">IO3 = 1.65 V + clamp signal</text>
+<text x="940" y="1449" font-family="Arial,Helvetica,sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#222">Fault found: clamp screen is joined to</text>
+<text x="940" y="1475" font-family="Arial,Helvetica,sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#222">  white inside the cable; screen on GND</text>
+<text x="940" y="1501" font-family="Arial,Helvetica,sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#222">  shorted BIAS → 0 V. Screen insulated.</text>
+<text x="940" y="1527" font-family="Arial,Helvetica,sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#222">Verified: BIAS and IO3 = 1.65 V</text>
+<text x="940" y="1553" font-family="Arial,Helvetica,sans-serif" font-size="12" font-weight="normal" text-anchor="start" fill="#222">ESPHome ct_clamp (RMS), states banded</text>
+</svg>

@@ -96,3 +96,13 @@ Files: [STL](../hardware/opto-tray/opto-board-tray-v2.stl) · [OpenSCAD source](
 | Radiator call only | IN1 on, IN5-IN7 off (IN8 on once W8 is live) |
 | UFH call only | IN7 on, then IN1 on via the UF valve end switch |
 | Each channel | Polarity confirmed; flip `inverted:` if needed |
+
+## 5. As built: enclosure schematic and status (10 Nov 2026)
+
+![Opto enclosure schematic](images/opto-enclosure-schematic.svg)
+
+- **Enclosure finished** and labelled (DANGER 230 V; live inputs fed from the heating junction box; channel numbers on the lid edge and the IN1-IN8 list on top).
+- **Logic side wired and tested:** VCC moved from 5 V to **3.3 V** (the outputs connect straight to ESP32 pins); all eight inputs read 3.3 V idle and **off** in HA.
+- **Mains side:** cables A/B/C to the neutral and earth Wagos and L1-L8, connected at the junction-box rewire; then each input tested against a real demand.
+- **Input LEDs** light only with 230 V on that channel, so all are off until then (expected).
+

@@ -1,0 +1,43 @@
+type: vertical-stack
+cards:
+  - type: horizontal-stack
+    cards:
+      - type: gauge
+        entity: sensor.left_cylinder_hot_water_charge
+        name: Left cylinder
+        min: 0
+        max: 100
+        needle: true
+        severity: {red: 0, yellow: 25, green: 50}
+      - type: gauge
+        entity: sensor.right_cylinder_hot_water_charge
+        name: Right cylinder
+        min: 0
+        max: 100
+        needle: true
+        severity: {red: 0, yellow: 25, green: 50}
+  - type: entities
+    title: Hot water available
+    entities:
+      - entity: sensor.left_cylinder_hot_water_available
+        name: Left (litres at 40 °C)
+      - {type: attribute, entity: sensor.left_cylinder_hot_water_available, attribute: average_temperature, name: Left average temperature, suffix: °C}
+      - {type: attribute, entity: sensor.left_cylinder_hot_water_available, attribute: stratification_k, name: Left top − bottom, suffix: K}
+      - entity: sensor.right_cylinder_hot_water_available
+        name: Right (litres at 40 °C)
+      - {type: attribute, entity: sensor.right_cylinder_hot_water_available, attribute: average_temperature, name: Right average temperature, suffix: °C}
+      - {type: attribute, entity: sensor.right_cylinder_hot_water_available, attribute: stratification_k, name: Right top − bottom, suffix: K}
+  - type: history-graph
+    title: Cylinder top and bottom (24 h)
+    hours_to_show: 24
+    entities:
+      - {entity: sensor.control_room_esp32_control_room_hot_water_cylinder_left_outlet_temperature, name: Left top}
+      - {entity: sensor.dhw_07_045307_temperature, name: Left bottom}
+      - {entity: sensor.control_room_esp32_control_room_hot_water_cylinder_right_outlet_temperature, name: Right top}
+      - {entity: sensor.dhw_07_040975_temperature, name: Right bottom}
+  - type: history-graph
+    title: Hot water available (24 h)
+    hours_to_show: 24
+    entities:
+      - {entity: sensor.left_cylinder_hot_water_available, name: Left}
+      - {entity: sensor.right_cylinder_hot_water_available, name: Right}

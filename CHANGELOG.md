@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.8.0] - 2026-11-11
+- Off-board rework of the control-room board: pressure dividers and filters moved into a junction box at each gauge; bus strip (5 V / GND); NTC resistors bridged between neighbouring terminals with IO10 as a 3V3 post; clamp bias on its own strip in the standard topology (doc 13).
+- New doc 12: full as-built schematic (SVG), pin table and power-up checks; new opto enclosure schematic (doc 11 §5).
+- Faults found: clamp cable screen joined to the white conductor (shorted the new bias node; screen insulated); flow/return swapped in re-wiring (YAML corrected); a meter-probe slip onto the neighbouring 1.65 V terminal.
+- Pins: boiler pressure → GPIO6, right inlet → GPIO1, left inlet GPIO2; tundish sense pins swapped to match the re-terminated plates; both inlet gauges zeroed (0.487 / 0.482 V).
+- New doc 14: cylinder stratification, a "hot water available" estimate (HA package and card), CS92 paste, Centre Store settings (3.5 bar PRV and pre-charge, 6 bar ERV).
+- NTC meter checks (IO4/5/8/9 within 0.6 °C of HA); YAML, I/O schedule, tracker and README updated; photos.
+
 ## [0.7.0] - 2026-11-06
 - Doc 02: flow/return noise traced to 330 kΩ top resistors (should be 3.3 kΩ), found by a powered voltage test; before/after graphs; NTC circuit corrected to 3.3 kΩ; standing-offset check (no offset applied yet).
 - Doc 04: ADC calibrated against a meter; pressure calibrated to the boiler gauge (3 points, linear fit); noise diagnosed as bursts on the sensor's 5 V supply; fast (diagnostic) and 1-minute main pressure sensors; graphs.
