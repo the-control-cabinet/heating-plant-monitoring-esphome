@@ -1,0 +1,133 @@
+# Cylinder inlet overnight floor trend (16 Nov 2026).
+# Each night, the lowest "inlet vs expected" value between 02:00 and 05:00 is the cylinder's floor:
+# the inlet pressure once it has settled back to the supply after the last draw. A drift of that floor
+# away from its own recent average means something changed on that side (pressure reducing valve
+# creep, a sensor drifting, a leak-by), independent of the offset helper's exact value.
+# Test 1 lesson (15-16 Nov): a side that was NOT drawn after its evening reheat stays held up by
+# expansion (~+1.2 bar) all night, so its floor is meaningless. Nights where the floor is more than
+# 0.5 bar from expected are therefore skipped (not recorded, no alert).
+# Alert: a recorded night differs from the average of the previous valid nights (3 to 7 of them)
+# by more than the threshold (default 0.15 bar).
+# Uses: sensor.cylinder_left_inlet_vs_expected / sensor.cylinder_right_inlet_vs_expected
+# (from cylinder_inlet_head.yaml) and notify.mobile_app_jamess_iphone.
+
+input_number:
+  cylinder_inlet_floor_trend_threshold:
+    name: "Cylinder inlet floor trend threshold"
+    min: 0.05
+    max: 0.5
+    step: 0.01
+    initial: 0.15
+    unit_of_measurement: "bar"
+    icon: mdi:chart-bell-curve-cumulative
+
+sensor:
+  - platform: statistics
+    name: Cylinder left inlet vs expected min 3h
+    unique_id: cylinder_left_inlet_vs_expected_min_3h
+    entity_id: sensor.cylinder_left_inlet_vs_expected
+    state_characteristic: value_min
+    max_age:
+      hours: 3
+    sampling_size: 2000
+    keep_last_sample: true
+    precision: 2
+  - platform: statistics
+    name: Cylinder right inlet vs expected min 3h
+    unique_id: cylinder_right_inlet_vs_expected_min_3h
+    entity_id: sensor.cylinder_right_inlet_vs_expected
+    state_characteristic: value_min
+    max_age:
+      hours: 3
+    sampling_size: 2000
+    keep_last_sample: true
+    precision: 2
+
+template:
+  - trigger:
+      - trigger: time
+        at: "05:00:00"
+    sensor:
+      - name: "Cylinder left inlet overnight floor"
+        unique_id: cylinder_left_inlet_overnight_floor
+        unit_of_measurement: "bar"
+        icon: mdi:arrow-collapse-down
+        state: >
+          {% set v = states('sensor.cylinder_left_inlet_vs_expected_min_3h') %}
+          {% if is_number(v) and (v | float) | abs <= 0.5 %}{{ v | float | round(2) }}
+          {% else %}{{ this.state if this is defined and this.state not in ['unknown', 'unavailable', None] else 'unknown' }}{% endif %}
+        attributes:
+          valid_tonight: >
+            {% set v = states('sensor.cylinder_left_inlet_vs_expected_min_3h') %}
+            {{ is_number(v) and (v | float) | abs <= 0.5 }}
+          raw_tonight: "{{ states('sensor.cylinder_left_inlet_vs_expected_min_3h') }}"
+          previous_avg: >
+            {% set h = (this.attributes.history if this is defined and this.attributes.history is defined else []) | list %}
+            {{ ((h | sum) / (h | count)) | round(2) if h | count > 0 else none }}
+          previous_count: >
+            {{ ((this.attributes.history if this is defined and this.attributes.history is defined else []) | list) | count }}
+          history: >
+            {% set h = (this.attributes.history if this is defined and this.attributes.history is defined else []) | list %}
+            {% set v = states('sensor.cylinder_left_inlet_vs_expected_min_3h') %}
+            {% if is_number(v) and (v | float) | abs <= 0.5 %}{{ (h + [v | float | round(2)])[-7:] }}{% else %}{{ h }}{% endif %}
+
+      - name: "Cylinder right inlet overnight floor"
+        unique_id: cylinder_right_inlet_overnight_floor
+        unit_of_measurement: "bar"
+        icon: mdi:arrow-collapse-down
+        state: >
+          {% set v = states('sensor.cylinder_right_inlet_vs_expected_min_3h') %}
+          {% if is_number(v) and (v | float) | abs <= 0.5 %}{{ v | float | round(2) }}
+          {% else %}{{ this.state if this is defined and this.state not in ['unknown', 'unavailable', None] else 'unknown' }}{% endif %}
+        attributes:
+          valid_tonight: >
+            {% set v = states('sensor.cylinder_right_inlet_vs_expected_min_3h') %}
+            {{ is_number(v) and (v | float) | abs <= 0.5 }}
+          raw_tonight: "{{ states('sensor.cylinder_right_inlet_vs_expected_min_3h') }}"
+          previous_avg: >
+            {% set h = (this.attributes.history if this is defined and this.attributes.history is defined else []) | list %}
+            {{ ((h | sum) / (h | count)) | round(2) if h | count > 0 else none }}
+          previous_count: >
+            {{ ((this.attributes.history if this is defined and this.attributes.history is defined else []) | list) | count }}
+          history: >
+            {% set h = (this.attributes.history if this is defined and this.attributes.history is defined else []) | list %}
+            {% set v = states('sensor.cylinder_right_inlet_vs_expected_min_3h') %}
+            {% if is_number(v) and (v | float) | abs <= 0.5 %}{{ (h + [v | float | round(2)])[-7:] }}{% else %}{{ h }}{% endif %}
+
+automation:
+  - id: plant_alert_inlet_floor_trend
+    alias: "Plant alert: cylinder inlet overnight floor drift"
+    mode: single
+    trigger:
+      - trigger: time
+        at: "05:02:00"
+    action:
+      - variables:
+          thr: "{{ states('input_number.cylinder_inlet_floor_trend_threshold') | float(0.15) }}"
+          msgs: >
+            {% set ns = namespace(out=[]) %}
+            {% for side, e in [('Left', 'sensor.cylinder_left_inlet_overnight_floor'),
+                               ('Right', 'sensor.cylinder_right_inlet_overnight_floor')] %}
+              {% set valid = state_attr(e, 'valid_tonight') in [true, 'True', 'true'] %}
+              {% set avg = state_attr(e, 'previous_avg') %}
+              {% set n = state_attr(e, 'previous_count') | int(0) %}
+              {% set v = states(e) %}
+              {% if valid and is_number(v) and is_number(avg) and n >= 3
+                    and ((v | float) - (avg | float)) | abs > thr %}
+                {% set ns.out = ns.out + [side ~ ' inlet floor ' ~ v ~ ' bar vs expected (average of last '
+                                         ~ n ~ ' valid nights ' ~ avg ~ ')'] %}
+              {% endif %}
+            {% endfor %}
+            {{ ns.out }}
+      - condition: template
+        value_template: "{{ msgs | count > 0 }}"
+      - action: notify.mobile_app_jamess_iphone
+        data:
+          title: "Cylinder inlet floor drift"
+          message: >
+            {{ msgs | join('; ') }}. Threshold {{ thr }} bar. Check the pressure reducing valve,
+            the inlet sensor and the mains sensor.
+      - action: logbook.log
+        data:
+          name: "Cylinder inlet floor trend"
+          message: "{{ msgs | join('; ') }}"

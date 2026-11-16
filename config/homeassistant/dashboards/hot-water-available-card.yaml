@@ -38,13 +38,20 @@ cards:
       - type: attribute
         entity: sensor.left_cylinder_hot_water_available
         attribute: top_used
-        name: Top used (live or last draw)
+        name: Top used (outlet, or bottom if higher)
         suffix: °C
       - type: attribute
         entity: sensor.left_cylinder_hot_water_available
-        attribute: stratification_k
+        attribute: top_source
+        name: Top reading from
+      - type: attribute
+        entity: sensor.left_cylinder_hot_water_available
+        attribute: usable_factor
+        name: Usable at 40 °C (0-1)
+      - type: attribute
+        entity: sensor.left_cylinder_hot_water_available
+        attribute: stratification_text
         name: Stratification (+ = hotter at top)
-        suffix: K
       - type: attribute
         entity: sensor.left_cylinder_hot_water_available
         attribute: bottom_reading_age_min
@@ -62,13 +69,20 @@ cards:
       - type: attribute
         entity: sensor.right_cylinder_hot_water_available
         attribute: top_used
-        name: Top used (live or last draw)
+        name: Top used (outlet, or bottom if higher)
         suffix: °C
       - type: attribute
         entity: sensor.right_cylinder_hot_water_available
-        attribute: stratification_k
+        attribute: top_source
+        name: Top reading from
+      - type: attribute
+        entity: sensor.right_cylinder_hot_water_available
+        attribute: usable_factor
+        name: Usable at 40 °C (0-1)
+      - type: attribute
+        entity: sensor.right_cylinder_hot_water_available
+        attribute: stratification_text
         name: Stratification (+ = hotter at top)
-        suffix: K
       - type: attribute
         entity: sensor.right_cylinder_hot_water_available
         attribute: bottom_reading_age_min

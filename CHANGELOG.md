@@ -1,13 +1,22 @@
 # Changelog
 
+## [0.10.0] - 2026-11-16
+- 12-13 Nov detail: docs 02/03/04/05/08/13 addenda (NTC offset, clamp AC check, GPIO6 boiler gauge and gauge boxes, long-term statistics and the daily cold-minimum decay check, inlet span checks with a tyre gauge, ADC-pin filtering lesson, 5 V decoupling, outlet NTC position, mains and inlet-group losses, tundish counter history, GPIO21); hardware/gauge-box; hot water card v4.
+- New doc 16: boiler states from the clamp: v2 (15 Nov) and why it fails at low fire (low-fire burning 0.13-0.18 A vs pump overrun 0.30-0.40 A, flow-temperature burn detector as reference, fan spike before only 47 of 152 burns); failed-ignition alert disabled; short cycling with radiators only (~50 s every ~2.6 min); v3 design (flow-temperature burning, clamp for high/low fire, lockout check).
+- New doc 17: cylinder inlets: effective height offset 0.37 bar (0.15 bar gap open), why inlets sit at 3.7-3.8 bar after reheats (3.5 bar pre-charge on a ~2.5 bar supply; Boyle's law), kick tests, Test 1 (valid only on a drawn side), inlet group losses and the part-closed isolating valve, the overnight floor-trend alert.
+- Doc 14 addendum: hot water estimate v4; card wording; 60 °C on both hubs. Doc 15 addendum: alerts changes 12-16 Nov.
+- Packages: heating_plant_alerts.yaml (hot water alerts on BDR91 relay states; failed ignition = no burn within 3 min; weekly 60 °C on the CS92 probes), dhw_hot_water_available.yaml (v4), cylinder_inlet_head.yaml, cylinder_inlet_floor_trend.yaml (new); cylinder inlet card; control-room firmware v2 (boiler gauge GPIO6, left span gain, state v2).
+- Valve names written in full throughout (pressure reducing valve, expansion relief valve, boiler pressure relief valve).
+- README: status, findings, files and documents.
+
 ## [0.9.0] - 2026-11-11 (evening)
 - New doc 15 and config/homeassistant/packages/heating_plant_alerts.yaml: 23 alerts with commissioning gates, FDD mapping and lessons (heat demand, not relay demand, for hot water; notify action name; RAMSES lag); replaces plant-alerts.example.yaml. ESP32 chip temperature sensor added.
-- Doc 05: plumber visit (24 L vessels at 3.5 bar, gauges between PRV and vessel), a false 5 bar from a loose divider leg, PRVs settling at ~2.5 bar, the vessels' knee and 3.8 bar peak, tundish water test and lingering water.
+- Doc 05: plumber visit (24 L vessels at 3.5 bar, gauges between pressure reducing valve and vessel), a false 5 bar from a loose divider leg, pressure reducing valves settling at ~2.5 bar, the vessels' knee and 3.8 bar peak, tundish water test and lingering water.
 - Left/right corrections: inlet gauges (IO1 left, IO2 right) and outlet NTCs (IO9 left, IO8 right), verified by a draw; YAML, I/O schedule, pin table and schematic updated.
 - Doc 14 and the hot water package v3: cold feed helper (14 °C), per-cylinder draw capture from each outlet's own cooling, stratification from the top used, the low probe pocket assessed, limits and next steps. New hot water and boiler plant cards.
 - Tracker and README status updated.
 - Alert "reheat finished below 55 °C" replaced by "reheat cut short (window closed)": bottom probe vs the hub's setpoint, 30 min after the reheat ends (the outlet NTC lags at rest).
-- Graphs: PRV settle (flow meter at 18:31), the vessel's knee during the reheat, the inlet dip that identified the left draw, hot water cards v3; PRV photo.
+- Graphs: pressure reducing valve settle (flow meter at 18:31), the vessel's knee during the reheat, the inlet dip that identified the left draw, hot water cards v3; pressure reducing valve photo.
 - Photos: new vessels and their label (factory 2.7 bar, maximum 3.5 bar gas charge), inlet gauges and gauge box, tundish plates in place, the opto enclosure installed.
 
 ## [0.8.0] - 2026-11-11
@@ -15,7 +24,7 @@
 - New doc 12: full as-built schematic (SVG), pin table and power-up checks; new opto enclosure schematic (doc 11 §5).
 - Faults found: clamp cable screen joined to the white conductor (shorted the new bias node; screen insulated); flow/return swapped in re-wiring (YAML corrected); a meter-probe slip onto the neighbouring 1.65 V terminal.
 - Pins: boiler pressure → GPIO6, right inlet → GPIO1, left inlet GPIO2; tundish sense pins swapped to match the re-terminated plates; both inlet gauges zeroed (0.487 / 0.482 V).
-- New doc 14: cylinder stratification, a "hot water available" estimate (HA package and card), CS92 paste, Centre Store settings (3.5 bar PRV and pre-charge, 6 bar ERV).
+- New doc 14: cylinder stratification, a "hot water available" estimate (HA package and card), CS92 paste, Centre Store settings (3.5 bar pressure reducing valve and pre-charge, 6 bar expansion relief valve).
 - NTC meter checks (IO4/5/8/9 within 0.6 °C of HA); YAML, I/O schedule, tracker and README updated; photos.
 
 ## [0.7.0] - 2026-11-06

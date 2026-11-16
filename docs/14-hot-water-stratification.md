@@ -62,4 +62,12 @@ The pockets are larger than the probes, so the gap is air. A thin coat of paste 
 
 ## Centre Store settings (from the installation manual)
 
-PRV / operating pressure **3.5 bar** · expansion vessel pre-charge **3.5 bar** (checked with the water side de-pressurised; 24 L for the 250 L) · expansion relief valve **6 bar** · T&P **90 °C / 10 bar**. Intermittent discharge from the expansion valve during reheats = vessel charge below 3.5 bar (the fault behind the tundish drips).
+pressure reducing valve / operating pressure **3.5 bar** · expansion vessel pre-charge **3.5 bar** (checked with the water side de-pressurised; 24 L for the 250 L) · expansion relief valve **6 bar** · T&P **90 °C / 10 bar**. Intermittent discharge from the expansion valve during reheats = vessel charge below 3.5 bar (the fault behind the tundish drips).
+
+
+## Addendum (12-16 Nov 2026): estimate v4 and 60 °C
+
+- **v4 replaces v3:** top used = the higher of the outlet NTC and the bottom probe (the probe floor fixes the post-reheat lag: both estimates read 100 % straight after the reheats); usable factor 0 below a 42 °C top, full at 45 °C (an emptied cylinder now shows 0 %, not 18 %). v3's per-draw capture was removed: long showers defeated its "rise within 10 min" rule, and at rest the outlet already tracks the top on this rising pipe. Eight helper entities deleted.
+- **Card:** "Top reading from" (outlet live / bottom probe) and stratification "n/a until next draw" at rest.
+- Long showers emptied the right cylinder (~200 L through the mains meter in 27 min) with nobody getting a cold shower: the estimate's "nearly empty" point was about right.
+- **60 °C:** both hubs set to 60 °C on 16 Nov (from 58), differential 5 K. The weekly check now uses the CS92 probes ([doc 15](15-alerts.md)).

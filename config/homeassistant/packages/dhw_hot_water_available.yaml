@@ -1,11 +1,18 @@
-# Estimated hot water available in each Centre Store 250 L cylinder (v3, 11 Nov 2026).
-# Top: outlet NTC on the hot pipe. At rest it reads low, so each cylinder detects its OWN draws:
-#   when its outlet starts cooling (< -0.15 K/min for 30 s) after a rise of > 1 K in the last 10 min,
-#   the highest reading of the last 3 min is captured (the peak after a short draw, or the end value
-#   of a long one, so a shower or bath that runs the cylinder down isn't over-estimated).
-#   The estimate uses the captured value for 6 h when it's higher than the live reading.
-# Bottom: Evohome CS92 probe in the lower pocket (~1/4 up); reports can be up to ~25 min apart.
-# Average = 0.4 x top + 0.6 x bottom. Stratification = top used - bottom (+ = hotter at top). Litres at 40 C from the cold feed helper (~14 C in Nov).
+# Estimated hot water available in each Centre Store 250 L cylinder (v4, 12 Nov 2026).
+# Top used = the higher of the outlet NTC and the bottom probe:
+#   - the outlet NTC sits on a pipe rising out of the cylinder, so after a draw it tracks the top
+#     well at rest (12 Nov: fell to the true ~31 C within 2 min when a cylinder emptied);
+#   - after a reheat with no draw since, the outlet lags, but the top can't be colder than the
+#     bottom then, so the bottom probe sets a floor (11 Nov: outlet 51 C, probe 60 C -> 60 C).
+# Usable: 0 when the top is below 42 C (nothing usable at 40 C), scaling to full at 45 C.
+# Average = 0.4 x top + 0.6 x bottom. Litres at 40 C from the cold feed helper (~14 C in Nov).
+# Bottom: Evohome CS92 probe (~1/4 up); reports can be up to ~25 min apart while the temperature
+# is changing, and much longer at rest (it reports on change), so "stale" is flagged only after 90 min.
+# v3's per-draw capture was removed: long draws defeated it, and the floor above covers the lag.
+# Stratification is only known when the outlet reads above the bottom probe (after a draw); otherwise
+# it is reported as unknown, and top_source says the bottom probe is standing in for the top (the outlet
+# pipe cools at rest, but the top can't be colder than the bottom, so the bottom probe is a safe floor).
+# 13 Nov 2026: stale threshold raised from 20 to 90 minutes (a quiet probe at rest is not a fault).
 
 input_number:
   dhw_cold_feed_temperature:
@@ -17,100 +24,7 @@ input_number:
     unit_of_measurement: "°C"
     icon: mdi:water-thermometer
 
-sensor:
-  - platform: derivative
-    name: "Left Cylinder Outlet Rate"
-    unique_id: dhw_left_outlet_rate
-    source: sensor.control_room_esp32_control_room_hot_water_cylinder_left_outlet_temperature
-    unit_time: min
-    time_window: "00:01:00"
-    round: 2
-
-  - platform: statistics
-    name: "Left Cylinder Outlet Max 3 min"
-    unique_id: dhw_left_outlet_max_3min
-    entity_id: sensor.control_room_esp32_control_room_hot_water_cylinder_left_outlet_temperature
-    state_characteristic: value_max
-    max_age:
-      minutes: 3
-    sampling_size: 200
-    precision: 1
-
-  - platform: statistics
-    name: "Left Cylinder Outlet Min 10 min"
-    unique_id: dhw_left_outlet_min_10min
-    entity_id: sensor.control_room_esp32_control_room_hot_water_cylinder_left_outlet_temperature
-    state_characteristic: value_min
-    max_age:
-      minutes: 10
-    sampling_size: 500
-    precision: 1
-
-  - platform: derivative
-    name: "Right Cylinder Outlet Rate"
-    unique_id: dhw_right_outlet_rate
-    source: sensor.control_room_esp32_control_room_hot_water_cylinder_right_outlet_temperature
-    unit_time: min
-    time_window: "00:01:00"
-    round: 2
-
-  - platform: statistics
-    name: "Right Cylinder Outlet Max 3 min"
-    unique_id: dhw_right_outlet_max_3min
-    entity_id: sensor.control_room_esp32_control_room_hot_water_cylinder_right_outlet_temperature
-    state_characteristic: value_max
-    max_age:
-      minutes: 3
-    sampling_size: 200
-    precision: 1
-
-  - platform: statistics
-    name: "Right Cylinder Outlet Min 10 min"
-    unique_id: dhw_right_outlet_min_10min
-    entity_id: sensor.control_room_esp32_control_room_hot_water_cylinder_right_outlet_temperature
-    state_characteristic: value_min
-    max_age:
-      minutes: 10
-    sampling_size: 500
-    precision: 1
-
 template:
-  - trigger:
-      - platform: numeric_state
-        entity_id: sensor.left_cylinder_outlet_rate
-        below: -0.15
-        for: "00:00:30"
-    sensor:
-      - name: "Left Cylinder Top At Last Draw"
-        unique_id: dhw_left_top_at_last_draw
-        unit_of_measurement: "°C"
-        device_class: temperature
-        icon: mdi:thermometer-water
-        state: >
-          {% if states('sensor.left_cylinder_outlet_max_3_min') | float(0) > states('sensor.left_cylinder_outlet_min_10_min') | float(0) + 1 %}{{ states('sensor.left_cylinder_outlet_max_3_min') | float(0) | round(1) }}
-          {% elif this.state not in ['unknown', 'unavailable', none] %}{{ this.state }}
-          {% else %}{{ states('sensor.control_room_esp32_control_room_hot_water_cylinder_left_outlet_temperature') | float(0) | round(1) }}{% endif %}
-        attributes:
-          captured_at: >
-            {% if states('sensor.left_cylinder_outlet_max_3_min') | float(0) > states('sensor.left_cylinder_outlet_min_10_min') | float(0) + 1 %}{{ now().isoformat() }}{% else %}{{ this.attributes.captured_at | default('') }}{% endif %}
-  - trigger:
-      - platform: numeric_state
-        entity_id: sensor.right_cylinder_outlet_rate
-        below: -0.15
-        for: "00:00:30"
-    sensor:
-      - name: "Right Cylinder Top At Last Draw"
-        unique_id: dhw_right_top_at_last_draw
-        unit_of_measurement: "°C"
-        device_class: temperature
-        icon: mdi:thermometer-water
-        state: >
-          {% if states('sensor.right_cylinder_outlet_max_3_min') | float(0) > states('sensor.right_cylinder_outlet_min_10_min') | float(0) + 1 %}{{ states('sensor.right_cylinder_outlet_max_3_min') | float(0) | round(1) }}
-          {% elif this.state not in ['unknown', 'unavailable', none] %}{{ this.state }}
-          {% else %}{{ states('sensor.control_room_esp32_control_room_hot_water_cylinder_right_outlet_temperature') | float(0) | round(1) }}{% endif %}
-        attributes:
-          captured_at: >
-            {% if states('sensor.right_cylinder_outlet_max_3_min') | float(0) > states('sensor.right_cylinder_outlet_min_10_min') | float(0) + 1 %}{{ now().isoformat() }}{% else %}{{ this.attributes.captured_at | default('') }}{% endif %}
   - sensor:
       - name: "Left Cylinder Hot Water Available"
         unique_id: dhw_left_hot_water_available_l40
@@ -121,39 +35,38 @@ template:
           {{ has_value('sensor.control_room_esp32_control_room_hot_water_cylinder_left_outlet_temperature') and has_value('sensor.dhw_07_045307_temperature') }}
         state: >
           {% set t_cold = states('input_number.dhw_cold_feed_temperature') | float(14) %}
-          {% set live = states('sensor.control_room_esp32_control_room_hot_water_cylinder_left_outlet_temperature') | float(0) %}
-          {% set held = states('sensor.left_cylinder_top_at_last_draw') | float(0) %}
-          {% set cap = state_attr('sensor.left_cylinder_top_at_last_draw', 'captured_at') %}
-          {% set fresh = cap not in [none, ''] and (now() - as_datetime(cap)).total_seconds() < 21600 %}
-          {% set t_top = [live, held] | max if fresh else live %}
+          {% set t_top = [states('sensor.control_room_esp32_control_room_hot_water_cylinder_left_outlet_temperature') | float(0), states('sensor.dhw_07_045307_temperature') | float(0)] | max %}
+          {% set f = 0 if t_top < 42 else (1 if t_top >= 45 else (t_top - 42) / 3) %}
           {% set t_avg = 0.4 * t_top + 0.6 * (states('sensor.dhw_07_045307_temperature') | float(0)) %}
-          {{ [250 * (t_avg - t_cold) / (40 - t_cold), 0] | max | round(0) }}
+          {{ ([250 * (t_avg - t_cold) / (40 - t_cold), 0] | max * f) | round(0) }}
         attributes:
           top_used: >
-            {% set live = states('sensor.control_room_esp32_control_room_hot_water_cylinder_left_outlet_temperature') | float(0) %}
-            {% set held = states('sensor.left_cylinder_top_at_last_draw') | float(0) %}
-            {% set cap = state_attr('sensor.left_cylinder_top_at_last_draw', 'captured_at') %}
-            {% set fresh = cap not in [none, ''] and (now() - as_datetime(cap)).total_seconds() < 21600 %}
-            {% set t_top = [live, held] | max if fresh else live %}
-            {{ t_top | round(1) }}
+            {{ [states('sensor.control_room_esp32_control_room_hot_water_cylinder_left_outlet_temperature') | float(0), states('sensor.dhw_07_045307_temperature') | float(0)] | max | round(1) }}
+          usable_factor: >
+            {% set t_top = [states('sensor.control_room_esp32_control_room_hot_water_cylinder_left_outlet_temperature') | float(0), states('sensor.dhw_07_045307_temperature') | float(0)] | max %}
+            {% set f = 0 if t_top < 42 else (1 if t_top >= 45 else (t_top - 42) / 3) %}
+            {{ f | round(2) }}
           average_temperature: >
-            {% set live = states('sensor.control_room_esp32_control_room_hot_water_cylinder_left_outlet_temperature') | float(0) %}
-            {% set held = states('sensor.left_cylinder_top_at_last_draw') | float(0) %}
-            {% set cap = state_attr('sensor.left_cylinder_top_at_last_draw', 'captured_at') %}
-            {% set fresh = cap not in [none, ''] and (now() - as_datetime(cap)).total_seconds() < 21600 %}
-            {% set t_top = [live, held] | max if fresh else live %}
+            {% set t_top = [states('sensor.control_room_esp32_control_room_hot_water_cylinder_left_outlet_temperature') | float(0), states('sensor.dhw_07_045307_temperature') | float(0)] | max %}
             {{ (0.4 * t_top + 0.6 * (states('sensor.dhw_07_045307_temperature') | float(0))) | round(1) }}
+          top_source: >
+            {% set o = states('sensor.control_room_esp32_control_room_hot_water_cylinder_left_outlet_temperature') | float(0) %}
+            {% set b = states('sensor.dhw_07_045307_temperature') | float(0) %}
+            {% if o >= b %}Outlet (live)
+            {% else %}Bottom probe (outlet cooled to {{ o | round(1) }} °C){% endif %}
           stratification_k: >
-            {% set live = states('sensor.control_room_esp32_control_room_hot_water_cylinder_left_outlet_temperature') | float(0) %}
-            {% set held = states('sensor.left_cylinder_top_at_last_draw') | float(0) %}
-            {% set cap = state_attr('sensor.left_cylinder_top_at_last_draw', 'captured_at') %}
-            {% set fresh = cap not in [none, ''] and (now() - as_datetime(cap)).total_seconds() < 21600 %}
-            {% set t_top = [live, held] | max if fresh else live %}
-            {{ (t_top - (states('sensor.dhw_07_045307_temperature') | float(0))) | round(1) }}
+            {% set o = states('sensor.control_room_esp32_control_room_hot_water_cylinder_left_outlet_temperature') | float(0) %}
+            {% set b = states('sensor.dhw_07_045307_temperature') | float(0) %}
+            {{ (o - b) | round(1) if o >= b else none }}
+          stratification_text: >
+            {% set o = states('sensor.control_room_esp32_control_room_hot_water_cylinder_left_outlet_temperature') | float(0) %}
+            {% set b = states('sensor.dhw_07_045307_temperature') | float(0) %}
+            {% if o >= b %}{{ '%+.1f' | format(o - b) }} K
+            {% else %}n/a until next draw{% endif %}
           bottom_reading_age_min: >
             {{ ((now() - states.sensor.dhw_07_045307_temperature.last_changed).total_seconds() / 60) | round(0) if states.sensor.dhw_07_045307_temperature is not none else none }}
           bottom_reading_stale: >
-            {{ states.sensor.dhw_07_045307_temperature is not none and (now() - states.sensor.dhw_07_045307_temperature.last_changed).total_seconds() > 1200 }}
+            {{ states.sensor.dhw_07_045307_temperature is not none and (now() - states.sensor.dhw_07_045307_temperature.last_changed).total_seconds() > 5400 }}
       - name: "Right Cylinder Hot Water Available"
         unique_id: dhw_right_hot_water_available_l40
         unit_of_measurement: "L"
@@ -163,39 +76,38 @@ template:
           {{ has_value('sensor.control_room_esp32_control_room_hot_water_cylinder_right_outlet_temperature') and has_value('sensor.dhw_07_040975_temperature') }}
         state: >
           {% set t_cold = states('input_number.dhw_cold_feed_temperature') | float(14) %}
-          {% set live = states('sensor.control_room_esp32_control_room_hot_water_cylinder_right_outlet_temperature') | float(0) %}
-          {% set held = states('sensor.right_cylinder_top_at_last_draw') | float(0) %}
-          {% set cap = state_attr('sensor.right_cylinder_top_at_last_draw', 'captured_at') %}
-          {% set fresh = cap not in [none, ''] and (now() - as_datetime(cap)).total_seconds() < 21600 %}
-          {% set t_top = [live, held] | max if fresh else live %}
+          {% set t_top = [states('sensor.control_room_esp32_control_room_hot_water_cylinder_right_outlet_temperature') | float(0), states('sensor.dhw_07_040975_temperature') | float(0)] | max %}
+          {% set f = 0 if t_top < 42 else (1 if t_top >= 45 else (t_top - 42) / 3) %}
           {% set t_avg = 0.4 * t_top + 0.6 * (states('sensor.dhw_07_040975_temperature') | float(0)) %}
-          {{ [250 * (t_avg - t_cold) / (40 - t_cold), 0] | max | round(0) }}
+          {{ ([250 * (t_avg - t_cold) / (40 - t_cold), 0] | max * f) | round(0) }}
         attributes:
           top_used: >
-            {% set live = states('sensor.control_room_esp32_control_room_hot_water_cylinder_right_outlet_temperature') | float(0) %}
-            {% set held = states('sensor.right_cylinder_top_at_last_draw') | float(0) %}
-            {% set cap = state_attr('sensor.right_cylinder_top_at_last_draw', 'captured_at') %}
-            {% set fresh = cap not in [none, ''] and (now() - as_datetime(cap)).total_seconds() < 21600 %}
-            {% set t_top = [live, held] | max if fresh else live %}
-            {{ t_top | round(1) }}
+            {{ [states('sensor.control_room_esp32_control_room_hot_water_cylinder_right_outlet_temperature') | float(0), states('sensor.dhw_07_040975_temperature') | float(0)] | max | round(1) }}
+          usable_factor: >
+            {% set t_top = [states('sensor.control_room_esp32_control_room_hot_water_cylinder_right_outlet_temperature') | float(0), states('sensor.dhw_07_040975_temperature') | float(0)] | max %}
+            {% set f = 0 if t_top < 42 else (1 if t_top >= 45 else (t_top - 42) / 3) %}
+            {{ f | round(2) }}
           average_temperature: >
-            {% set live = states('sensor.control_room_esp32_control_room_hot_water_cylinder_right_outlet_temperature') | float(0) %}
-            {% set held = states('sensor.right_cylinder_top_at_last_draw') | float(0) %}
-            {% set cap = state_attr('sensor.right_cylinder_top_at_last_draw', 'captured_at') %}
-            {% set fresh = cap not in [none, ''] and (now() - as_datetime(cap)).total_seconds() < 21600 %}
-            {% set t_top = [live, held] | max if fresh else live %}
+            {% set t_top = [states('sensor.control_room_esp32_control_room_hot_water_cylinder_right_outlet_temperature') | float(0), states('sensor.dhw_07_040975_temperature') | float(0)] | max %}
             {{ (0.4 * t_top + 0.6 * (states('sensor.dhw_07_040975_temperature') | float(0))) | round(1) }}
+          top_source: >
+            {% set o = states('sensor.control_room_esp32_control_room_hot_water_cylinder_right_outlet_temperature') | float(0) %}
+            {% set b = states('sensor.dhw_07_040975_temperature') | float(0) %}
+            {% if o >= b %}Outlet (live)
+            {% else %}Bottom probe (outlet cooled to {{ o | round(1) }} °C){% endif %}
           stratification_k: >
-            {% set live = states('sensor.control_room_esp32_control_room_hot_water_cylinder_right_outlet_temperature') | float(0) %}
-            {% set held = states('sensor.right_cylinder_top_at_last_draw') | float(0) %}
-            {% set cap = state_attr('sensor.right_cylinder_top_at_last_draw', 'captured_at') %}
-            {% set fresh = cap not in [none, ''] and (now() - as_datetime(cap)).total_seconds() < 21600 %}
-            {% set t_top = [live, held] | max if fresh else live %}
-            {{ (t_top - (states('sensor.dhw_07_040975_temperature') | float(0))) | round(1) }}
+            {% set o = states('sensor.control_room_esp32_control_room_hot_water_cylinder_right_outlet_temperature') | float(0) %}
+            {% set b = states('sensor.dhw_07_040975_temperature') | float(0) %}
+            {{ (o - b) | round(1) if o >= b else none }}
+          stratification_text: >
+            {% set o = states('sensor.control_room_esp32_control_room_hot_water_cylinder_right_outlet_temperature') | float(0) %}
+            {% set b = states('sensor.dhw_07_040975_temperature') | float(0) %}
+            {% if o >= b %}{{ '%+.1f' | format(o - b) }} K
+            {% else %}n/a until next draw{% endif %}
           bottom_reading_age_min: >
             {{ ((now() - states.sensor.dhw_07_040975_temperature.last_changed).total_seconds() / 60) | round(0) if states.sensor.dhw_07_040975_temperature is not none else none }}
           bottom_reading_stale: >
-            {{ states.sensor.dhw_07_040975_temperature is not none and (now() - states.sensor.dhw_07_040975_temperature.last_changed).total_seconds() > 1200 }}
+            {{ states.sensor.dhw_07_040975_temperature is not none and (now() - states.sensor.dhw_07_040975_temperature.last_changed).total_seconds() > 5400 }}
       - name: "Left Cylinder Hot Water Charge"
         unique_id: dhw_left_hot_water_charge_pct
         unit_of_measurement: "%"

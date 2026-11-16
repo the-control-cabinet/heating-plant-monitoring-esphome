@@ -57,3 +57,9 @@ The flow and return readings were noisy and jumpy from installation. A **powered
 | NTCs | Two-point check against a reference thermometer (cold, e.g. a water bath, and hot, a running flow pipe). Apply `offset`, or `calibrate_linear` if both ends differ |
 | Pressure transducers | **Zero:** read the output at 0 bar gauge (open to air before fitting, or isolate and vent) and set the `*_zero_v` substitution. **Span:** compare with a known reference (the mechanical gauge) at working pressure |
 | Current clamp | Zero with no load; then a known resistive load (e.g. a kettle, ~9-13 A, or a lower load with several turns through the clamp), measured with a clamp meter → `calibrate_linear` |
+
+## Addendum (12-16 Nov 2026)
+
+- **NTC standing offset:** with the boiler off (03:00-05:30 overlap), flow and return agree to well under 0.2 K: no correction applied.
+- **Left inlet noise, filtered at the ADC pin:** IO1 jumped between two levels (~1.08 ↔ 1.18 V, ~0.3-0.4 bar) while a multimeter (averaging) read steady at every point in the gauge box (sensor output, divider output, 5 V, ground difference). A pin swap showed the noise followed the left cable. 100 nF at the pin was too small; **10 µF at IO1** cured it. Lesson: when a meter and the ADC disagree at the same point, the noise is fast and needs an adequate capacitor **at the ADC input**. 10 µF also planned at IO2 (right inlet) and GPIO6 (boiler gauge) for consistency.
+- **5 V bus decoupling:** 470 µF + 100 nF (in parallel) across the 5 V and GND buses; bus 4.67 V under load.

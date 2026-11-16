@@ -1,0 +1,57 @@
+# Cylinder inlet pressures against the mains sensor (14 Nov 2026).
+# The mains sensor (DFRobot SEN0257, 0-16 bar) is in the ground-floor utility room, downstream of the
+# stopcock; the cylinders and their inlet transducers are in the second-floor control room.
+# Measured 14 Nov (slow-close tests, both sides): the cylinders settle / top up at ~2.55 bar while the
+# mains sensor reads ~2.92 -> effective offset ~0.37 bar. Two floors (~5.3 m) would give ~0.52 bar;
+# the difference is within the mains sensor's tolerance (its span has never been checked), so the
+# offset helper is an EFFECTIVE value (height + any calibration difference). Tune it from the
+# overnight trough test (Test 1).
+# "vs expected" = inlet minus (mains - offset): ~0 at a trough before a top-up step,
+# positive while a cylinder holds its reheat expansion.
+
+input_number:
+  cylinder_inlet_offset_below_mains:
+    name: "Cylinder inlets: expected offset below mains"
+    min: 0
+    max: 1.5
+    step: 0.01
+    initial: 0.37
+    unit_of_measurement: "bar"
+    icon: mdi:arrow-expand-vertical
+
+template:
+  - sensor:
+      - name: "Mains pressure expected at cylinders"
+        unique_id: mains_pressure_expected_at_cylinders
+        unit_of_measurement: "bar"
+        device_class: pressure
+        state_class: measurement
+        icon: mdi:gauge
+        availability: "{{ has_value('sensor.esp32_utility_room_mains_water_pressure_2') }}"
+        state: >
+          {{ (states('sensor.esp32_utility_room_mains_water_pressure_2') | float
+              - states('input_number.cylinder_inlet_offset_below_mains') | float(0.37)) | round(2) }}
+
+      - name: "Cylinder left inlet vs expected"
+        unique_id: cylinder_left_inlet_vs_expected
+        unit_of_measurement: "bar"
+        state_class: measurement
+        icon: mdi:delta
+        availability: >
+          {{ has_value('sensor.control_room_esp32_control_room_cylinder_left_inlet_pressure')
+             and has_value('sensor.mains_pressure_expected_at_cylinders') }}
+        state: >
+          {{ (states('sensor.control_room_esp32_control_room_cylinder_left_inlet_pressure') | float
+              - states('sensor.mains_pressure_expected_at_cylinders') | float) | round(2) }}
+
+      - name: "Cylinder right inlet vs expected"
+        unique_id: cylinder_right_inlet_vs_expected
+        unit_of_measurement: "bar"
+        state_class: measurement
+        icon: mdi:delta
+        availability: >
+          {{ has_value('sensor.control_room_esp32_control_room_cylinder_right_inlet_pressure')
+             and has_value('sensor.mains_pressure_expected_at_cylinders') }}
+        state: >
+          {{ (states('sensor.control_room_esp32_control_room_cylinder_right_inlet_pressure') | float
+              - states('sensor.mains_pressure_expected_at_cylinders') | float) | round(2) }}

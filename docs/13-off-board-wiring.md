@@ -22,7 +22,7 @@ Each pressure sensor needs a 10k/20k divider (0.5-4.5 V down to ≈0.33-3.0 V) a
 
 **Supply decoupling** moves to one shared **470 µF (+100 nF)** across the 5 V and GND buses at the board, serving all three sensors (to fit).
 
-**Zero at room pressure (11 Nov):** 1.5 h means of the normalised voltage: **left 0.487 V, right 0.482 V** (raw swing about ±0.014 V ≈ ±0.035 bar, smoothed by the 1-minute sensors). Span check at working pressure (≈3.5 bar, the PRV setting) to follow, against the expansion vessel's air pressure measured with the cylinder pressurised.
+**Zero at room pressure (11 Nov):** 1.5 h means of the normalised voltage: **left 0.487 V, right 0.482 V** (raw swing about ±0.014 V ≈ ±0.035 bar, smoothed by the 1-minute sensors). Span check at working pressure (≈3.5 bar, the pressure reducing valve setting) to follow, against the expansion vessel's air pressure measured with the cylinder pressurised.
 
 ## 2. Bus strip
 
@@ -59,3 +59,8 @@ The MOSFETs and 2.2 MΩ pull-downs stay on the board. Moving them would add join
 ![Tundish sensor in its printed holder](images/tundish-sensor-printed-holder.jpg)
 *Tundish plate in its printed holder below the discharge (doc 05).*
 
+## Addendum (12-16 Nov 2026)
+
+- **Boiler gauge box** printed and fitted (models in [hardware/gauge-box](../hardware/gauge-box/): boiler base, cylinder base, lid, OpenSCAD source); backhaul 3-core + screen, screen grounded at the ESP32 end only.
+- **GPIO21 with Test Mode on:** 3.269 V (tundish test path confirmed).
+- **Decoupling:** 470 µF + 100 nF across the 5 V/GND buses; 10 µF at IO1 (left inlet) for the fast noise ([doc 02](02-signal-conditioning-and-noise.md)).

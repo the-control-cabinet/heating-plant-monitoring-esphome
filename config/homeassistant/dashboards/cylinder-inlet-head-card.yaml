@@ -1,0 +1,40 @@
+type: vertical-stack
+cards:
+  - type: entities
+    title: Cylinder inlets vs mains (height-corrected)
+    entities:
+      - entity: sensor.esp32_utility_room_mains_water_pressure_2
+        name: Mains (utility, ground floor)
+      - entity: sensor.mains_pressure_expected_at_cylinders
+        name: Expected at cylinders (second floor)
+      - type: divider
+      - entity: sensor.control_room_esp32_control_room_cylinder_left_inlet_pressure
+        name: Left inlet
+      - entity: sensor.cylinder_left_inlet_vs_expected
+        name: Left vs expected
+      - type: divider
+      - entity: sensor.control_room_esp32_control_room_cylinder_right_inlet_pressure
+        name: Right inlet
+      - entity: sensor.cylinder_right_inlet_vs_expected
+        name: Right vs expected
+      - type: divider
+      - entity: input_number.cylinder_inlet_offset_below_mains
+        name: Offset below mains (tune from Test 1)
+  - type: history-graph
+    title: Inlets vs expected (24 h)
+    hours_to_show: 24
+    entities:
+      - entity: sensor.mains_pressure_expected_at_cylinders
+        name: Expected at cylinders
+      - entity: sensor.control_room_esp32_control_room_cylinder_left_inlet_pressure
+        name: Left inlet
+      - entity: sensor.control_room_esp32_control_room_cylinder_right_inlet_pressure
+        name: Right inlet
+  - type: history-graph
+    title: Deviation from expected (24 h)
+    hours_to_show: 24
+    entities:
+      - entity: sensor.cylinder_left_inlet_vs_expected
+        name: Left
+      - entity: sensor.cylinder_right_inlet_vs_expected
+        name: Right

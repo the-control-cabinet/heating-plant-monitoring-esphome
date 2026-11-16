@@ -79,7 +79,7 @@ A first attempt with oversampling and short windows gave **no visible improvemen
 
 | Check | How | What it tells you |
 |---|---|---|
-| Boiler pressure relief valve discharge | Check the PRV discharge pipe outlet (outside) for drips or staining | A passing PRV loses water silently |
+| Boiler pressure relief valve discharge | Check the boiler pressure relief valve discharge pipe outlet (outside) for drips or staining | A passing pressure reducing valve loses water silently |
 | Auto air vents | Pump/boiler AAV and any manifold vents: look for damp or crusting | Vents can weep |
 | Visible joints, valves | Radiator valves, TRV bodies, manifold, cylinder primary connections, under floors where accessible | Tide marks or corrosion |
 | **Circuit isolation** | Isolate one circuit at a time (radiator flow/return, UFH manifold, each cylinder primary) for 24-48 h, cold, and compare decay rates | The circuit whose isolation stops the decay holds the leak |
@@ -91,3 +91,11 @@ A first attempt with oversampling and short windows gave **no visible improvemen
 
 ## Dashboard
 Pressure with 7-day history, the daily 05:00 reading, decay rate, and the boiler flow temperature overlaid.
+
+## Addendum (12-16 Nov 2026)
+
+- **Boiler gauge commissioned on GPIO6** (12 Nov): 3-core + screen backhaul (red 5 V, black GND, yellow signal; screen grounded at the ESP32 end only); 0.83 V at ~1.15 bar; HA matches the boiler dial cold (~1.15-1.27 bar) and hot (1.49 vs ~1.48): no recalibration. 10 µF at the pin still to fit. Printed gauge boxes: [hardware/gauge-box](../hardware/gauge-box/).
+- **Long-term statistics:** `state_class: measurement` added to the boiler and both inlet pressures (daily min/mean/max cards from 12 Nov ~23:00); two orphaned statistics (old plant-room and voltage versions) to delete.
+- **Decay check changed to daily cold minimums:** a 05:00 snapshot was invalid whenever optimum start fired from ~02:00-03:00 (hot vs yesterday's cold). Now the daily cold minimum is taken at 06:00 and compared at 06:01: **1.05 bar on 15 and 16 Nov**: no loss this week. Earlier (on GPIO1, 4-9 Nov) daily swings were 0.3-0.4 bar with an inconclusive ~0.02-0.03 bar/day drift.
+- **First evening baseline (12 Nov):** ~1.2 bar cold → 1.62 peak → 1.36 bar.
+- **Boiler pressure relief valve:** its discharge runs internally, so it can't be watched for weeping; instead, watch for pressure ever exceeding ~2 bar (alert).

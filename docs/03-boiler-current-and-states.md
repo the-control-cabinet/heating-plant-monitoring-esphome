@@ -32,3 +32,8 @@ Each state is also published as a binary sensor for history and automations.
 3. **Calibrate:** compare against a clamp meter at idle and when firing; apply `calibrate_linear`.
 4. **Record real bands:** log a week of current against the opto demand. Set the thresholds from the actual idle, pump and firing levels.
 5. Verify each state against what the boiler display shows.
+
+## Addendum (12-16 Nov 2026)
+
+- **Clamp AC check:** 31.1 mV AC at the burden (= 0.47 A) vs HA 0.49 A, ~5 % high, consistent with 7 Nov (~3 %): no change. Meter tip: the mV range is DC by default (SELECT for AC).
+- **States v2 and why the clamp can't separate low-fire burning from the pump:** see [doc 16](16-boiler-states-short-cycling-and-v3.md). The flow temperature becomes the burner signal in v3.

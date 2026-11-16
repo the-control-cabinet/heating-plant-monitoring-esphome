@@ -25,11 +25,11 @@ About an hour from 17 to 58 °C: roughly **12 kWh into 250 L, so ~12 kW** throug
 ## Cold-inlet pressure (to install with the plumber)
 - **Ausla 0-150 psi** stainless transducers (G1/4, 5 V supply, 0.5-4.5 V out), one on each cylinder's cold inlet **after the pressure-reducing valve**, fitted while the plumber is on site.
 - **What they show:**
-  - **Static pressure** = the PRV set point (typically 3 bar).
+  - **Static pressure** = the pressure reducing valve set point (typically 3 bar).
   - **During reheat, the pressure rises** as the water expands. With a healthy expansion vessel the rise is small.
   - **A steep rise toward the expansion relief valve setting (6 bar here)** means a **failed or flat expansion vessel**, and the tundish will discharge.
   - **Alert thresholds:** warning at **5.0 bar**, critical at **5.5 bar**.
-  - **A drop during draws** shows the supply and PRV performance.
+  - **A drop during draws** shows the supply and pressure reducing valve performance.
 
 ## Plumber work (planned, one visit)
 
@@ -84,7 +84,7 @@ Each has its own debounce and counter (Wet Events, **Discharge Events**). Test s
 
 ## Plumber visit and commissioning, 11 Nov 2026
 
-**Work done:** both expansion vessels replaced (**Flomasta 24 L**, potable, pre-charged **3.5 bar**); the expansion relief valves kept (judged not worth replacing); both inlet gauges fitted **between the PRV and the vessel**, so each reads its cylinder's pressure. Cylinders drained down, refilled and re-pressurised.
+**Work done:** both expansion vessels replaced (**Flomasta 24 L**, potable, pre-charged **3.5 bar**); the expansion relief valves kept (judged not worth replacing); both inlet gauges fitted **between the pressure reducing valve and the vessel**, so each reads its cylinder's pressure. Cylinders drained down, refilled and re-pressurised.
 
 **Draining an unvented cylinder:** closing the cold inlet and opening hot taps only **de-pressurises** it; water stops once air can't get in. Draining needs the drain cock with a hose to a lower point and a hot tap open to admit air. For a vessel or valve swap, isolating and de-pressurising is usually enough.
 
@@ -95,11 +95,11 @@ Each has its own debounce and counter (Wet Events, **Discharge Events**). Test s
 | Static pressure | Both cylinders ~2.85-2.9 bar after the refill, against the utility mains sensor's 2.98 bar (height and tolerance) |
 | A false 5 bar | One gauge box's 20k leg had pulled out of its Wago: the pin read 1.52 V, exactly 1.5× the other side (the divider ratio), i.e. ~2.9 bar undivided. Re-seated: 1.0 V. Tug-test every ferrule after work near the boxes |
 | Gauges and outlet NTCs swapped | Both pairs were left/right swapped on the ESP32; found by a kitchen (left) draw that dipped the left inlet and warmed the other NTC; corrected in the YAML (inlets IO1 L / IO2 R, outlets IO9 L / IO8 R) |
-| PRVs settle at ~2.5 bar | After the first draw each cylinder settled at **~2.5 bar** and stayed (flow meter showed no flow), though the PRVs are marked **"pre-set 3.5 bar"** and the mains is ~2.9 bar. Both sides alike. Suspects: scaled strainers or worn cartridges (9 years old). A full-flow kitchen draw dropped the left to 2.1 bar. Plumber's next visit: clean the strainers or replace the cartridges |
-| Vessel pre-charge vs working pressure | With the cylinders at ~2.5 bar and the vessels at 3.5 bar, a reheat first rises uncushioned to 3.5 bar; then the vessel takes over (a clear "knee" on both sides). Peak 3.8 bar after a from-cold reheat, well below the 4.5 bar alert and the 6 bar ERV. Pre-charge to be matched to the working pressure once the PRVs are sorted |
+| pressure reducing valves settle at ~2.5 bar | After the first draw each cylinder settled at **~2.5 bar** and stayed (flow meter showed no flow), though the pressure reducing valves are marked **"pre-set 3.5 bar"** and the mains is ~2.9 bar. Both sides alike. Suspects: scaled strainers or worn cartridges (9 years old). A full-flow kitchen draw dropped the left to 2.1 bar. Plumber's next visit: clean the strainers or replace the cartridges |
+| Vessel pre-charge vs working pressure | With the cylinders at ~2.5 bar and the vessels at 3.5 bar, a reheat first rises uncushioned to 3.5 bar; then the vessel takes over (a clear "knee" on both sides). Peak 3.8 bar after a from-cold reheat, well below the 4.5 bar alert and the 6 bar expansion relief valve. Pre-charge to be matched to the working pressure once the pressure reducing valves are sorted |
 | Tundishes | **No wet events** during the first reheats with the new vessels |
 
-**Vessel label (Flomasta 24 L potable, WRAS):** factory gas charge **2.7 bar**, **maximum gas charge 3.5 bar**, maximum working pressure 10 bar, working temperature −10 to +70 °C. So the 3.5 bar pre-charge set on fitting is at the vessel's **maximum**, and the factory 2.7 bar is closer to the cylinders' actual working pressure (~2.5-2.9 bar): a point for the pre-charge decision once the PRVs are sorted.
+**Vessel label (Flomasta 24 L potable, WRAS):** factory gas charge **2.7 bar**, **maximum gas charge 3.5 bar**, maximum working pressure 10 bar, working temperature −10 to +70 °C. So the 3.5 bar pre-charge set on fitting is at the vessel's **maximum**, and the factory 2.7 bar is closer to the cylinders' actual working pressure (~2.5-2.9 bar): a point for the pre-charge decision once the pressure reducing valves are sorted.
 
 | | |
 |---|---|
@@ -111,7 +111,7 @@ Each has its own debounce and counter (Wet Events, **Discharge Events**). Test s
 
 | | |
 |---|---|
-| ![PRV marked pre-set 3.5 bar](images/cylinder-prv-preset-3-5-bar-2026-11-11.jpg) | ![18:31: a 1-1.5 L draw on the mains flow meter, with the matching mains pressure dip; the cylinder then settled at ~2.5 bar](images/mains-flow-draw-and-pressure-1831-2026-11-11.png) |
+| ![pressure reducing valve marked pre-set 3.5 bar](images/cylinder-prv-preset-3-5-bar-2026-11-11.jpg) | ![18:31: a 1-1.5 L draw on the mains flow meter, with the matching mains pressure dip; the cylinder then settled at ~2.5 bar](images/mains-flow-draw-and-pressure-1831-2026-11-11.png) |
 | ![Left inlet during the reheat: a fast rise to ~3.4 bar, the vessel's knee, then dips during kitchen draws](images/left-inlet-reheat-knee-and-draws-2026-11-11.png) | ![22:17: the kitchen draw dips only the left inlet, settling the left/right question](images/inlet-dip-identifies-left-draw-2026-11-11.png) |
 
 **Span check (pending):** above 3.5 bar the vessel's air pressure equals the water pressure, so a tyre gauge on the Schrader valve near a reheat's peak checks the inlet gauge at ~4 bar (below 3.5 bar the air stays at the pre-charge, whatever the water does). A digital inflator (AstroAI L7, 0.05 bar resolution) is on order, to be sanity-checked against another gauge first.
@@ -122,3 +122,11 @@ Each has its own debounce and counter (Wet Events, **Discharge Events**). Test s
 - Tundish wet → immediate phone alert.
 - Cylinder inlet pressure above a threshold → expansion/relief check.
 - Hot outlet never reaches 60 °C in 7 days → Legionella reminder.
+
+## Addendum (12-16 Nov 2026)
+
+- **Inlet span checks** with a digital tyre gauge (AstroAI L7, sanity-checked on car tyres) on each vessel's Schrader valve, with water above the pre-charge: right HA 4.06 vs 4.10 bar (gain 1.000); left six readings, mean ratio 1.028 → `inlet_left_span_gain: 1.028` (afterwards 3.82-3.84 vs 3.85). Lessons: test at least ~0.3 bar above the pre-charge (at 3.59 bar the vessel may not yet hold water), and keep checks few (each one bleeds a little vessel air). Both gauges now verified at zero, mid-range (~2.9 bar) and near the top.
+- **Outlet NTC position:** the pipe rises out of the cylinder, so after a draw the at-rest reading tracks the top well (54 → 32 °C within ~2 min when the right cylinder emptied).
+- **Mains under flow:** the mains sags ~3.0 → ~2.4 bar at 7-9 L/min; each inlet group loses a further ~0.55-1.0 bar under flow. The left "settling below mains" was a part-closed cold isolating valve, fixed. Hot-only tap tests and the strainers: [doc 17](17-cylinder-inlets-height-offset-tests-and-trend.md#5-inlet-group-losses-12-nov).
+- **Right tundish counter (10):** real discharges on 10 Nov evening and 11 Nov morning (the old, failed vessels) plus the 11 Nov water test; none since the new vessels, including two reheats from empty peaking ~4.1 bar. Counter reset 12 Nov.
+- **Vessel pre-charge** (3.5 bar on a ~2.5 bar supply) and the 3.7-3.8 bar post-reheat level: [doc 17](17-cylinder-inlets-height-offset-tests-and-trend.md#2-why-the-inlets-sit-at-37-38-bar-after-a-reheat).

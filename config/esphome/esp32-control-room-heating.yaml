@@ -1,5 +1,7 @@
 # =============================================================================
 # esp32-control-room-heating.yaml - boiler plant monitoring (10 Nov 2026: off-board rewiring)
+# 15 Nov 2026: boiler electrical state v2 (smoothed current, 20 s confirm / 20 s drop-out, see the
+#   text_sensor notes). Nothing else changed.
 # ESP32-S3-DevKitC-1 (16 MB), ESPHome, ESP-IDF
 #   - Boiler flow/return NTCs: installed, 3.3k dividers (docs/02)
 #   - Boiler pressure: installed, calibrated to the boiler gauge, fast + 1-min main (docs/04)
@@ -30,7 +32,14 @@ substitutions:
   inlet_left_zero_v: "0.482"     # 11 Nov 2026: mean of 1.5 h at room pressure, measured on GPIO1 (now LEFT)
   # Revisit both zeros once the 470 uF is fitted across the 5 V and GND buses.
   inlet_right_zero_v: "0.487"    # 11 Nov 2026: mean of 1.5 h at room pressure, measured on GPIO2 (now RIGHT)
-
+  # Span checks 12 Nov 2026 (tyre gauge on each vessel's Schrader valve, water above the pre-charge):
+  #   right: HA 4.06 vs gauge 4.10 bar (agrees); left: HA 3.59/3.65/3.70/3.72/3.74/3.79 vs gauge 3.70/3.75/3.80/3.85/3.85/3.85 bar (mean ratio 1.028,
+  #   six points, gauge in 0.05 bar steps; unchanged by re-seating the box; resistor or sensor tolerance). Zero unaffected.
+  # 13 Nov 2026: one clean-signal check after the IO1 noise fix: HA 3.59 (with 1.028) vs gauge 3.55 bar
+  # (suggests ~1.017); kept at 1.028 until more clean readings are taken.
+  inlet_left_span_gain: "1.028"
+  inlet_right_span_gain: "1.000"
+ 
 esphome:
   name: esp32-control-room-heating
   friendly_name: Control Room (Heating)
@@ -46,41 +55,41 @@ esphome:
           // IO40 (JTAG MTDO pad, linked to the right MOSFET's gate): explicitly input, no pull
           gpio_set_direction(GPIO_NUM_40, GPIO_MODE_INPUT);
           gpio_set_pull_mode(GPIO_NUM_40, GPIO_FLOATING);
-
+ 
 esp32:
   board: esp32-s3-devkitc-1
   variant: esp32s3
   flash_size: 16MB
   framework:
     type: esp-idf
-
+ 
 logger:
   hardware_uart: UART0
   deassert_rts_dtr: true
   level: INFO
-
+ 
 api:
   encryption:
     key: !secret esp32_control_room_heating_key
   custom_services: true
   homeassistant_services: true
-
+ 
 ota:
   - platform: esphome
     encryption:
-
+ 
 wifi:
   ssid: !secret wifi_ssid
   password: !secret wifi_password
   ap:
     ssid: ESP32 Control Room Hotspot
     password: !secret fallback_ap_password
-
+ 
 captive_portal:
-
+ 
 debug:
   update_interval: 10s
-
+ 
 globals:
   - id: was_calling
     type: bool
@@ -97,6 +106,12 @@ globals:
   - id: firing_latched
     type: bool
     initial_value: 'false'
+  - id: low_band_since
+    type: uint32_t
+    initial_value: '0'
+  - id: drop_since
+    type: uint32_t
+    initial_value: '0'
   # --- Tundish: wet (any water, 2.2 MOhm only) ---
   - id: t1_streak
     type: int
@@ -134,7 +149,7 @@ globals:
   - id: t2_raw_wet
     type: bool
     initial_value: 'false'
-
+ 
 # =========================================================
 # Tundish drip sensors — gold-plated contact plates + 2N7000 MOSFETs (as-built 5 Nov 2026)
 # Plate power (both plates, shared): GPIO21, pulsed 150 ms every 5 s.
@@ -167,7 +182,7 @@ switch:
     id: plate_power
     internal: true
     restore_mode: ALWAYS_OFF
-
+ 
   - platform: template
     name: "Tundish Test Mode"
     id: tundish_test_mode
@@ -182,7 +197,7 @@ switch:
       - script.stop: tundish_test_mode_timer
       - switch.turn_off: tundish_test_pulldown
       - switch.turn_off: plate_power
-
+ 
   - platform: template
     name: "Tundish Test Pull-down"
     id: tundish_test_pulldown
@@ -200,7 +215,7 @@ switch:
       - lambda: |-
           gpio_set_pull_mode(GPIO_NUM_47, GPIO_FLOATING);
           gpio_set_pull_mode(GPIO_NUM_38, GPIO_FLOATING);
-
+ 
 # Auto-off for the tundish test switches (15 min); restart mode re-arms on each switch-on
 script:
   - id: tundish_test_mode_timer
@@ -213,7 +228,7 @@ script:
     then:
       - delay: 15min
       - switch.turn_off: tundish_test_pulldown
-
+ 
 sensor:
   # Flow / return NTCs (beta 3977): 3V3 -> 3.3k -> IO4 (flow) / IO5 (return) -> NTC -> GND
   # (swapped 10 Nov 2026 to match the off-board re-wiring: flow now GPIO4, return GPIO5)
@@ -224,13 +239,13 @@ sensor:
     attenuation: 12db
     samples: 16
     update_interval: 2s
-
+ 
   - platform: resistance
     id: boiler_flow_ohm
     sensor: boiler_flow_adc
     configuration: DOWNSTREAM
     resistor: 3.3kOhm
-
+ 
   - platform: ntc
     sensor: boiler_flow_ohm
     name: "Boiler Flow Temperature"
@@ -248,20 +263,20 @@ sensor:
       - sliding_window_moving_average:
           window_size: 10
           send_every: 1
-
+ 
   - platform: adc
     pin: GPIO5
     id: boiler_return_adc
     attenuation: 12db
     samples: 16
     update_interval: 2s
-
+ 
   - platform: resistance
     id: boiler_return_ohm
     sensor: boiler_return_adc
     configuration: DOWNSTREAM
     resistor: 3.3kOhm
-
+ 
   - platform: ntc
     sensor: boiler_return_ohm
     name: "Boiler Return Temperature"
@@ -279,7 +294,7 @@ sensor:
       - sliding_window_moving_average:
           window_size: 10
           send_every: 1
-
+ 
   - platform: template
     name: "Boiler ΔT (Flow − Return)"
     id: boiler_delta_t
@@ -290,7 +305,7 @@ sensor:
       if (!id(boiler_flow_temperature).has_state() || !id(boiler_return_temperature).has_state())
         return {};
       return id(boiler_flow_temperature).state - id(boiler_return_temperature).state;
-
+ 
   # Cylinder hot-outlet NTCs: 3.3k from the IO10 post -> IO9 (LEFT) / IO8 (RIGHT) -> NTC -> GND
   # Swapped 11 Nov 2026: a kitchen (left cylinder) draw dipped the left inlet and warmed the IO8 NTC.
   - platform: adc
@@ -299,13 +314,13 @@ sensor:
     attenuation: 12db
     samples: 16
     update_interval: 5s
-
+ 
   - platform: resistance
     id: cyl_left_outlet_ohm
     sensor: cyl_left_outlet_adc
     configuration: DOWNSTREAM
     resistor: 3.3kOhm
-
+ 
   - platform: ntc
     sensor: cyl_left_outlet_ohm
     name: "Hot Water Cylinder (Left) Outlet Temperature"
@@ -323,20 +338,20 @@ sensor:
       - sliding_window_moving_average:
           window_size: 6
           send_every: 1
-
+ 
   - platform: adc
     pin: GPIO8
     id: cyl_right_outlet_adc
     attenuation: 12db
     samples: 16
     update_interval: 5s
-
+ 
   - platform: resistance
     id: cyl_right_outlet_ohm
     sensor: cyl_right_outlet_adc
     configuration: DOWNSTREAM
     resistor: 3.3kOhm
-
+ 
   - platform: ntc
     sensor: cyl_right_outlet_ohm
     name: "Hot Water Cylinder (Right) Outlet Temperature"
@@ -354,7 +369,7 @@ sensor:
       - sliding_window_moving_average:
           window_size: 6
           send_every: 1
-
+ 
   # Boiler current clamp — SCT013-015 (15A = 1V RMS): 3V3 -> 10k -> IO3 -> 10k -> GND bias,
   # capacitor + on IO3, - on post IO13; clamp tip -> IO13, sleeve -> GND
   - platform: adc
@@ -363,7 +378,7 @@ sensor:
     attenuation: 12db
     update_interval: never
     internal: true
-
+ 
   - platform: ct_clamp
     sensor: boiler_adc
     name: "Boiler Current"
@@ -374,6 +389,16 @@ sensor:
     filters:
       - multiply: 15.0   # 1V RMS = 15A. Refine with calibrate_linear against a known load.
 
+  # Smoothed copy (5 s median) used only by the state logic: removes 1-4 s noise blips.
+  - platform: copy
+    source_id: boiler_current
+    id: boiler_current_smooth
+    internal: true
+    filters:
+      - median:
+          window_size: 5
+          send_every: 1
+ 
   # Boiler pressure (10 Nov 2026): divider 10k/20k + 100 nF now in the boiler gauge's junction box;
   # its signal core lands on GPIO6. ADC calibration below was measured on GPIO1: re-check on GPIO6.
   # ADC calibrated against a meter; pressure calibrated to the boiler gauge (3 points, 3-4 Nov):
@@ -399,7 +424,7 @@ sensor:
       - sliding_window_moving_average:
           window_size: 5
           send_every: 1
-
+ 
   - platform: template
     name: "Boiler Pressure Sensor Voltage"
     id: boiler_pressure_sensor_voltage
@@ -411,7 +436,7 @@ sensor:
       if (!id(boiler_system_pressure_raw).has_state())
         return {};
       return id(boiler_system_pressure_raw).state / ${pressure_divider_ratio};
-
+ 
   - platform: template
     name: "Boiler System Pressure (fast)"
     id: boiler_system_pressure_fast
@@ -437,7 +462,7 @@ sensor:
             - 1.46 -> 1.65
       - clamp:
           min_value: 0
-
+ 
   # Main pressure: 1 min average of the fast sensor (30 x 2 s), every 10 s. entity_category ""
   # overrides the diagnostic category the copy platform would inherit.
   - platform: copy
@@ -446,12 +471,14 @@ sensor:
     id: boiler_system_pressure
     entity_category: ""
     unit_of_measurement: "bar"
+    device_class: pressure
+    state_class: measurement
     accuracy_decimals: 2
     filters:
       - sliding_window_moving_average:
           window_size: 30
           send_every: 5
-
+ 
   # =========================================================
   # Cylinder cold-inlet pressures (Ausla 0-150 PSI), 10 Nov 2026 layout:
   #   at each gauge: 10k series + 20k + 100 nF to GND (divider and filter in the gauge's box);
@@ -476,7 +503,7 @@ sensor:
       - sliding_window_moving_average:
           window_size: 5
           send_every: 1
-
+ 
   - platform: template
     name: "Inlet (Left) Sensor Voltage Normalised"
     id: inlet_left_v_norm
@@ -487,7 +514,7 @@ sensor:
     lambda: |-
       if (!id(inlet_left_pin_v).has_state()) return {};
       return (id(inlet_left_pin_v).state / ${inlet_left_divider_ratio}) * (5.0 / ${pressure_supply_v});
-
+ 
   - platform: template
     name: "Cylinder Left Inlet Pressure (fast)"
     id: inlet_left_pressure_fast
@@ -498,21 +525,23 @@ sensor:
     lambda: |-
       if (!id(inlet_left_pin_v).has_state()) return {};
       float v_norm = (id(inlet_left_pin_v).state / ${inlet_left_divider_ratio}) * (5.0 / ${pressure_supply_v});
-      float p = (v_norm - ${inlet_left_zero_v}) * (${inlet_full_scale_bar} / 4.0);
+      float p = (v_norm - ${inlet_left_zero_v}) * (${inlet_full_scale_bar} / 4.0) * ${inlet_left_span_gain};
       return p < 0 ? 0.0f : p;
-
+ 
   - platform: copy
     source_id: inlet_left_pressure_fast
     name: "Cylinder Left Inlet Pressure"
     id: inlet_left_pressure
     entity_category: ""
     unit_of_measurement: "bar"
+    device_class: pressure
+    state_class: measurement
     accuracy_decimals: 2
     filters:
       - sliding_window_moving_average:
           window_size: 30
           send_every: 5
-
+ 
   - platform: adc
     pin: GPIO2
     id: inlet_right_pin_v
@@ -530,7 +559,7 @@ sensor:
       - sliding_window_moving_average:
           window_size: 5
           send_every: 1
-
+ 
   - platform: template
     name: "Inlet (Right) Sensor Voltage Normalised"
     id: inlet_right_v_norm
@@ -541,7 +570,7 @@ sensor:
     lambda: |-
       if (!id(inlet_right_pin_v).has_state()) return {};
       return (id(inlet_right_pin_v).state / ${inlet_right_divider_ratio}) * (5.0 / ${pressure_supply_v});
-
+ 
   - platform: template
     name: "Cylinder Right Inlet Pressure (fast)"
     id: inlet_right_pressure_fast
@@ -552,21 +581,23 @@ sensor:
     lambda: |-
       if (!id(inlet_right_pin_v).has_state()) return {};
       float v_norm = (id(inlet_right_pin_v).state / ${inlet_right_divider_ratio}) * (5.0 / ${pressure_supply_v});
-      float p = (v_norm - ${inlet_right_zero_v}) * (${inlet_full_scale_bar} / 4.0);
+      float p = (v_norm - ${inlet_right_zero_v}) * (${inlet_full_scale_bar} / 4.0) * ${inlet_right_span_gain};
       return p < 0 ? 0.0f : p;
-
+ 
   - platform: copy
     source_id: inlet_right_pressure_fast
     name: "Cylinder Right Inlet Pressure"
     id: inlet_right_pressure
     entity_category: ""
     unit_of_measurement: "bar"
+    device_class: pressure
+    state_class: measurement
     accuracy_decimals: 2
     filters:
       - sliding_window_moving_average:
           window_size: 30
           send_every: 5
-
+ 
   # Tundish counters: wet events (dry -> wet) and discharge events (dry -> running)
   - platform: template
     name: "Tundish (Left) Wet Events"
@@ -588,20 +619,20 @@ sensor:
     lambda: 'return (float) id(t2_run_events);'
     accuracy_decimals: 0
     update_interval: 60s
-
+ 
   - platform: wifi_signal
     name: "Control Room WiFi Signal"
     update_interval: 60s
-
+ 
   - platform: internal_temperature
     name: "Control Room ESP32 Temperature"
     id: esp_internal_temp
     update_interval: 60s
     entity_category: diagnostic
-
+ 
   - platform: uptime
     name: "Control Room Uptime"
-
+ 
   - platform: debug
     free:
       name: "Control Room Heap Free"
@@ -609,16 +640,24 @@ sensor:
       name: "Control Room Heap Max Block"
     loop_time:
       name: "Control Room Loop Time"
-
+ 
 text_sensor:
   # =========================================================
   # Boiler Electrical State from the SCT013-015 clamp (single pass on the boiler's
   # permanent live, 7 Nov 2026). Measured on this Ideal Logic+ S30:
-  #   standby: ~0 A (below resolution with one pass), pump only (overrun): ~0.27-0.29 A,
-  #   fan/ignition: ~0.44 A, firing: ~0.38-0.59 A (modulating; ~0.58 A at full rate),
-  #   pump overrun: ~4 min.
-  # Firing uses hysteresis: starts at >= 0.42 A, ends only below 0.33 A, so the burner
-  # modulating down is not counted as a new start. High = >= 0.55 A (full rate).
+  #   standby: ~0 A (below resolution with one pass), pump only (overrun): ~0.17-0.29 A,
+  #   firing: ~0.33-0.59 A (modulating; ~0.58 A at full rate), pump overrun: ~4 min.
+  # 15 Nov 2026 (v2), from the 13-15 Nov history: real burns show ~2 min at 0.31-0.42 A, then a
+  #   ~10 s 0.42-0.55 A fan spike at the END, then pump only. No distinct spike at the START.
+  #   v1 split low-fire periods where the current wandered 0.25-0.45 A every 5-15 s into many
+  #   short "burns" and "ignition attempts" (inflated starts counts).
+  # v2 logic (on the 5 s median current):
+  #   - a burn is CONFIRMED when the current stays >= 0.33 A for 20 s;
+  #   - it ENDS only when the current stays below 0.29 A for 20 s (dips shorter than that are
+  #     the same burn). Start and end are both ~20 s late, so burn lengths stay about right;
+  #   - "Ignition Attempt" = >= 0.33 A for 15-20 s, not yet confirmed. If it drops away without
+  #     confirming, that is an aborted/failed attempt (what the HA failed-ignition counter looks for).
+  #   - High = >= 0.55 A while firing.
   # Pre-Purge / Overrun need IN1 (boiler call, opto board) and Idle needs more clamp
   # turns: both to follow. Until IN1 is wired, "Firing Without Call" reads on while firing.
   # =========================================================
@@ -627,41 +666,67 @@ text_sensor:
     id: boiler_electrical_state
     update_interval: 1s
     lambda: |-
-      if (!id(boiler_current).has_state())
+      if (!id(boiler_current_smooth).has_state())
         return {"Unknown"};
-      float a = id(boiler_current).state;
+      float a = id(boiler_current_smooth).state;
       bool calling = id(boiler_call_for_heat).state;
       uint32_t now = millis();
+      const float FIRE_ON = 0.33f;        // low fire ~0.33-0.45 A
+      const float FIRE_OFF = 0.29f;       // pump only ~0.17-0.29 A
+      const float HIGH_A = 0.55f;         // full rate ~0.58 A
+      const uint32_t CONFIRM_MS = 20000;  // sustained >= FIRE_ON to confirm a burn
+      const uint32_t DROP_MS = 20000;     // sustained < FIRE_OFF to end a burn
+      const uint32_t SHOW_MS = 15000;     // shorter rises are ignored as noise
+
+      // --- Already firing: stay firing until the current has been low for DROP_MS ---
+      if (id(firing_latched)) {
+        if (a < FIRE_OFF) {
+          if (id(drop_since) == 0) id(drop_since) = now;
+          if (now - id(drop_since) >= DROP_MS) {
+            id(firing_latched) = false;
+            id(drop_since) = 0;
+            id(low_band_since) = 0;
+            id(elevated_start_time) = 0;
+          }
+        } else {
+          id(drop_since) = 0;
+        }
+        if (id(firing_latched)) {
+          id(was_calling) = calling;
+          id(overrun_start_time) = 0;
+          id(last_real_cycle_time) = now;
+          if (a >= HIGH_A) return {"Firing (Running) - High"};
+          return {"Firing (Running) - Low"};
+        }
+      }
+
+      // --- Not firing: a rise to >= FIRE_ON must hold CONFIRM_MS to become a burn ---
+      if (a >= FIRE_ON) {
+        if (id(low_band_since) == 0) id(low_band_since) = now;
+        uint32_t held = now - id(low_band_since);
+        if (held >= CONFIRM_MS) {
+          id(firing_latched) = true;
+          id(drop_since) = 0;
+          id(elevated_start_time) = id(low_band_since);
+          id(was_calling) = calling;
+          id(overrun_start_time) = 0;
+          id(last_real_cycle_time) = now;
+          if (a >= HIGH_A) return {"Firing (Running) - High"};
+          return {"Firing (Running) - Low"};
+        }
+        if (held >= SHOW_MS) return {"Ignition Attempt"};
+      } else {
+        id(low_band_since) = 0;
+      }
 
       // Off / standby (standby is below resolution with a single clamp pass)
       if (a < 0.10) {
-        id(firing_latched) = false;
         id(elevated_start_time) = 0;
         id(was_calling) = false;
         return {"Off"};
       }
 
-      // Firing with hysteresis
-      if (!id(firing_latched) && a >= 0.42) {
-        id(firing_latched) = true;
-        id(elevated_start_time) = now;
-      } else if (id(firing_latched) && a < 0.33) {
-        id(firing_latched) = false;
-        id(elevated_start_time) = 0;
-      }
-
-      if (id(firing_latched)) {
-        id(was_calling) = calling;
-        id(overrun_start_time) = 0;
-        id(last_real_cycle_time) = now;
-        if (now - id(elevated_start_time) < 10000)
-          return {"Ignition Attempt"};
-        if (a >= 0.55)
-          return {"Firing (Running) - High"};
-        return {"Firing (Running) - Low"};
-      }
-
-      // Not firing, current 0.10-0.42 A: pump and/or fan
+      // Not firing, below the firing band: pump and/or fan
       if (a < 0.15) {
         if (calling && !id(was_calling)) {
           id(was_calling) = true;
@@ -670,7 +735,7 @@ text_sensor:
         return {"Idle"};
       }
 
-      // Pump band (~0.15-0.42 A)
+      // Pump band (~0.15-0.33 A)
       if (!calling && id(was_calling)) {
         if (id(overrun_start_time) == 0) id(overrun_start_time) = now;
         if (now - id(overrun_start_time) < 300000)   // up to 5 min (measured ~4 min)
@@ -688,7 +753,7 @@ text_sensor:
 binary_sensor:
   - platform: status
     name: "Control Room Online"
-
+ 
   # =========================================================
   # Opto board: Hailege 8-ch AC 230 V optocoupler, logic link set to 3.3 V (docs/11).
   # Board outputs -> GPIO (internal pull-ups). Output LOW when 230 V present, so
@@ -783,7 +848,7 @@ binary_sensor:
     filters:
       - delayed_on: 100ms
       - delayed_off: 100ms
-
+ 
   - platform: template
     name: "Boiler State - Off"
     id: state_off
@@ -836,7 +901,7 @@ binary_sensor:
       std::string s = id(boiler_electrical_state).state;
       return (s == "Ignition Attempt" || s == "Firing (Running) - Low" || s == "Firing (Running) - High")
              && !id(boiler_call_for_heat).state;
-
+ 
   # Tundish sense pins (MOSFET drains): configured here for their pull-ups; the interval
   # lambda reads them directly within each plate pulse.
   - platform: gpio
@@ -853,7 +918,7 @@ binary_sensor:
       inverted: true
     id: t2_sense
     internal: true
-
+ 
   - platform: template
     name: "Tundish (Left) Wet"
     id: t1_wet
@@ -882,7 +947,7 @@ binary_sensor:
     device_class: running
     lambda: |-
       return id(t1_running).state || id(t2_running).state;
-
+ 
 button:
   - platform: template
     name: "Reset Tundish Wet Events"
@@ -892,7 +957,7 @@ button:
           id(t2_events) = 0;
           id(t1_run_events) = 0;
           id(t2_run_events) = 0;
-
+ 
 interval:
   - interval: 5s
     then:
@@ -918,22 +983,22 @@ interval:
                 bool t2_run_raw = (gpio_get_level(GPIO_NUM_20) == 0);  // RIGHT
                 gpio_set_pull_mode(GPIO_NUM_47, GPIO_FLOATING);
                 gpio_set_pull_mode(GPIO_NUM_38, GPIO_FLOATING);
-
+ 
                 if (id(t1_raw_wet)) { id(t1_streak)++; } else { id(t1_streak) = 0; }
                 bool wet1 = id(t1_streak) >= 2;
                 if (wet1 && !id(t1_wet).state) { id(t1_events)++; }
                 id(t1_wet).publish_state(wet1);
-
+ 
                 if (id(t2_raw_wet)) { id(t2_streak)++; } else { id(t2_streak) = 0; }
                 bool wet2 = id(t2_streak) >= 2;
                 if (wet2 && !id(t2_wet).state) { id(t2_events)++; }
                 id(t2_wet).publish_state(wet2);
-
+ 
                 if (t1_run_raw) { id(t1_run_streak)++; } else { id(t1_run_streak) = 0; }
                 bool run1 = id(t1_run_streak) >= 2;
                 if (run1 && !id(t1_running).state) { id(t1_run_events)++; }
                 id(t1_running).publish_state(run1);
-
+ 
                 if (t2_run_raw) { id(t2_run_streak)++; } else { id(t2_run_streak) = 0; }
                 bool run2 = id(t2_run_streak) >= 2;
                 if (run2 && !id(t2_running).state) { id(t2_run_events)++; }
@@ -943,3 +1008,4 @@ interval:
                   switch.is_off: tundish_test_mode
                 then:
                   - switch.turn_off: plate_power
+ 

@@ -52,3 +52,11 @@ Existing automations kept separate: the RAMSES gateway down/restart/reconnect al
 - **A time trigger fires only if HA is running at that minute:** the first digest was missed because HA was restarting at 21:30. *Run actions* confirmed the notification path.
 - **RAMSES values can lag:** a hub showed hot water off in its app ~8 min before HA saw it (gateway position), so short-persistence alerts on RAMSES values can be late or spurious until the gateway moves. The opto inputs, once live, give wired signals for the hot water alerts.
 - **Several restarts in a day** can lock the Evohome cloud integration out (login limits); prefer reloads where they suffice.
+
+
+## Changes 12-16 Nov 2026
+- **Reheat cut short (window closed):** bottom probe vs setpoint, 30 min after the reheat ends (the outlet-based version was false after every reheat).
+- **Hot water alerts on the relays:** not-firing, reheat > 1:30, reheat cut short and timer-blocking now use each hot water BDR91's own state (`binary_sensor.bdr_13_036609_active` right, `binary_sensor.bdr_13_073145_active` left), because the RAMSES heat demand for one cylinder stuck at 100 % for 11 h. They move to the opto inputs at the junction-box rewire, with RAMSES as a cross-check.
+- **Failed ignitions:** counted only when no burn follows within 3 minutes; the alert was then disabled (15 Nov) because the clamp can't separate low-fire burning from the pump ([doc 16](16-boiler-states-short-cycling-and-v3.md)); replaced by v3's lockout check.
+- **Weekly 60 °C:** now on the CS92 probes (the hubs' own control sensors), 0.5 °C allowance; both hubs set to 60 °C on 16 Nov.
+- **New: cylinder inlet overnight floor drift** ([doc 17](17-cylinder-inlets-height-offset-tests-and-trend.md)).
