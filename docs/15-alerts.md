@@ -60,3 +60,12 @@ Existing automations kept separate: the RAMSES gateway down/restart/reconnect al
 - **Failed ignitions:** counted only when no burn follows within 3 minutes; the alert was then disabled (15 Nov) because the clamp can't separate low-fire burning from the pump ([doc 16](16-boiler-states-short-cycling-and-v3.md)); replaced by v3's lockout check.
 - **Weekly 60 °C:** now on the CS92 probes (the hubs' own control sensors), 0.5 °C allowance; both hubs set to 60 °C on 16 Nov.
 - **New: cylinder inlet overnight floor drift** ([doc 17](17-cylinder-inlets-height-offset-tests-and-trend.md)).
+
+## Changes 16-18 Nov 2026
+
+- **Boiler states v3** ([doc 16](16-boiler-states-short-cycling-and-v3.md)): starts today, firing time and starts in the last hour now count **Boiler Burner On** ([`boiler_kpis.yaml`](../config/homeassistant/packages/boiler_kpis.yaml)); the lockout and hot-water-not-firing checks use "burner off"; the failed-ignition counters copy the ESP32's own count (lit by the fan jump, no flow rise within 2 minutes). v2 figures before 17 Nov are not meaningful.
+- **Opto alerts switched on** (17 Nov) after commissioning.
+- **"Boiler called, flow cold (lockout?)":** IN1 on for 15 minutes with the boiler flow below 35 °C throughout; the four relays are the fallback if IN1 is unavailable. Logbook line + phone + a daily counter in the digest. Its first event (17 Nov 16:50-21:11) was the junction box being isolated with the UFH relay still commanded on: correct, and the reason the check needs a wired call signal.
+- **Pressure peak** (new package `boiler_pressure_peak.yaml`) and the **robust cold minimum** ([doc 04](04-pressure-and-leak-diagnosis.md)).
+- **Digest additions:** morning UFH shortfall per zone (Family, Dining, Hall: temperature minus setpoint when the morning period ends) and calls without heat today. The shortfall sensors stay empty (not "unknown") outside their window, so reloads no longer log invalid-state errors.
+- **RAMSES device health** (not-heard alert) lives in the Evohome repo ([B11](https://github.com/the-control-cabinet/evohome-heating-controls-ramses-integration/blob/main/docs/B11-rf-health-and-hub-checks.md)).

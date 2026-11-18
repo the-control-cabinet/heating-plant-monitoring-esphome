@@ -2,7 +2,7 @@
 
 [← Back to README](../README.md)
 
-Follows the October 2026 junction box survey ([Evohome repo, A4](https://github.com/the-control-cabinet/evohome-heating-controls-ramses-integration/blob/main/docs/A4-junction-box-survey-and-wiring.md)). Status: **materials in hand, tray printed (v2), install pending** (the box stays isolated until the tidy-up is done).
+Follows the October 2026 junction box survey ([Evohome repo, A4](https://github.com/the-control-cabinet/evohome-heating-controls-ramses-integration/blob/main/docs/A4-junction-box-survey-and-wiring.md)). Status: **installed and commissioned 17 Nov 2026** (junction box Stage 1a); all eight inputs proven on and off against their relays. See [section 6](#6-installed-and-commissioned-17-nov-2026).
 
 ## 1. Which signals: all eight inputs
 
@@ -17,7 +17,7 @@ RAMSES-II reports every BDR91's relay state, but not what happens **after** the 
 | **IN5 Cyl L valve drive** | W2 | Stat passing, valve motor driven | Stat and valve path proven |
 | **IN6 Cyl R valve drive** | W1 | As IN5, right cylinder | As IN5 |
 | **IN7 UFH relay** | W4 | UFH relay calling, UF valve driven | Physical cross-check of RAMSES |
-| **IN8 Radiator relay** | W8 (new joint) | Radiator relay calling | **Live only after the TF/MF re-wire**, which waits for the bypass |
+| **IN8 Radiator relay** | W8 (new joint) | Radiator relay calling | **Live since 17 Nov:** W8 was built at Stage 1a with a link to W7, so the radiators still fire the boiler directly until the TF/MF valves go on W8 after the bypass |
 
 Until W8 exists, the radiator relay feeds the switched-live joint directly, so **IN1 on with IN5-IN7 off = radiators calling**. That logic sits on the board; RAMSES-II adds the full picture in HA. A hardware interposing relay for the radiator signal was considered and rejected (more 230 V wiring for a signal the logic already gives).
 
@@ -107,3 +107,32 @@ Files: [STL](../hardware/opto-tray/opto-board-tray-v2.stl) · [OpenSCAD source](
 - **Input LEDs** light only with 230 V on that channel, so all are off until then (expected).
 
 ![Opto enclosure installed and labelled, 11 Nov 2026](images/opto-enclosure-installed-2026-11-11.jpg)
+
+## 6. Installed and commissioned (17 Nov 2026)
+
+Wired at the junction box Stage 1a rewire: choc blocks replaced by Wagos (bars plus joints W1-W8), the opto taps landed one per joint. The Wago layout and core markers are in the Evohome repo ([A4, section 8](https://github.com/the-control-cabinet/evohome-heating-controls-ramses-integration/blob/main/docs/A4-junction-box-survey-and-wiring.md#8-stage-1a-as-built-17-nov-2026)).
+
+**Cable cores as wired** (the planned colour order changed at the enclosure; this is the record):
+
+| Cable | Black | Grey | Brown | Blue | Green/yellow |
+|---|---|---|---|---|---|
+| A | IN1 boiler call (W7) | IN2 timer (W3) | spare, capped | neutral | earth |
+| B | IN3 HW relay left (W6) | IN4 HW relay right (W5) | IN5 cyl L valve drive (W2) | neutral | earth |
+| C | IN6 cyl R valve drive (W1) | IN7 UFH relay (W4) | IN8 radiator relay (W8) | neutral | earth |
+
+The inputs share the enclosure's three neutral Wagos across cables, which is fine because those Wagos are linked.
+
+**Commissioning (17 Nov, evening):**
+
+| Check | Result |
+|---|---|
+| Power-up with the timer on permanent ON | IN2 on at the moment of power-up ✅ |
+| Radiator relay on | IN8 and IN1 on in the same minute ✅ |
+| UFH relay on | IN7 on ✅ (the relay needed a button press after the power cut, then the hub took it back on its next cycle) |
+| Left cylinder relay on | IN3 (relay) and IN5 (stat passing, valve driven) ✅ |
+| Right cylinder relay on | IN4 and IN6 ✅ |
+| Each relay off | Its inputs off in the same minute (IN3/IN5 22:34, IN7 22:39) ✅ |
+| Polarity | `inverted: true` correct on all eight |
+
+The opto alerts ([doc 15](15-alerts.md), rules F-series) were switched on the same night. IN1 also feeds boiler state v3 (anti-cycle wait vs pump overrun) and the "boiler called, flow cold" check.
+

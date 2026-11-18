@@ -63,3 +63,16 @@ The flow and return readings were noisy and jumpy from installation. A **powered
 - **NTC standing offset:** with the boiler off (03:00-05:30 overlap), flow and return agree to well under 0.2 K: no correction applied.
 - **Left inlet noise, filtered at the ADC pin:** IO1 jumped between two levels (~1.08 ↔ 1.18 V, ~0.3-0.4 bar) while a multimeter (averaging) read steady at every point in the gauge box (sensor output, divider output, 5 V, ground difference). A pin swap showed the noise followed the left cable. 100 nF at the pin was too small; **10 µF at IO1** cured it. Lesson: when a meter and the ADC disagree at the same point, the noise is fast and needs an adequate capacitor **at the ADC input**. 10 µF also planned at IO2 (right inlet) and GPIO6 (boiler gauge) for consistency.
 - **5 V bus decoupling:** 470 µF + 100 nF (in parallel) across the 5 V and GND buses; bus 4.67 V under load.
+
+## Addendum (16-17 Nov 2026): 10 µF on every pressure input
+
+| Input | Fitted | Night-time noise (p95 30 s step) |
+|---|---|---|
+| IO1 left inlet | 13 Nov | 0.007 bar (reference) |
+| IO2 right inlet | 16 Nov | 0.019 → **0.007** bar (3-4× lower) |
+| GPIO6 boiler pressure | 16 Nov | 0.021 → **0.006** bar; max step 0.05-0.07 → 0.009 |
+| GPIO9 mains (utility board) | 16 Nov | 25-45 % lower ([water repo doc 04](https://github.com/the-control-cabinet/mains-water-metering-modbus-rtu/blob/main/docs/04-calibration-and-testing.md)) |
+
+**A GPIO as a filter ground.** GPIO6 had no GND pin nearby and the gauge box Wagos had no room for another wire. The capacitor went across the header pins **GPIO6 (+) and GPIO7 (−)**, with GPIO7 configured as an output held **LOW** from boot (`gpio` switch `gpio7_filter_ground`, `restore_mode: ALWAYS_OFF`, internal). No steady current flows into a capacitor, so the held-low pin works as its ground and the reading is unaffected. GPIO7 is reserved for this while the capacitor is fitted.
+
+**The ESP32-S3 ADC on the utility board** reads a near-constant ~15 mV low with ~0.2 % gain error: corrected with a two-point `calibrate_linear` against a multimeter at the pin.

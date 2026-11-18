@@ -37,3 +37,9 @@ Each state is also published as a binary sensor for history and automations.
 
 - **Clamp AC check:** 31.1 mV AC at the burden (= 0.47 A) vs HA 0.49 A, ~5 % high, consistent with 7 Nov (~3 %): no change. Meter tip: the mV range is DC by default (SELECT for AC).
 - **States v2 and why the clamp can't separate low-fire burning from the pump:** see [doc 16](16-boiler-states-short-cycling-and-v3.md). The flow temperature becomes the burner signal in v3.
+
+## Addendum (17-18 Nov 2026): v3 live
+
+- The state banding table above was the original design and is **superseded**. The banding assumed more current means more activity; the boiler display showed that at low fire the burner draws *less* than the pump alone. v3 uses the flow temperature to decide burning, the clamp for light-off, fire level and pump, and opto IN1 to separate the anti-cycle wait from the overrun: [doc 16](16-boiler-states-short-cycling-and-v3.md).
+- **Turns:** 2 turns of the boiler permanent live (marker 33 in the junction box) through the clamp, `multiply: 7.5` (17 Nov). Three turns didn't fit. No known-load calibration; the v3 thresholds were set from the boiler's own behaviour, so they move with the clamp, not with the amps.
+

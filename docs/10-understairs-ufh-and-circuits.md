@@ -64,3 +64,11 @@ The UFH loop is part of the **same sealed primary system** as the boiler, so in 
 - **Clamps:** zero with the circuit off; compare with a clamp meter while running → `calibrate_linear`. A pump draws little, so consider 2-3 turns through the 5 A clamp.
 - **NTCs:** two-point check against a reference thermometer, or against the manifold dial thermometers when stable.
 - **Pressure:** a single-point offset against a gauge, as in [doc 04](04-pressure-and-leak-diagnosis.md).
+
+## Addendum (16-18 Nov 2026): UFH plant observations
+
+- **Pump:** electronic circulator (RS 25-6EA): modes I/II/III, AUTO, CP1/CP2, PP1/PP2 and night mode, with a live watts display. Found on **III (fixed maximum)**: 45 W with one loop open. The squeal at start-up is the pump at full speed against thermal heads that are still closed (they take 3-5 minutes to open). Planned after the morning-watch week: **III → CP1** (constant pressure, normal for UFH manifolds), one change at a time, watts recorded before and after.
+- **Mixing valve:** set ~50 °C; manifold gauge 50-55 °C. The floor is screed with porcelain tiles, so 50 °C is acceptable; a **45 °C trial** is planned only if the rooms reach setpoint with demand to spare.
+- **Manifold combination gauge:** 0-16 bar over a ~25° arc, unreadable to better than ±0.3 bar. Pump-off it read ~1.8-2 bar against 1.22 + 0.58 (same 5.87 m height as the mains measurement) = 1.8: the gauge works, but pump head can't be measured with it. A 0-4 bar gauge or a sensor here stays on the plumber list.
+- **HCC80R outputs:** after stray zones 7/8 were cleared (17 Nov) the HCC80R broadcasts only its bound outputs (6 instead of 8), which froze the output sensors until the decoder was changed to accept any length ([Evohome repo B8](https://github.com/the-control-cabinet/evohome-heating-controls-ramses-integration/blob/main/docs/B8-ufh-demand-decoding.md)).
+- **Lounge:** one of the two Lounge loops (door / front-window end) has no power at its actuator (cold head, pin down). Wiring fault on HCC80R output 2, to trace with the controller isolated.

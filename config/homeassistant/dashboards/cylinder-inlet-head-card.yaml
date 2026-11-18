@@ -18,8 +18,20 @@ cards:
       - entity: sensor.cylinder_right_inlet_vs_expected
         name: Right vs expected
       - type: divider
-      - entity: input_number.cylinder_inlet_offset_below_mains
-        name: Offset below mains (tune from Test 1)
+      - entity: input_number.mains_sensor_height_above_cylinder_inlets
+        name: Height (inlet sensors above mains sensor)
+      - type: attribute
+        entity: sensor.mains_pressure_expected_at_cylinders
+        attribute: height_offset_bar
+        name: Height offset
+        suffix: " bar"
+      - entity: input_number.mains_sensor_tolerance_correction
+        name: Sensor tolerance correction
+      - type: attribute
+        entity: sensor.mains_pressure_expected_at_cylinders
+        attribute: effective_offset_bar
+        name: Effective offset
+        suffix: " bar"
   - type: history-graph
     title: Inlets vs expected (24 h)
     hours_to_show: 24

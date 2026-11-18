@@ -71,3 +71,7 @@ pressure reducing valve / operating pressure **3.5 bar** · expansion vessel pre
 - **Card:** "Top reading from" (outlet live / bottom probe) and stratification "n/a until next draw" at rest.
 - Long showers emptied the right cylinder (~200 L through the mains meter in 27 min) with nobody getting a cold shower: the estimate's "nearly empty" point was about right.
 - **60 °C:** both hubs set to 60 °C on 16 Nov (from 58), differential 5 K. The weekly check now uses the CS92 probes ([doc 15](15-alerts.md)).
+
+## Addendum (17 Nov 2026): the low probe after two showers
+
+The left CS92 fell from **59 °C to 14 °C in 4 minutes** at 08:37 and stayed at 13-19 °C until the evening reheat. It looked like a probe out of its pocket, but it wasn't: the left inlet pressure shows a long draw from 08:24 to 08:44 (3.49 → 1.43 bar), two showers. The CS92 sits in the **lower pocket (~¼ height)**, so the cold front reached it while hot water still sat above. The evening reheat took 70 minutes against 39 for the right cylinder, which started from 54 °C. Exactly the behaviour the low pocket was chosen for: Evohome reheats by volume used.

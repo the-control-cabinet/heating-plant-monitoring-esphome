@@ -1,3 +1,23 @@
+# 18 Nov 2026: 06:00 cold minimum read 0.0 because "Boiler pressure pump off" went unavailable when the
+#   boiler started at 03:01 and took the 24 h minimum with it. The pump-off sensor now holds its last value,
+#   the 24 h minimum keeps its last sample, and the cold minimum never falls back to 0. Real 18 Nov
+#   overnight pump-off minimum: 1.14 bar at 02:57.
+# 17 Nov 2026 (late): cold minimum now taken only while the boiler has been Off for 20 min (new sensor
+#   "Boiler pressure pump off"); the 16 Nov 0.99 came from the GPIO6 capacitor work, and the 17 Nov 12:05
+#   pump start dipped to 0.98 for ~14 min, which the 15-minute median alone didn't remove.
+# 17 Nov 2026 (late): no-heat check uses opto IN1 (boiler call) with the four relays as a fallback; the three
+#   morning-shortfall sensors keep an empty value (not "unknown") until their first morning, so a reload no
+#   longer logs "invalid sensor state".
+# 17 Nov 2026 (afternoon): boiler state v3 on the control-room ESP32. v2 read the boiler back to front, so
+#   starts, firing time and failed ignitions before today are not meaningful. Starts last hour now counts
+#   "Boiler Burner On"; starts today and firing time today are in boiler_kpis.yaml (also repointed). Failed ignitions come from the ESP32's own count (lit by the
+#   fan jump but no flow rise within 2 min). The lockout and hot-water checks use "Boiler Burner On".
+# 17 Nov 2026: (1) cold minimum made robust: the 24 h minimum is now taken from a 15-minute median of the
+#   pressure, so pump-start dips (e.g. 1.02 bar for a few minutes at 03:40 on 17 Nov) and reboot artefacts no
+#   longer set the "cold minimum". (2) [17 Nov late: now uses opto IN1, relays as fallback] Interim no-heat check until v3 / the opto inputs: any Evohome relay
+#   (radiator, UFH, either cylinder) on for 15 min while the boiler flow has stayed below 35 C = phone alert
+#   (lockout suspected) + daily count. (3) Morning UFH shortfall per zone (Family room, Dining room, Hall):
+#   room temperature minus setpoint at the end of each zone's morning period, in the 21:30 digest.
 # 16 Nov 2026: weekly 60 C check now uses the CS92 probes (sensor.dhw_07_045307_temperature = LEFT,
 #   sensor.dhw_07_040975_temperature = RIGHT), the hubs' own control sensors; both hubs set to 60 C today.
 #   Entity IDs of the weekly max sensors are unchanged (unique_ids kept); only their names changed.
@@ -38,6 +58,10 @@ counter:
     name: "Boiler failed ignitions (total)"
     icon: mdi:fire-alert
     step: 1
+  boiler_no_heat_calls_today:
+    name: "Boiler calls without heat today"
+    icon: mdi:fire-off
+    step: 1
  
 input_number:
   alerts_weekly_dhw_target:
@@ -53,13 +77,13 @@ sensor:
   - platform: history_stats
     name: "Boiler starts last hour"
     unique_id: boiler_starts_last_hour
-    entity_id: binary_sensor.control_room_esp32_control_room_boiler_state_ignition_attempt
+    entity_id: binary_sensor.control_room_esp32_control_room_boiler_burner_on
     state: "on"
     type: count
     end: "{{ now() }}"
     duration:
       hours: 1
- 
+
   # sampling_size must exceed the number of updates in 24 h, or the window is cut short.
   - platform: statistics
     name: "Boiler pressure change 24h"
@@ -71,17 +95,65 @@ sensor:
     sampling_size: 30000
     precision: 3
 
+  # 17 Nov: 15-minute median removes pump-start dips and single low readings before the 24 h minimum is taken.
+  - platform: statistics
+    name: "Boiler pressure 15 min median"
+    unique_id: boiler_pressure_15_min_median
+    entity_id: sensor.control_room_esp32_control_room_boiler_system_pressure
+    state_characteristic: median
+    max_age:
+      minutes: 15
+    sampling_size: 1000
+    precision: 3
+
+  - platform: statistics
+    name: "Boiler flow max 15 min"
+    unique_id: boiler_flow_max_15_min
+    entity_id: sensor.control_room_esp32_control_room_boiler_flow_temperature
+    state_characteristic: value_max
+    max_age:
+      minutes: 15
+    sampling_size: 2000
+    precision: 1
+
+  # Minimum of the 15-minute median, taken only while the boiler has been Off (pump stopped) for 20 min,
+  # so pump-start dips (e.g. 0.98 bar for ~14 min at 12:05 on 17 Nov) can't set the cold minimum.
+  # Entity ID unchanged, so the cold minimum and the digest keep working.
   - platform: statistics
     name: "Boiler pressure min 24h"
     unique_id: boiler_pressure_min_24h
-    entity_id: sensor.control_room_esp32_control_room_boiler_system_pressure
+    entity_id: sensor.boiler_pressure_pump_off
     state_characteristic: value_min
     max_age:
       hours: 24
     sampling_size: 30000
+    keep_last_sample: true
     precision: 3
  
 template:
+  # 17 Nov 2026: the 15-minute pressure median, updated only while the boiler has been Off (no pump) for
+  # 20 minutes. 18 Nov: it now HOLDS its last pump-off value while the boiler runs (was "unavailable", which
+  # made the 24 h minimum unavailable too, so the 06:00 cold minimum read 0.0).
+  - trigger:
+      - platform: time_pattern
+        minutes: "/1"
+      - platform: state
+        entity_id: sensor.boiler_pressure_15_min_median
+    sensor:
+      - name: "Boiler pressure pump off"
+        unique_id: boiler_pressure_pump_off
+        unit_of_measurement: "bar"
+        state_class: measurement
+        icon: mdi:gauge
+        state: >
+          {% set st = states.sensor.control_room_esp32_control_room_boiler_electrical_state %}
+          {% if st is not none and st.state == 'Off'
+                and (now() - st.last_changed).total_seconds() > 1200
+                and has_value('sensor.boiler_pressure_15_min_median') %}
+            {{ states('sensor.boiler_pressure_15_min_median') | float | round(3) }}
+          {% elif is_number(this.state) %}{{ this.state }}
+          {% else %}{{ none }}{% endif %}
+
   # Daily cold minimum (the lowest pressure in the 24 h to 06:00), with the previous day's kept for comparison.
   - trigger:
       - platform: time
@@ -91,9 +163,106 @@ template:
         unique_id: boiler_pressure_daily_cold_minimum
         unit_of_measurement: "bar"
         icon: mdi:gauge-low
-        state: "{{ states('sensor.boiler_pressure_min_24h') | float(0) | round(2) }}"
+        state: >
+          {% set m = states('sensor.boiler_pressure_min_24h') %}
+          {% if is_number(m) %}{{ m | float | round(2) }}
+          {% elif is_number(this.state) %}{{ this.state }}
+          {% else %}{{ none }}{% endif %}
         attributes:
           previous: "{{ this.state if this.state not in ['unknown', 'unavailable', None] else none }}"
+
+  # Morning UFH shortfall: room temperature minus the setpoint, recorded when a zone's morning period
+  # ends (its setpoint drops between 06:30 and 10:30). Negative = short. Kept until the next morning.
+  - trigger:
+      - platform: state
+        entity_id: climate.rf_family_room
+        attribute: temperature
+    sensor:
+      - name: "Family room morning shortfall"
+        unique_id: ufh_morning_shortfall_family_room
+        unit_of_measurement: "°C"
+        icon: mdi:thermometer-minus
+        state: >
+          {% set f = trigger.from_state.attributes.temperature | float(0) %}
+          {% set t = trigger.to_state.attributes.temperature | float(0) %}
+          {% if t < f and now().hour * 60 + now().minute >= 390 and now().hour * 60 + now().minute <= 630 %}
+            {{ (trigger.to_state.attributes.current_temperature | float(0) - f) | round(1) }}
+          {% elif this.state not in ['unknown', 'unavailable'] %}{{ this.state }}{% else %}{{ none }}{% endif %}
+        attributes:
+          setpoint: >
+            {% set f = trigger.from_state.attributes.temperature | float(0) %}
+            {% set t = trigger.to_state.attributes.temperature | float(0) %}
+            {{ f if (t < f and 390 <= now().hour * 60 + now().minute <= 630) else this.attributes.setpoint | default(none) }}
+          ended: >
+            {% set f = trigger.from_state.attributes.temperature | float(0) %}
+            {% set t = trigger.to_state.attributes.temperature | float(0) %}
+            {{ now().strftime('%a %H:%M') if (t < f and 390 <= now().hour * 60 + now().minute <= 630) else this.attributes.ended | default(none) }}
+
+  - trigger:
+      - platform: state
+        entity_id: climate.rf_dining_room
+        attribute: temperature
+    sensor:
+      - name: "Dining room morning shortfall"
+        unique_id: ufh_morning_shortfall_dining_room
+        unit_of_measurement: "°C"
+        icon: mdi:thermometer-minus
+        state: >
+          {% set f = trigger.from_state.attributes.temperature | float(0) %}
+          {% set t = trigger.to_state.attributes.temperature | float(0) %}
+          {% if t < f and now().hour * 60 + now().minute >= 390 and now().hour * 60 + now().minute <= 630 %}
+            {{ (trigger.to_state.attributes.current_temperature | float(0) - f) | round(1) }}
+          {% elif this.state not in ['unknown', 'unavailable'] %}{{ this.state }}{% else %}{{ none }}{% endif %}
+        attributes:
+          setpoint: >
+            {% set f = trigger.from_state.attributes.temperature | float(0) %}
+            {% set t = trigger.to_state.attributes.temperature | float(0) %}
+            {{ f if (t < f and 390 <= now().hour * 60 + now().minute <= 630) else this.attributes.setpoint | default(none) }}
+          ended: >
+            {% set f = trigger.from_state.attributes.temperature | float(0) %}
+            {% set t = trigger.to_state.attributes.temperature | float(0) %}
+            {{ now().strftime('%a %H:%M') if (t < f and 390 <= now().hour * 60 + now().minute <= 630) else this.attributes.ended | default(none) }}
+
+  - trigger:
+      - platform: state
+        entity_id: climate.rf_hall
+        attribute: temperature
+    sensor:
+      - name: "Hall morning shortfall"
+        unique_id: ufh_morning_shortfall_hall
+        unit_of_measurement: "°C"
+        icon: mdi:thermometer-minus
+        state: >
+          {% set f = trigger.from_state.attributes.temperature | float(0) %}
+          {% set t = trigger.to_state.attributes.temperature | float(0) %}
+          {% if t < f and now().hour * 60 + now().minute >= 390 and now().hour * 60 + now().minute <= 630 %}
+            {{ (trigger.to_state.attributes.current_temperature | float(0) - f) | round(1) }}
+          {% elif this.state not in ['unknown', 'unavailable'] %}{{ this.state }}{% else %}{{ none }}{% endif %}
+        attributes:
+          setpoint: >
+            {% set f = trigger.from_state.attributes.temperature | float(0) %}
+            {% set t = trigger.to_state.attributes.temperature | float(0) %}
+            {{ f if (t < f and 390 <= now().hour * 60 + now().minute <= 630) else this.attributes.setpoint | default(none) }}
+          ended: >
+            {% set f = trigger.from_state.attributes.temperature | float(0) %}
+            {% set t = trigger.to_state.attributes.temperature | float(0) %}
+            {{ now().strftime('%a %H:%M') if (t < f and 390 <= now().hour * 60 + now().minute <= 630) else this.attributes.ended | default(none) }}
+
+  # No-heat check: the boiler has a real call (opto IN1 = 230 V on the switched live, 17 Nov 2026) while
+  # the boiler flow stays cold. Falls back to the four Evohome relays if IN1 is unavailable.
+  - binary_sensor:
+      - name: "Boiler call without heat"
+        unique_id: boiler_call_without_heat
+        device_class: problem
+        icon: mdi:fire-off
+        state: >
+          {% set in1 = states('binary_sensor.control_room_esp32_control_room_opto_in1_boiler_call') %}
+          {% set relays = is_state('binary_sensor.bdr_13_258561_active', 'on')
+                          or is_state('binary_sensor.bdr_13_039497_active', 'on')
+                          or is_state('binary_sensor.bdr_13_073145_active', 'on')
+                          or is_state('binary_sensor.bdr_13_036609_active', 'on') %}
+          {% set calling = (in1 == 'on') if in1 in ['on', 'off'] else relays %}
+          {{ calling and states('sensor.boiler_flow_max_15_min') | float(99) < 35 }}
 
   - trigger:
       - platform: state
@@ -244,8 +413,7 @@ automation:
       - platform: template
         value_template: >
           {{ is_state('binary_sensor.control_room_esp32_control_room_opto_in1_boiler_call', 'on')
-             and (is_state('binary_sensor.control_room_esp32_control_room_boiler_state_off', 'on')
-                  or is_state('binary_sensor.control_room_esp32_control_room_boiler_state_idle', 'on')) }}
+             and is_state('binary_sensor.control_room_esp32_control_room_boiler_burner_on', 'off') }}
         for: "00:15:00"
     condition:
       - condition: state
@@ -266,8 +434,7 @@ automation:
         value_template: >
           {{ (is_state('binary_sensor.bdr_13_036609_active', 'on')
               or is_state('binary_sensor.bdr_13_073145_active', 'on'))
-             and (is_state('binary_sensor.control_room_esp32_control_room_boiler_state_off', 'on')
-                  or is_state('binary_sensor.control_room_esp32_control_room_boiler_state_idle', 'on')) }}
+             and is_state('binary_sensor.control_room_esp32_control_room_boiler_burner_on', 'off') }}
         for: "00:15:00"
     action:
       - service: notify.mobile_app_jamess_iphone
@@ -586,36 +753,59 @@ automation:
                | map(attribute='state') | first }} °C for 10 minutes (normal 40-55 °C).
             Check the enclosure's ventilation, the 3.3 V regulator and for a short on the board.
  
-  # ---------- Boiler wear: failed ignitions ----------
-  - id: plant_boiler_failed_ignition_count
-    alias: "Plant: count failed boiler ignitions"
-    mode: parallel
+  # ---------- No-heat check (boiler call on IN1, flow cold) ----------
+  - id: plant_alert_call_without_heat
+    alias: "Plant alert: boiler called, flow cold (lockout?)"
+    mode: single
     trigger:
       - platform: state
-        entity_id: binary_sensor.control_room_esp32_control_room_boiler_state_ignition_attempt
+        entity_id: binary_sensor.boiler_call_without_heat
         to: "on"
+        for: "00:15:00"
     action:
-      # 15 Nov 2026 (ESPHome state v2): count only when NO burn is confirmed within 3 minutes.
-      # A retry that then lights is not counted (v2 shows every real start as a short
-      # "Ignition Attempt" first, so the old "retry" rule counted normal restarts).
-      - wait_for_trigger:
-          - platform: state
-            entity_id:
-              - binary_sensor.control_room_esp32_control_room_boiler_state_firing_running_low
-              - binary_sensor.control_room_esp32_control_room_boiler_state_firing_running_high
-            to: "on"
-            id: fired
-        timeout: "00:03:00"
-        continue_on_timeout: true
-      - if:
-          - condition: template
-            value_template: "{{ wait.trigger is none }}"
-        then:
-          - service: counter.increment
-            target:
-              entity_id:
-                - counter.boiler_failed_ignitions_today
-                - counter.boiler_failed_ignitions_total
+      - service: logbook.log
+        data:
+          name: "Boiler call without heat"
+          message: >
+            Boiler call (IN1) {{ states('binary_sensor.control_room_esp32_control_room_opto_in1_boiler_call') }}.
+            Relays: radiators {{ states('binary_sensor.bdr_13_258561_active') }}, UFH {{ states('binary_sensor.bdr_13_039497_active') }},
+            left HW {{ states('binary_sensor.bdr_13_073145_active') }}, right HW {{ states('binary_sensor.bdr_13_036609_active') }};
+            flow max 15 min {{ states('sensor.boiler_flow_max_15_min') }} °C
+          entity_id: binary_sensor.boiler_call_without_heat
+      - service: notify.mobile_app_jamess_iphone
+        data:
+          title: "Boiler not heating"
+          message: >
+            The boiler has been called (IN1) for at least 15 minutes with its flow below 35 °C throughout
+            (now {{ states('sensor.control_room_esp32_control_room_boiler_flow_temperature') | float(0) | round(1) }} °C).
+            Check the boiler display for a fault/lockout code.
+      # last, and allowed to fail: the counter only exists after the next HA restart (counters have no YAML reload)
+      - service: counter.increment
+        continue_on_error: true
+        target:
+          entity_id: counter.boiler_no_heat_calls_today
+
+  # ---------- Boiler wear: failed ignitions ----------
+  # 17 Nov 2026 (v3): the ESP32 counts a failed ignition itself (lit by the fan jump, no flow rise within
+  # 2 min); this copies each new one into the daily and total counters.
+  - id: plant_boiler_failed_ignition_count
+    alias: "Plant: count failed boiler ignitions"
+    mode: queued
+    trigger:
+      - platform: state
+        entity_id: sensor.control_room_esp32_control_room_boiler_failed_ignitions
+    condition:
+      - condition: template
+        value_template: >
+          {{ trigger.from_state is not none and trigger.to_state is not none
+             and trigger.from_state.state not in ['unknown', 'unavailable']
+             and trigger.to_state.state | float(0) > trigger.from_state.state | float(0) }}
+    action:
+      - service: counter.increment
+        target:
+          entity_id:
+            - counter.boiler_failed_ignitions_today
+            - counter.boiler_failed_ignitions_total
 
   - id: plant_boiler_failed_ignition_reset
     alias: "Plant: reset daily failed ignitions"
@@ -627,6 +817,10 @@ automation:
       - service: counter.reset
         target:
           entity_id: counter.boiler_failed_ignitions_today
+      - service: counter.reset
+        continue_on_error: true
+        target:
+          entity_id: counter.boiler_no_heat_calls_today
  
   - id: plant_alert_failed_ignitions
     alias: "Plant alert: boiler failed ignitions"
@@ -640,7 +834,7 @@ automation:
         data:
           title: "Boiler failed ignitions"
           message: >
-            {{ states('counter.boiler_failed_ignitions_today') }} ignition attempts today didn't reach firing (no burn within 3 min)
+            {{ states('counter.boiler_failed_ignitions_today') }} ignitions today didn't light (fan started, no flow rise within 2 min)
             (out of {{ states('sensor.boiler_starts_today') }} starts). A worn igniter electrode or flame sensor,
             or a gas supply issue: worth mentioning at the boiler service.
  
@@ -739,4 +933,7 @@ automation:
             Tundish discharge events: left {{ states('sensor.control_room_esp32_control_room_tundish_left_discharge_events') | int(0) }},
             right {{ states('sensor.control_room_esp32_control_room_tundish_right_discharge_events') | int(0) }}.
             {% if is_state('input_boolean.alerts_boiler_pressure', 'on') %}System pressure {{ states('sensor.control_room_esp32_control_room_boiler_system_pressure') | float(0) | round(2) }} bar; cold minimum {{ states('sensor.boiler_pressure_daily_cold_minimum') }} bar (previous {{ state_attr('sensor.boiler_pressure_daily_cold_minimum', 'previous') or 'n/a' }}).{% endif %}
+            UFH mornings (temp vs setpoint at period end): Family {{ states('sensor.family_room_morning_shortfall') }},
+            Dining {{ states('sensor.dining_room_morning_shortfall') }}, Hall {{ states('sensor.hall_morning_shortfall') }} °C.
+            Calls without heat today: {{ states('counter.boiler_no_heat_calls_today') | int(0) }}.
             {% if is_state('input_boolean.alerts_cylinder_pressure', 'on') %}Inlets: left {{ states('sensor.control_room_esp32_control_room_cylinder_left_inlet_pressure') | float(0) | round(2) }}, right {{ states('sensor.control_room_esp32_control_room_cylinder_right_inlet_pressure') | float(0) | round(2) }} bar.{% endif %}

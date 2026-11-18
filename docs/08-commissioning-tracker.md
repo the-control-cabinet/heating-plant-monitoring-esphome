@@ -34,3 +34,17 @@
 | Hot water estimate | ✅ v4 |
 | Alerts | ✅ Relay-based hot water alerts, weekly 60 °C on CS92s, inlet floor trend · failed-ignition alert off until v3 |
 | Housekeeping | ✅ Old MQTT device "ESP32 Control Room (Heating)" deleted (its retained discovery kept old entities alive) · ⏳ two orphaned statistics |
+
+## Update (18 Nov 2026)
+
+| Item | Status |
+|---|---|
+| Boiler gauge on GPIO6 | ✅ 10 µF fitted (GPIO7 held low as its ground), noise 3× lower · ✅ hot check: dial ~1.37 vs HA 1.34 |
+| Inlet gauges | ✅ 10 µF at IO2 (noise 3-4× lower) · ✅ left gain 1.028 confirmed overnight · right inconclusive (stays 1.000) |
+| Height offset | ✅ **Closed:** 5.87 m (0.576 bar), mains sensor calibrated, gap = check-valve ratchet; tolerance correction 0 ([doc 17](17-cylinder-inlets-height-offset-tests-and-trend.md)) |
+| Clamp | ✅ 2 turns, multiply 7.5 (17 Nov) |
+| Boiler states | ✅ **v3 live** (17 Nov), validated against two videos of the boiler display; light-off threshold 0.42 A at 2 turns ([doc 16](16-boiler-states-short-cycling-and-v3.md)) |
+| Opto board | ✅ **Installed and commissioned** (17 Nov): all 8 inputs proven on and off ([doc 11](11-opto-board-installation.md#6-installed-and-commissioned-17-nov-2026)) |
+| Alerts | ✅ Opto alerts on · ✅ "boiler called, flow cold" on IN1 · ✅ pressure peak · ✅ robust cold minimum ([doc 15](15-alerts.md)) |
+| Junction box | ✅ Stage 1a (functional Wago rewire) · ⏳ earth bar: two earths to re-terminate, one earth to trace · ⏳ Stage 1b tidy |
+| Housekeeping | ⏳ Orphaned statistics (old v2 state binaries, heap/loop sensors) at the end of the project |

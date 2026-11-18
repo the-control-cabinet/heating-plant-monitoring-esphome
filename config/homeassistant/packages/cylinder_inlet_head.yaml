@@ -1,23 +1,38 @@
-# Cylinder inlet pressures against the mains sensor (14 Nov 2026).
+# Cylinder inlet pressures against the mains sensor (14 Nov 2026; recalibrated and restructured 16 Nov).
 # The mains sensor (DFRobot SEN0257, 0-16 bar) is in the ground-floor utility room, downstream of the
 # stopcock; the cylinders and their inlet transducers are in the second-floor control room.
-# Measured 14 Nov (slow-close tests, both sides): the cylinders settle / top up at ~2.55 bar while the
-# mains sensor reads ~2.92 -> effective offset ~0.37 bar. Two floors (~5.3 m) would give ~0.52 bar;
-# the difference is within the mains sensor's tolerance (its span has never been checked), so the
-# offset helper is an EFFECTIVE value (height + any calibration difference). Tune it from the
-# overnight trough test (Test 1).
-# "vs expected" = inlet minus (mains - offset): ~0 at a trough before a top-up step,
+#
+# Expected pressure at the cylinders = mains - (height x 0.0981 bar/m + sensor tolerance correction)
+#   Height: a helper in metres (measured precisely 5.87 m, 16 Nov 15:04; first tape figure 6.2 m). The bar figure is worked out here.
+#   Sensor tolerance correction: the disagreement that height doesn't explain. The ESP32 ADC
+#   (calibrated 16 Nov against a multimeter) and the mains sensor's zero (stopcock test) are proven,
+#   and both inlet sensors were span-checked against the AstroAI L7 (zero, ~2.9 and ~4 bar), so it
+#   points to the mains sensor's span reading ~0.18 bar low at ~3 bar. Helper set to -0.18 bar until a
+#   span gain is fitted to the mains sensor in ESPHome (then set it to 0).
+#   Both helpers have no "initial", so the values set are kept across restarts.
+# "vs expected" = inlet minus expected: ~0 at a trough before a top-up step,
 # positive while a cylinder holds its reheat expansion.
 
 input_number:
-  cylinder_inlet_offset_below_mains:
-    name: "Cylinder inlets: expected offset below mains"
+  mains_sensor_height_above_cylinder_inlets:
+    name: "Height: cylinder inlet sensors above mains sensor"
     min: 0
-    max: 1.5
+    max: 10
     step: 0.01
-    initial: 0.37
-    unit_of_measurement: "bar"
+    mode: slider
+    unit_of_measurement: "m"
     icon: mdi:arrow-expand-vertical
+    # no "initial": the value you set is kept across restarts (set 5.87 once after installing)
+
+  mains_sensor_tolerance_correction:
+    name: "Mains vs inlet sensors: tolerance correction"
+    min: -0.5
+    max: 0.5
+    step: 0.01
+    mode: slider
+    unit_of_measurement: "bar"
+    icon: mdi:tune-variant
+    # no "initial": set -0.18 once after installing; 0 once the mains span gain is in ESPHome
 
 template:
   - sensor:
@@ -27,10 +42,20 @@ template:
         device_class: pressure
         state_class: measurement
         icon: mdi:gauge
-        availability: "{{ has_value('sensor.esp32_utility_room_mains_water_pressure_2') }}"
+        availability: >
+          {{ has_value('sensor.esp32_utility_room_mains_water_pressure_2')
+             and states('input_number.mains_sensor_height_above_cylinder_inlets') | float(0) > 0 }}
         state: >
-          {{ (states('sensor.esp32_utility_room_mains_water_pressure_2') | float
-              - states('input_number.cylinder_inlet_offset_below_mains') | float(0.37)) | round(2) }}
+          {% set height_m = states('input_number.mains_sensor_height_above_cylinder_inlets') | float(0) %}
+          {% set tolerance_correction_bar = states('input_number.mains_sensor_tolerance_correction') | float(0) %}
+          {% set effective = height_m * 0.0981 + tolerance_correction_bar %}
+          {{ (states('sensor.esp32_utility_room_mains_water_pressure_2') | float - effective) | round(2) }}
+        attributes:
+          height_offset_bar: >
+            {{ (states('input_number.mains_sensor_height_above_cylinder_inlets') | float(0) * 0.0981) | round(3) }}
+          effective_offset_bar: >
+            {{ (states('input_number.mains_sensor_height_above_cylinder_inlets') | float(0) * 0.0981
+                + states('input_number.mains_sensor_tolerance_correction') | float(0)) | round(3) }}
 
       - name: "Cylinder left inlet vs expected"
         unique_id: cylinder_left_inlet_vs_expected

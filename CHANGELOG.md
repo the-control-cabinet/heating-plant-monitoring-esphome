@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.11.0] - 2026-11-18
+- **Boiler states v3 live** (doc 16 sections 5-9): two videos of the boiler display as ground truth (radiators only: cut-out at 72-73 °C, fixed ~120 s anti-cycle wait; all zones: one full-fire burn); v2 found inverted; v3 rules (light-off jump, flow slope and flow-return to decide burning, IN1 to split anti-cycle wait from pump overrun), validation and replays 15-18 Nov; Burner On, Last Burn, Last Gap, Failed Ignitions on the board; flow/return/ΔT to HA on 0.5 °C or 30 s. Clamp 2 turns, multiply 7.5; light-off threshold 0.38 → 0.42 A after the turns moved pump-only to 0.38 A. Debug component and heap/loop sensors removed.
+- **Opto board installed and commissioned** (doc 11 section 6): cable cores as wired, all 8 inputs proven on and off; IN8 live via W8 built early; opto alerts on.
+- **Cylinder inlet gap closed** (doc 17 section 6): height 5.87 m (0.576 bar); mains sensor calibrated (+0.025 bar) and span confirmed overnight; the daytime gap = inlet check valves holding peaks; height and tolerance slider helpers, tolerance 0; left gain 1.028 confirmed.
+- **10 µF on every pressure input** (doc 02 addendum), including GPIO6 with GPIO7 held low as the filter ground.
+- **Pressure** (doc 04 addendum): new boiler_pressure_peak.yaml; the cold minimum made robust in three steps (15-min median; only while v3 is Off for 20 min; held value so it never reads 0).
+- **Alerts** (doc 15): starts/firing time from v3 (new boiler_kpis.yaml), failed ignitions from the board, "boiler called, flow cold" on IN1 with relay fallback, morning UFH shortfall and calls-without-heat digest lines, shortfall sensors empty outside their window.
+- Docs 03, 08, 10 (UFH pump mode III, mixing valve 50 °C, manifold gauge, HCC80R broadcast, Lounge loop), 13 (clamp turns, boiler flex earth), 14 (low probe after two showers) updated.
+- New card: boiler-and-demand-card.yaml (v3 + relays vs optos). cylinder-inlet-head card updated.
+- README: short version, latest, status and findings.
+
 ## [0.10.0] - 2026-11-16
 - 12-13 Nov detail: docs 02/03/04/05/08/13 addenda (NTC offset, clamp AC check, GPIO6 boiler gauge and gauge boxes, long-term statistics and the daily cold-minimum decay check, inlet span checks with a tyre gauge, ADC-pin filtering lesson, 5 V decoupling, outlet NTC position, mains and inlet-group losses, tundish counter history, GPIO21); hardware/gauge-box; hot water card v4.
 - New doc 16: boiler states from the clamp: v2 (15 Nov) and why it fails at low fire (low-fire burning 0.13-0.18 A vs pump overrun 0.30-0.40 A, flow-temperature burn detector as reference, fan spike before only 47 of 152 burns); failed-ignition alert disabled; short cycling with radiators only (~50 s every ~2.6 min); v3 design (flow-temperature burning, clamp for high/low fire, lockout check).

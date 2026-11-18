@@ -1,0 +1,29 @@
+# =========================================================
+# Boiler KPIs from the control-room ESP32
+# Created 7 Nov 2026.
+# 17 Nov 2026: repointed to boiler state v3's "Boiler Burner On" (current clamp + flow temperature,
+#   checked against two videos of the boiler display). v2 read the boiler back to front, so the
+#   figures before 17 Nov afternoon are not meaningful. Names and unique_ids unchanged, so the
+#   entity IDs, the card and the 21:30 digest are unaffected.
+#  - Firing time today: time the burner was on
+#  - Starts today: number of times the burner lit (failed ignitions are counted separately by the
+#    ESP32: "Boiler Failed Ignitions")
+# =========================================================
+sensor:
+  - platform: history_stats
+    name: "Boiler Firing Time Today"
+    unique_id: boiler_firing_time_today
+    entity_id: binary_sensor.control_room_esp32_control_room_boiler_burner_on
+    state: "on"
+    type: time
+    start: "{{ today_at() }}"
+    end: "{{ now() }}"
+
+  - platform: history_stats
+    name: "Boiler Starts Today"
+    unique_id: boiler_starts_today
+    entity_id: binary_sensor.control_room_esp32_control_room_boiler_burner_on
+    state: "on"
+    type: count
+    start: "{{ today_at() }}"
+    end: "{{ now() }}"

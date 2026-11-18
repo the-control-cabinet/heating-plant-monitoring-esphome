@@ -2,7 +2,7 @@
 
 [← Back to README](../README.md)
 
-**Status (16 Nov 2026): inlets behave as expected; the effective offset below the mains sensor is 0.37 bar, 0.15-0.24 bar less than the measured 6.2 m height predicts (open: meter and stopcock checks); an overnight floor-trend alert is live.**
+**Status (17 Nov 2026): gap explained and closed. The height is 5.87 m (0.576 bar); the mains sensor is calibrated and its span confirmed; the daytime "gap" was the inlet check valves holding recent peaks. The expected-pressure calculation now uses the height alone (tolerance correction 0). Section 6 has the details; sections 1-5 are kept as the history.**
 
 ## 1. Expected pressure at the cylinders
 
@@ -34,3 +34,23 @@ To absorb ~3.5 L of expansion: **~4.3 bar** at a 3.5 bar pre-charge vs **~3.1 ba
 ## 5. Inlet group losses (12 Nov)
 
 Like-for-like hot-only tap draws: both inlet groups lose ~0.55-0.6 bar at only 3-4 L/min (loss/flow²: left ~0.04, right ~0.07), high for a 22 mm group: consistent with partly blocked strainers. The left "settling below mains" seen earlier was a part-closed cold isolating valve, fixed by opening it fully. Plumber: clean both strainers, then repeat the test.
+
+## 6. Gap closed (16-17 Nov 2026)
+
+**Height re-measured precisely: 5.87 m**, not 6.2 m → **0.576 bar** (0.0981 bar/m).
+
+**Mains sensor calibrated at the pin** (multimeter, 16 Nov): the ESP32 ADC reads a steady ~15 mV low; the divider is 0.662, not 2/3. Net correction **+0.025 bar** at ~3 bar. Not the 0.15-0.25 bar suspected. Details in the water repo ([doc 04](https://github.com/the-control-cabinet/mains-water-metering-modbus-rtu/blob/main/docs/04-calibration-and-testing.md)).
+
+**The check-valve ratchet.** Overnight, once the cylinders have cooled and settled to the true supply, **mains minus the left inlet = 0.55-0.58 bar every hour** (17 Nov), matching the height. So the mains sensor's span is right and needs no gain. The smaller daytime differences (0.37-0.40 bar) come from the inlet check valves: the inlet follows the mains **up but not down**, holding the most recent peak, plus held reheat expansion. Only overnight cooling lets an inlet fall to the real supply.
+
+**Package changes** (`cylinder_inlet_head.yaml`): two slider helpers replace the old single offset (whose `initial:` reset it at every restart):
+- `input_number.mains_sensor_height_above_cylinder_inlets` (0-10 m, 0.01 m steps), set to **5.87**;
+- `input_number.mains_sensor_tolerance_correction` (−0.5 to +0.5 bar), set to **0.00** on 17 Nov.
+
+`sensor.mains_pressure_expected_at_cylinders` = mains − (height × 0.0981 + tolerance), with the height and effective offsets as attributes. Card: [`cylinder-inlet-head-card.yaml`](../config/homeassistant/dashboards/cylinder-inlet-head-card.yaml).
+
+**Left gain 1.028 confirmed** (matches the height within ~0.01 bar overnight). The right side was held up by expansion most nights, so it is inconclusive; its gain stays 1.000.
+
+**Noise:** 10 µF at IO2 (right inlet) fitted 16 Nov: night-time noise 3-4× lower, now the same as the left (cap since 13 Nov).
+
+**Plumber (optional confirmation):** a calibrated gauge on a cold tap at the service, read at the same moment as HA.

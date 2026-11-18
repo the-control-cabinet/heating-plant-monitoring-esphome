@@ -99,3 +99,12 @@ Pressure with 7-day history, the daily 05:00 reading, decay rate, and the boiler
 - **Decay check changed to daily cold minimums:** a 05:00 snapshot was invalid whenever optimum start fired from ~02:00-03:00 (hot vs yesterday's cold). Now the daily cold minimum is taken at 06:00 and compared at 06:01: **1.05 bar on 15 and 16 Nov**: no loss this week. Earlier (on GPIO1, 4-9 Nov) daily swings were 0.3-0.4 bar with an inconclusive ~0.02-0.03 bar/day drift.
 - **First evening baseline (12 Nov):** ~1.2 bar cold → 1.62 peak → 1.36 bar.
 - **Boiler pressure relief valve:** its discharge runs internally, so it can't be watched for weeping; instead, watch for pressure ever exceeding ~2 bar (alert).
+
+## Addendum (16-18 Nov 2026): peak alert and a robust cold minimum
+
+- **Pressure peak:** new package [`boiler_pressure_peak.yaml`](../config/homeassistant/packages/boiler_pressure_peak.yaml): 24 h maximum, the day's peak recorded at 23:59:30 with 14 days of history, and one phone message a day if the pressure stays above a threshold helper (2.0 bar) for 2 minutes. Watches for the boiler pressure relief valve's lift point being approached (its discharge runs internally and can't be seen). First peaks: 1.47 bar.
+- **Cold minimum, three fixes in three days.** The daily 06:00 cold minimum is the slow-leak watch, so it must reflect a cold, still system:
+  1. *17 Nov:* the raw 24 h minimum picked up a single-sample dip (0.99 bar on 16 Nov at 15:31, during the GPIO6 capacitor work). Now taken from a **15-minute median**.
+  2. *17 Nov evening:* a **pump start** on a cold system dips the reading by ~0.1 bar for ~14 minutes (0.98 bar at 12:05), which a 15-minute median doesn't remove. Now the median only counts **while boiler state v3 has been Off for 20 minutes** (new sensor "Boiler pressure pump off").
+  3. *18 Nov:* that sensor went unavailable when the boiler started at 03:01, taking the 24 h minimum with it, so the 06:00 cold minimum read **0.0**. Now the pump-off sensor **holds** its last value while the boiler runs, the 24 h minimum keeps its last sample, and the cold minimum keeps the previous value if its source isn't a number.
+- **Readings:** true cold static pressure 1.08-1.14 bar on 16-18 Nov (≥ the 1.05 recorded earlier, which noise had depressed): **no sign of the slow leak getting worse this week**. The leak itself stays on the plumber list.

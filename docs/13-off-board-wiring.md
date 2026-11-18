@@ -64,3 +64,9 @@ The MOSFETs and 2.2 MΩ pull-downs stay on the board. Moving them would add join
 - **Boiler gauge box** printed and fitted (models in [hardware/gauge-box](../hardware/gauge-box/): boiler base, cylinder base, lid, OpenSCAD source); backhaul 3-core + screen, screen grounded at the ESP32 end only.
 - **GPIO21 with Test Mode on:** 3.269 V (tundish test path confirmed).
 - **Decoupling:** 470 µF + 100 nF across the 5 V/GND buses; 10 µF at IO1 (left inlet) for the fast noise ([doc 02](02-signal-conditioning-and-noise.md)).
+
+## Addendum (17 Nov 2026): clamp turns
+
+At the junction box Stage 1a rewire the boiler's permanent live (core marker 33, brown, in the boiler flex) was passed **twice** through the clamp (three turns wouldn't fit), same direction each time, neutral and switched live outside. `multiply` 15.0 → **7.5** so the amps read as before. The signal doubled over the same noise; pump-only now reads 0.375-0.384 A, which moved boiler state v3's light-off threshold to 0.42 A ([doc 16](16-boiler-states-short-cycling-and-v3.md)).
+
+The boiler flex was recorded in the October survey as having **no earth core**; an earth found at the bar during the rewire is still to be traced, and proving the boiler's earth path stays on the Gas Safe list.

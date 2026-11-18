@@ -1,13 +1,23 @@
 # =============================================================================
 # esp32-control-room-heating.yaml - boiler plant monitoring (10 Nov 2026: off-board rewiring)
-# 15 Nov 2026: boiler electrical state v2 (smoothed current, 20 s confirm / 20 s drop-out, see the
-#   text_sensor notes). Nothing else changed.
+# 18 Nov 2026: light-off threshold 0.38 -> 0.42 A. With 2 clamp turns, pump only reads 0.375-0.384 A
+#   (was 0.34-0.36 at 1 turn), which sat on the old threshold and gave false "Burner Lighting" during
+#   anti-cycle waits; light-off jumps are 0.43-0.53 A. Replayed on 18 Nov 00:00-08:38: no false burns.
+# 17 Nov 2026 (late): v3 uses opto IN1 (boiler call) to split "pump only" into "Anti-Cycle Wait" (call on,
+#   burner out) and "Pump Overrun" (call off). Opto board commissioned; comments updated.
+# 17 Nov 2026 (evening): clamp now 2 turns of the boiler permanent live -> multiply 15.0 -> 7.5, so the
+#   amps (and the v3 thresholds) read the same as before with 2x the signal over the noise.
+# 17 Nov 2026: boiler state v3 (burner on/off from the clamp current AND the flow temperature, checked
+#   against two videos of the boiler display; see the text_sensor notes). v2 read the boiler back to front.
+#   Flow, return and delta T now sent to HA on a 0.5 C change or every 30 s (were every 2 s); the logic
+#   still uses the 2 s readings internally. Debug component and heap/loop sensors removed.
+# 15 Nov 2026: boiler electrical state v2 (superseded by v3).
 # ESP32-S3-DevKitC-1 (16 MB), ESPHome, ESP-IDF
 #   - Boiler flow/return NTCs: installed, 3.3k dividers (docs/02)
 #   - Boiler pressure: installed, calibrated to the boiler gauge, fast + 1-min main (docs/04)
 #   - Cylinder outlet NTCs: left installed, right wired (docs/05)
 #   - Tundish plates: commissioned, wet + running two-sensitivity sensing (docs/05)
-#   - Current clamp (GPIO3): cable run to the electrical enclosure, to wire (docs/03)
+#   - Current clamp (GPIO3): on the boiler permanent live (marker 33), 2 turns (17 Nov 2026), multiply 7.5
 #   - Pressure gauges (10 Nov 2026 rewire): dividers (10k/20k) + 100 nF now in each GAUGE's junction
 #     box; signal cores land directly on: boiler GPIO6, left cylinder GPIO2, right cylinder GPIO1.
 #     5 V / GND via the bus strip (470 uF across the buses to be added).
@@ -15,7 +25,8 @@
 #     out of this YAML). IO13 stays the current clamp's post.
 #   - Tundish plates re-terminated 10 Nov: LEFT plate B on IO38 (sense GPIO39), RIGHT plate B on IO47
 #     (sense GPIO20), so the pins below are swapped vs 5 Nov. Confirm with a water test.
-#   - Opto board, 8 inputs (IN1-IN8): enclosure fitted, cables run, to wire (docs/11)
+#   - Opto board, 8 inputs (IN1-IN8): wired at the junction-box Stage 1a rewire and commissioned
+#     17 Nov 2026 (each input proven on and off against its relay; polarity inverted: true correct)
 # =============================================================================
 substitutions:
   # Boiler pressure transducer: generic G1/4" 0-80 PSI, 0.5-4.5 V, ratiometric (assumed)
@@ -87,30 +98,35 @@ wifi:
  
 captive_portal:
  
-debug:
-  update_interval: 10s
- 
 globals:
-  - id: was_calling
+  # --- Boiler state v3 (see the text_sensor notes) ---
+  - id: b3_lit
     type: bool
     initial_value: 'false'
-  - id: overrun_start_time
-    type: uint32_t
-    initial_value: '0'
-  - id: elevated_start_time
-    type: uint32_t
-    initial_value: '0'
-  - id: last_real_cycle_time
-    type: uint32_t
-    initial_value: '0'
-  - id: firing_latched
+  - id: b3_by_spike
     type: bool
     initial_value: 'false'
-  - id: low_band_since
+  - id: b3_rose
+    type: bool
+    initial_value: 'false'
+  - id: b3_start
     type: uint32_t
     initial_value: '0'
-  - id: drop_since
+  - id: b3_last_end
     type: uint32_t
+    initial_value: '0'
+  - id: b3_mid_since
+    type: uint32_t
+    initial_value: '0'
+  - id: b3_low_since
+    type: uint32_t
+    initial_value: '0'
+  - id: b3_dtlow_since
+    type: uint32_t
+    initial_value: '0'
+  - id: b3_failed_total
+    type: int
+    restore_value: true
     initial_value: '0'
   # --- Tundish: wet (any water, 2.2 MOhm only) ---
   - id: t1_streak
@@ -182,6 +198,16 @@ switch:
     id: plate_power
     internal: true
     restore_mode: ALWAYS_OFF
+
+  # GPIO7 held LOW from boot: the ground point for the 10 uF filter across the adjacent header pins
+  # GPIO6 (boiler pressure) and GPIO7 (16 Nov 2026; no GND pin near GPIO6 and no room in the gauge
+  # box Wagos). No steady current flows, so the pressure reading is unaffected. Do not use GPIO7
+  # for anything else while the capacitor is fitted.
+  - platform: gpio
+    pin: GPIO7
+    id: gpio7_filter_ground
+    internal: true
+    restore_mode: ALWAYS_OFF
  
   - platform: template
     name: "Tundish Test Mode"
@@ -246,10 +272,11 @@ sensor:
     configuration: DOWNSTREAM
     resistor: 3.3kOhm
  
+  # Fast (2 s) reading: internal, used by the state logic and delta T. HA gets the throttled copy below.
   - platform: ntc
     sensor: boiler_flow_ohm
-    name: "Boiler Flow Temperature"
-    id: boiler_flow_temperature
+    id: boiler_flow_temperature_fast
+    internal: true
     unit_of_measurement: "°C"
     accuracy_decimals: 1
     calibration:
@@ -279,8 +306,8 @@ sensor:
  
   - platform: ntc
     sensor: boiler_return_ohm
-    name: "Boiler Return Temperature"
-    id: boiler_return_temperature
+    id: boiler_return_temperature_fast
+    internal: true
     unit_of_measurement: "°C"
     accuracy_decimals: 1
     calibration:
@@ -295,6 +322,25 @@ sensor:
           window_size: 10
           send_every: 1
  
+  # To HA (same names, so the entity IDs are unchanged): sent on a 0.5 C change or at least every 30 s.
+  - platform: copy
+    source_id: boiler_flow_temperature_fast
+    name: "Boiler Flow Temperature"
+    id: boiler_flow_temperature
+    filters:
+      - or:
+          - throttle: 30s
+          - delta: 0.5
+
+  - platform: copy
+    source_id: boiler_return_temperature_fast
+    name: "Boiler Return Temperature"
+    id: boiler_return_temperature
+    filters:
+      - or:
+          - throttle: 30s
+          - delta: 0.5
+
   - platform: template
     name: "Boiler ΔT (Flow − Return)"
     id: boiler_delta_t
@@ -302,9 +348,13 @@ sensor:
     accuracy_decimals: 1
     update_interval: 2s
     lambda: |-
-      if (!id(boiler_flow_temperature).has_state() || !id(boiler_return_temperature).has_state())
+      if (!id(boiler_flow_temperature_fast).has_state() || !id(boiler_return_temperature_fast).has_state())
         return {};
-      return id(boiler_flow_temperature).state - id(boiler_return_temperature).state;
+      return id(boiler_flow_temperature_fast).state - id(boiler_return_temperature_fast).state;
+    filters:
+      - or:
+          - throttle: 30s
+          - delta: 0.5
  
   # Cylinder hot-outlet NTCs: 3.3k from the IO10 post -> IO9 (LEFT) / IO8 (RIGHT) -> NTC -> GND
   # Swapped 11 Nov 2026: a kitchen (left cylinder) draw dipped the left inlet and warmed the IO8 NTC.
@@ -387,9 +437,12 @@ sensor:
     update_interval: 1s
     accuracy_decimals: 2
     filters:
-      - multiply: 15.0   # 1V RMS = 15A. Refine with calibrate_linear against a known load.
+      - multiply: 7.5    # 17 Nov 2026: boiler permanent live (marker 33) passes 2 times through the clamp: 15 A / 2 turns. No known-load calibration (nominal).
 
   # Smoothed copy (5 s median) used only by the state logic: removes 1-4 s noise blips.
+  # Current bands seen on the two videos (17 Nov 2026): standby ~0 A (0.08-0.12 A at times);
+  #   pump only, burner off: 0.30-0.36 A; burning at low fire: 0.14-0.24 A (the pump slows);
+  #   mid fire: 0.28-0.40 A; full fire: 0.57-0.60 A; fan pre-purge at light-off: 0.42-0.47 A for ~10 s.
   - platform: copy
     source_id: boiler_current
     id: boiler_current_smooth
@@ -403,7 +456,8 @@ sensor:
   # its signal core lands on GPIO6. ADC calibration below was measured on GPIO1: re-check on GPIO6.
   # ADC calibrated against a meter; pressure calibrated to the boiler gauge (3 points, 3-4 Nov):
   # gauge = 1.193 x HA - 0.093 (valid 1.0-1.65 bar). Fast (diagnostic) + 1-min main sensor.
-  # Cable screen to GND at the ESP32 end (5 Nov). TODO: 10 uF (+100 nF) at the sensor end.
+  # Cable screen to GND at the ESP32 end (5 Nov). 10 uF at the pin: + GPIO6, - GPIO7 (held LOW, see
+  # switch "gpio7_filter_ground"), fitted 16 Nov; 100 nF stays in the gauge box.
   - platform: adc
     pin: GPIO6
     id: boiler_system_pressure_raw
@@ -633,33 +687,52 @@ sensor:
   - platform: uptime
     name: "Control Room Uptime"
  
-  - platform: debug
-    free:
-      name: "Control Room Heap Free"
-    block:
-      name: "Control Room Heap Max Block"
-    loop_time:
-      name: "Control Room Loop Time"
+  # Boiler state v3 outputs (published by the state logic)
+  - platform: template
+    name: "Boiler Last Burn Duration"
+    id: boiler_last_burn
+    unit_of_measurement: "s"
+    accuracy_decimals: 0
+    state_class: measurement
+    icon: mdi:fire
+    update_interval: never
+  - platform: template
+    name: "Boiler Last Off Gap"
+    id: boiler_last_gap
+    unit_of_measurement: "s"
+    accuracy_decimals: 0
+    state_class: measurement
+    icon: mdi:timer-sand
+    update_interval: never
+  - platform: template
+    name: "Boiler Failed Ignitions"
+    id: boiler_failed_ignitions
+    accuracy_decimals: 0
+    state_class: total_increasing
+    icon: mdi:fire-alert
+    update_interval: 60s
+    lambda: 'return (float) id(b3_failed_total);'
  
 text_sensor:
   # =========================================================
-  # Boiler Electrical State from the SCT013-015 clamp (single pass on the boiler's
-  # permanent live, 7 Nov 2026). Measured on this Ideal Logic+ S30:
-  #   standby: ~0 A (below resolution with one pass), pump only (overrun): ~0.17-0.29 A,
-  #   firing: ~0.33-0.59 A (modulating; ~0.58 A at full rate), pump overrun: ~4 min.
-  # 15 Nov 2026 (v2), from the 13-15 Nov history: real burns show ~2 min at 0.31-0.42 A, then a
-  #   ~10 s 0.42-0.55 A fan spike at the END, then pump only. No distinct spike at the START.
-  #   v1 split low-fire periods where the current wandered 0.25-0.45 A every 5-15 s into many
-  #   short "burns" and "ignition attempts" (inflated starts counts).
-  # v2 logic (on the 5 s median current):
-  #   - a burn is CONFIRMED when the current stays >= 0.33 A for 20 s;
-  #   - it ENDS only when the current stays below 0.29 A for 20 s (dips shorter than that are
-  #     the same burn). Start and end are both ~20 s late, so burn lengths stay about right;
-  #   - "Ignition Attempt" = >= 0.33 A for 15-20 s, not yet confirmed. If it drops away without
-  #     confirming, that is an aborted/failed attempt (what the HA failed-ignition counter looks for).
-  #   - High = >= 0.55 A while firing.
-  # Pre-Purge / Overrun need IN1 (boiler call, opto board) and Idle needs more clamp
-  # turns: both to follow. Until IN1 is wired, "Firing Without Call" reads on while firing.
+  # Boiler state v3 (17 Nov 2026). Ideal Logic+ S30, SCT013-015 clamp on the permanent live.
+  # Checked against two videos of the boiler display (flame symbol) with the HA history:
+  #   12:23-12:36 radiators only, light load: 4 short burns ending at 72-73 C, ~120 s anti-cycle
+  #     waits with the pump running; 13:48-13:56 all zones calling: one steady burn at full fire.
+  # Why current alone can't work: at light load the pump slows while the burner is lit, so "pump only,
+  # burner off" (0.30-0.36 A) draws MORE than "burning at low fire" (0.14-0.24 A), and mid fire sits
+  # in the same 0.28-0.40 A band as pump only. v2 read it back to front.
+  # v3 rules (current = 5 s median; flow slope = change of the 2 s flow reading over 20 s):
+  #   LIGHTS when the current jumps to >= 0.42 A from not lit (0.38 until 18 Nov) (fan pre-purge, matches the flame symbol
+  #     to 1-2 s), or sits at 0.13-0.28 A while the flow rises faster than 0.08 C/s.
+  #   GOES OUT (any of):
+  #     - current < 0.13 A for 10 s (pump stopped);
+  #     - current in 0.28-0.42 A and the flow falling faster than 0.12 C/s (not in the first 45 s):
+  #       the end is dated back to when the current entered that band (flame-off -> pump-only step);
+  #     - current in 0.28-0.42 A with flow - return < 4 C for 30 s (not in the first 60 s);
+  #   FAILED IGNITION: lit by a jump but no flow rise (> 0.05 C/s) within 120 s.
+  # Replayed on 15-17 Nov: starts within 1-2 s, ends within 3-15 s of the video; anti-cycle gaps
+  # 118-120 s. Pump running with the burner out: IN1 on = Anti-Cycle Wait, IN1 off = Pump Overrun.
   # =========================================================
   - platform: template
     name: "Boiler Electrical State"
@@ -668,87 +741,98 @@ text_sensor:
     lambda: |-
       if (!id(boiler_current_smooth).has_state())
         return {"Unknown"};
-      float a = id(boiler_current_smooth).state;
-      bool calling = id(boiler_call_for_heat).state;
+      const float IDLE_A = 0.13f;     // below: pump stopped
+      const float LO_A = 0.28f;       // low fire below this
+      const float HI_A = 0.42f;       // light-off jump at or above this (18 Nov: 0.38 -> 0.42, pump only reads 0.37-0.38 A at 2 turns)
+      const float FULL_A = 0.45f;     // "High Fire" label
+      const float RISE = 0.08f;       // C/s, light-off without a jump
+      const float ROSE = 0.05f;       // C/s, proves the burner lit
+      const float FALL = -0.12f;      // C/s, burner out while the pump runs
+      const float DT_MIN = 4.0f;      // C, flow - return below this = no heat going in
       uint32_t now = millis();
-      const float FIRE_ON = 0.33f;        // low fire ~0.33-0.45 A
-      const float FIRE_OFF = 0.29f;       // pump only ~0.17-0.29 A
-      const float HIGH_A = 0.55f;         // full rate ~0.58 A
-      const uint32_t CONFIRM_MS = 20000;  // sustained >= FIRE_ON to confirm a burn
-      const uint32_t DROP_MS = 20000;     // sustained < FIRE_OFF to end a burn
-      const uint32_t SHOW_MS = 15000;     // shorter rises are ignored as noise
+      float a = id(boiler_current_smooth).state;
 
-      // --- Already firing: stay firing until the current has been low for DROP_MS ---
-      if (id(firing_latched)) {
-        if (a < FIRE_OFF) {
-          if (id(drop_since) == 0) id(drop_since) = now;
-          if (now - id(drop_since) >= DROP_MS) {
-            id(firing_latched) = false;
-            id(drop_since) = 0;
-            id(low_band_since) = 0;
-            id(elevated_start_time) = 0;
-          }
+      // 20 s flow slope from a 1 s ring buffer (21 values)
+      static float fb[21];
+      static uint8_t fn = 0, fp = 0;
+      bool fok = id(boiler_flow_temperature_fast).has_state() && !std::isnan(id(boiler_flow_temperature_fast).state);
+      bool rok = id(boiler_return_temperature_fast).has_state() && !std::isnan(id(boiler_return_temperature_fast).state);
+      float f = fok ? id(boiler_flow_temperature_fast).state : 0.0f;
+      float slope = 0.0f;
+      bool slope_ok = false;
+      if (fok) {
+        fb[fp] = f;
+        fp = (fp + 1) % 21;
+        if (fn < 21) fn++;
+        if (fn == 21) { slope = (f - fb[fp]) / 20.0f; slope_ok = true; }
+      }
+      float dT = (fok && rok) ? f - id(boiler_return_temperature_fast).state : 99.0f;
+
+      auto end_burn = [&](uint32_t end_t, bool failed) {
+        if (end_t < id(b3_start)) end_t = id(b3_start);
+        id(b3_lit) = false;
+        if (failed) {
+          id(b3_failed_total) += 1;
+          id(boiler_failed_ignitions).publish_state((float) id(b3_failed_total));
         } else {
-          id(drop_since) = 0;
+          id(boiler_last_burn).publish_state((end_t - id(b3_start)) / 1000.0f);
         }
-        if (id(firing_latched)) {
-          id(was_calling) = calling;
-          id(overrun_start_time) = 0;
-          id(last_real_cycle_time) = now;
-          if (a >= HIGH_A) return {"Firing (Running) - High"};
-          return {"Firing (Running) - Low"};
-        }
-      }
+        id(b3_last_end) = end_t;
+        id(b3_mid_since) = 0;
+        id(b3_low_since) = 0;
+        id(b3_dtlow_since) = 0;
+      };
 
-      // --- Not firing: a rise to >= FIRE_ON must hold CONFIRM_MS to become a burn ---
-      if (a >= FIRE_ON) {
-        if (id(low_band_since) == 0) id(low_band_since) = now;
-        uint32_t held = now - id(low_band_since);
-        if (held >= CONFIRM_MS) {
-          id(firing_latched) = true;
-          id(drop_since) = 0;
-          id(elevated_start_time) = id(low_band_since);
-          id(was_calling) = calling;
-          id(overrun_start_time) = 0;
-          id(last_real_cycle_time) = now;
-          if (a >= HIGH_A) return {"Firing (Running) - High"};
-          return {"Firing (Running) - Low"};
+      bool mid = (a >= LO_A && a < HI_A);
+      if (mid) { if (id(b3_mid_since) == 0) id(b3_mid_since) = now; }
+      else id(b3_mid_since) = 0;
+
+      if (!id(b3_lit)) {
+        bool spike = (a >= HI_A);
+        bool quiet = (id(b3_last_end) == 0 || now - id(b3_last_end) > 40000);
+        bool rise = (a >= IDLE_A && a < LO_A && slope_ok && slope > RISE && quiet);
+        if (spike || rise) {
+          id(b3_lit) = true;
+          id(b3_by_spike) = spike;
+          id(b3_rose) = !spike;
+          id(b3_start) = now;
+          id(b3_low_since) = 0;
+          id(b3_dtlow_since) = 0;
+          if (id(b3_last_end) > 0)
+            id(boiler_last_gap).publish_state((now - id(b3_last_end)) / 1000.0f);
         }
-        if (held >= SHOW_MS) return {"Ignition Attempt"};
       } else {
-        id(low_band_since) = 0;
-      }
-
-      // Off / standby (standby is below resolution with a single clamp pass)
-      if (a < 0.10) {
-        id(elevated_start_time) = 0;
-        id(was_calling) = false;
-        return {"Off"};
-      }
-
-      // Not firing, below the firing band: pump and/or fan
-      if (a < 0.15) {
-        if (calling && !id(was_calling)) {
-          id(was_calling) = true;
-          return {"Pre-Purge"};
+        uint32_t age = now - id(b3_start);
+        if (slope_ok && slope > ROSE) id(b3_rose) = true;
+        // pump stopped
+        if (a < IDLE_A) {
+          if (id(b3_low_since) == 0) id(b3_low_since) = now;
+          if (now - id(b3_low_since) >= 10000) end_burn(id(b3_low_since), false);
+        } else id(b3_low_since) = 0;
+        // flame out, pump running: flow falling in the pump-only band
+        if (id(b3_lit) && mid && slope_ok && slope < FALL && age > 45000) {
+          uint32_t e = (now - id(b3_mid_since) <= 60000) ? id(b3_mid_since) : now;
+          end_burn(e, false);
         }
-        return {"Idle"};
+        // pump-only band with no heat going in
+        if (id(b3_lit) && mid && dT < DT_MIN) {
+          if (id(b3_dtlow_since) == 0) id(b3_dtlow_since) = now;
+          if (now - id(b3_dtlow_since) >= 30000 && age > 60000) end_burn(id(b3_dtlow_since), false);
+        } else id(b3_dtlow_since) = 0;
+        // never lit
+        if (id(b3_lit) && !id(b3_rose) && age > 120000) end_burn(now, true);
       }
 
-      // Pump band (~0.15-0.33 A)
-      if (!calling && id(was_calling)) {
-        if (id(overrun_start_time) == 0) id(overrun_start_time) = now;
-        if (now - id(overrun_start_time) < 300000)   // up to 5 min (measured ~4 min)
-          return {"Overrun"};
-        id(was_calling) = false;
-        id(overrun_start_time) = 0;
+      if (id(b3_lit)) {
+        if (id(b3_by_spike) && now - id(b3_start) < 20000) return {"Burner Lighting"};
+        if (a >= FULL_A) return {"Burning - High Fire"};
+        if (a < LO_A) return {"Burning - Low Fire"};
+        return {"Burning - Modulating"};
       }
-      if (!calling && id(last_real_cycle_time) > 0) {
-        uint32_t hours_since = (now - id(last_real_cycle_time)) / 3600000;
-        if (hours_since >= 23 && hours_since <= 25)
-          return {"24h Pump Self-Test (likely)"};
-      }
-      return {"Fan and/or Pump Active"};
+      if (a < IDLE_A) return {"Off"};
+      // Pump running, burner out: IN1 says whether the boiler is still being called.
+      if (id(boiler_call_for_heat).state) return {"Pump Only - Anti-Cycle Wait"};
+      return {"Pump Overrun"};
 
 binary_sensor:
   - platform: status
@@ -756,8 +840,9 @@ binary_sensor:
  
   # =========================================================
   # Opto board: Hailege 8-ch AC 230 V optocoupler, logic link set to 3.3 V (docs/11).
-  # Board outputs -> GPIO (internal pull-ups). Output LOW when 230 V present, so
-  # inverted: true is EXPECTED - confirm each channel against a real demand.
+  # Board outputs -> GPIO (internal pull-ups). Output LOW when 230 V present, so inverted: true
+  # (confirmed on all 8 channels, 17 Nov 2026). Opto cable cores: A black IN1, grey IN2 (brown spare);
+  # B black IN3, grey IN4, brown IN5; C black IN6, grey IN7, brown IN8.
   #   IN1 Boiler call (W7)              -> GPIO14
   #   IN2 Hot water timer output (W3)   -> GPIO18
   #   IN3 HW relay L output (W6)        -> GPIO15
@@ -765,8 +850,9 @@ binary_sensor:
   #   IN5 Cyl L valve drive (W2)        -> GPIO17
   #   IN6 Cyl R valve drive (W1)        -> GPIO11
   #   IN7 UFH relay / UF valve (W4)     -> GPIO12
-  #   IN8 Radiator relay (W8)           -> GPIO42  (live only after the TF/MF re-wire)
-  # GPIO6/7 freed (spare ADC1). Avoid GPIO19 (USB), 0/45/46, 35-37, 48.
+  #   IN8 Radiator relay (W8)           -> GPIO42  (W8 built at Stage 1a, linked to W7; live now)
+  # GPIO6 = boiler pressure; GPIO7 = held LOW as the filter ground for GPIO6's 10 uF (not spare).
+  # Avoid GPIO19 (USB), 0/45/46, 35-37, 48.
   # =========================================================
   - platform: gpio
     pin:
@@ -849,58 +935,18 @@ binary_sensor:
       - delayed_on: 100ms
       - delayed_off: 100ms
  
+  # Boiler state v3
   - platform: template
-    name: "Boiler State - Off"
-    id: state_off
+    name: "Boiler Burner On"
+    id: boiler_burner_on
+    device_class: heat
     lambda: |-
-      return id(boiler_electrical_state).state == "Off";
-  - platform: template
-    name: "Boiler State - Idle"
-    id: state_idle
-    lambda: |-
-      return id(boiler_electrical_state).state == "Idle";
-  - platform: template
-    name: "Boiler State - Fan and/or Pump Active"
-    id: state_fan_pump_active
-    lambda: |-
-      return id(boiler_electrical_state).state == "Fan and/or Pump Active";
-  - platform: template
-    name: "Boiler State - 24h Pump Self-Test"
-    id: state_24h_self_test
-    lambda: |-
-      return id(boiler_electrical_state).state == "24h Pump Self-Test (likely)";
-  - platform: template
-    name: "Boiler State - Pre-Purge"
-    id: state_pre_purge
-    lambda: |-
-      return id(boiler_electrical_state).state == "Pre-Purge";
-  - platform: template
-    name: "Boiler State - Ignition Attempt"
-    id: state_ignition_attempt
-    lambda: |-
-      return id(boiler_electrical_state).state == "Ignition Attempt";
-  - platform: template
-    name: "Boiler State - Firing (Running) - Low"
-    id: state_firing_low
-    lambda: |-
-      return id(boiler_electrical_state).state == "Firing (Running) - Low";
-  - platform: template
-    name: "Boiler State - Firing (Running) - High"
-    id: state_firing_high
-    lambda: |-
-      return id(boiler_electrical_state).state == "Firing (Running) - High";
-  - platform: template
-    name: "Boiler State - Overrun"
-    id: state_overrun
-    lambda: |-
-      return id(boiler_electrical_state).state == "Overrun";
+      return id(b3_lit);
   - platform: template
     name: "Firing Without Call"
     id: firing_without_call
     lambda: |-
-      std::string s = id(boiler_electrical_state).state;
-      return (s == "Ignition Attempt" || s == "Firing (Running) - Low" || s == "Firing (Running) - High")
-             && !id(boiler_call_for_heat).state;
+      return id(b3_lit) && !id(boiler_call_for_heat).state;
  
   # Tundish sense pins (MOSFET drains): configured here for their pull-ups; the interval
   # lambda reads them directly within each plate pulse.

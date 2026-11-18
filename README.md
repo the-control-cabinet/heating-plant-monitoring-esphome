@@ -11,15 +11,17 @@
 > **The short version:** a plant-room points list built from scratch:
 > - **temperatures** (NTC dividers)
 > - **pressures** (0.5-4.5 V transducers through 10k/20k dividers)
-> - **current** (SCT013 clamps with a bias network, banded into boiler states: Off, Idle, Pump, Ignition, Firing Low/High, Overrun, and a "firing without call" alarm)
+> - **current** (SCT013 clamp with a bias network) combined with the **flow temperature** and the wired boiler call into boiler states v3: burner lighting, burning at low/mid/high fire, anti-cycle wait, pump overrun, plus a "firing without call" alarm
 > - **demand** (230 V opto-isolated boiler switched live, timer output, hot-water relays, valve drives, UFH and radiator relays)
 > - **leak detection** (pulsed tundish plates)
 >
-> **Built so far:** both boards' firmware; boiler flow/return, system pressure (calibrated), current and banded states; both cylinders' outlet temperatures and inlet pressures (live, left/right verified), a per-cylinder "hot water available" estimate, and both tundish sensors (water-tested); the opto enclosure (logic side); an off-board rewiring of the control-room board ([full schematic](docs/12-control-room-wiring-schematic.md)); and a 23-rule alerts package ([doc 15](docs/15-alerts.md)).
+> **Built so far:** both boards' firmware; boiler flow/return, system pressure (calibrated, filtered), current and **v3 states (validated against video of the boiler display)**; the **opto board, installed and commissioned** (all 8 demand inputs proven); both cylinders' outlet temperatures and inlet pressures (live, left/right verified), a per-cylinder "hot water available" estimate, and both tundish sensors (water-tested); the opto enclosure (logic side); an off-board rewiring of the control-room board ([full schematic](docs/12-control-room-wiring-schematic.md)); and a 23-rule alerts package ([doc 15](docs/15-alerts.md)).
 >
-> **Latest (12-16 Nov):** boiler gauge commissioned on GPIO6; inlet spans verified (tyre gauge, left gain 1.028); left inlet noise cured with 10 µF at the ADC pin; hot water estimate v4; the clamp's boiler states found **wrong at low fire** (flow temperature is the burner signal: v3 designed, [doc 16](docs/16-boiler-states-short-cycling-and-v3.md)); inlet height offset, the vessel pre-charge question and an overnight floor-trend alert ([doc 17](docs/17-cylinder-inlets-height-offset-tests-and-trend.md)); weekly 60 °C check moved to the hubs' own probes (both hubs now 60 °C).
+> **Latest (16-18 Nov):** **boiler states v3 live**: two videos of the boiler display showed v2 was reading the boiler back to front (at low fire the pump alone draws more than burning); v3 uses the flow temperature to decide burning ([doc 16](docs/16-boiler-states-short-cycling-and-v3.md)). **Opto board commissioned** at the junction box rewire; clamp on 2 turns. **Inlet height gap closed** (5.87 m, mains sensor calibrated, the daytime gap was the inlet check valves holding peaks: [doc 17](docs/17-cylinder-inlets-height-offset-tests-and-trend.md)). 10 µF on every pressure input (one using a GPIO held low as its ground). Pressure peak alert and a cold minimum that ignores pump starts.
 >
-> **In progress:** boiler state v3, the height gap (6.2 m measured; meter check and Test 3), the opto board's mains side at the junction-box rewire, slow-leak diagnosis.
+> **Earlier (12-16 Nov):** boiler gauge commissioned on GPIO6; inlet spans verified (tyre gauge, left gain 1.028); left inlet noise cured with 10 µF at the ADC pin; hot water estimate v4; the clamp's boiler states found **wrong at low fire** (flow temperature is the burner signal: v3 designed, [doc 16](docs/16-boiler-states-short-cycling-and-v3.md)); inlet height offset, the vessel pre-charge question and an overnight floor-trend alert ([doc 17](docs/17-cylinder-inlets-height-offset-tests-and-trend.md)); weekly 60 °C check moved to the hubs' own probes (both hubs now 60 °C).
+>
+> **In progress:** the junction box tidy (Stage 1b), short cycling (automatic bypass: plumber), UFH pump mode and mixing temperature trials, slow-leak diagnosis.
 >
 > **Then:** OpenTherm with a DIYLESS shield and PID logic.
 
@@ -33,15 +35,15 @@
 |---|---|
 | ESPHome firmware: control room + understairs | ✅ Both written and flashed |
 | Control-room wiring | ✅ Off-board rework (gauge boxes, bus strip, posts, clamp strip): [schematic](docs/12-control-room-wiring-schematic.md) |
-| Boiler pressure transducer | ✅ On GPIO6 (gauge box, screened backhaul), checked cold and hot against the dial · ⏳ 10 µF at the pin |
+| Boiler pressure transducer | ✅ On GPIO6 (gauge box, screened backhaul), checked cold and hot against the dial · ✅ 10 µF at the pin (GPIO7 held low as its ground) · ✅ peak alert, cold minimum ignores pump starts |
 | Boiler flow/return NTCs | ✅ Installed, meter-checked (11 Nov) |
-| Boiler current clamp | ✅ Fitted, ±3% vs meter · ⚠️ states wrong at low fire: v3 uses flow temperature for burning ([doc 16](docs/16-boiler-states-short-cycling-and-v3.md)) · ⏳ 3 turns |
-| Opto board (8 inputs, own enclosure) | ✅ Enclosure and logic side ([schematic](docs/11-opto-board-installation.md#5-as-built-enclosure-schematic-and-status-10-nov-2026)) · ⏳ mains side at the rewire |
+| Boiler current clamp + states | ✅ 2 turns, ±3% vs meter · ✅ **v3 live** (flow temperature + clamp + IN1), validated against video ([doc 16](docs/16-boiler-states-short-cycling-and-v3.md)) |
+| Opto board (8 inputs, own enclosure) | ✅ **Installed and commissioned 17 Nov**: all 8 inputs proven on and off ([doc 11](docs/11-opto-board-installation.md#6-installed-and-commissioned-17-nov-2026)) |
 | Cylinder hot-outlet NTCs ×2 | ✅ Fitted, meter-checked, left/right verified · "hot water available" v3 with per-cylinder draw capture ([doc 14](docs/14-hot-water-stratification.md)) |
-| Cylinder inlet pressures ×2 | ✅ Live, spans verified (tyre gauge), left noise fixed (10 µF), height offset 0.37 bar (6.2 m measured → 0.61 bar: mains sensor suspected ~0.15-0.25 bar low), overnight floor trend ([doc 17](docs/17-cylinder-inlets-height-offset-tests-and-trend.md)) · ⏳ meter check + Test 3 |
+| Cylinder inlet pressures ×2 | ✅ Live, spans verified, 10 µF on both, expected pressure from the 5.87 m height (gap explained: check-valve ratchet), overnight floor trend ([doc 17](docs/17-cylinder-inlets-height-offset-tests-and-trend.md)) |
 | Expansion vessels | ✅ Replaced 11 Nov (24 L, 3.5 bar), peak 3.8 bar on reheat · ⏳ pressure reducing valves settle ~2.5 bar ([doc 05](docs/05-dhw-cylinders-expansion-and-tundish.md#plumber-visit-and-commissioning-11-nov-2026)) |
 | Tundish sensors ×2 | ✅ Commissioned, water-tested (naming confirmed), no wet events with the new vessels |
-| Alerts | ✅ Package live ([doc 15](docs/15-alerts.md)); hot water alerts on the BDR91 relay states; failed-ignition alert off until v3; inlet floor trend added |
+| Alerts | ✅ Package live ([doc 15](docs/15-alerts.md)); opto alerts on; starts/firing/failed ignitions from v3; "boiler called, flow cold" on IN1; pressure peak; inlet floor trend |
 | Understairs board: UFH pump + cooker clamps, UFH flow/return, (proposed) manifold pressure | ✅ Flashed · ⏳ sensors to connect |
 | OpenTherm + PID | 📐 Designed in its own repo: [opentherm-boiler-control-esphome](https://github.com/the-control-cabinet/opentherm-boiler-control-esphome) · node hardware assembled |
 
@@ -64,6 +66,11 @@ Full tracker: [docs/08](docs/08-commissioning-tracker.md)
 | **The clamp reads low-fire burning as "off"** (0.13-0.18 A) and the pump overrun as "firing" (0.30-0.40 A) | Flow-temperature burn detector vs clamp, 13-15 Nov | [16](docs/16-boiler-states-short-cycling-and-v3.md) |
 | **Short cycling with radiators only**: ~50 s burns every ~2.6 min | Flow-confirmed, 15 Nov early morning | [16](docs/16-boiler-states-short-cycling-and-v3.md) |
 | **Inlet noise needs filtering at the ADC pin**: the meter read steady while the ADC jumped | Pin swap + meter at each point; 10 µF at IO1 | [17](docs/17-cylinder-inlets-height-offset-tests-and-trend.md) |
+| **v2 boiler states were inverted**: its "firing low" was the pump alone, its "ignition attempts" were the burner going out | Two videos of the boiler display aligned with the history | [16](docs/16-boiler-states-short-cycling-and-v3.md) |
+| **The boiler cuts out at 72-73 °C and waits a fixed ~120 s** before relighting; radiators alone give 19 burns an hour | Video + v3 replay, 17-18 Nov | [16](docs/16-boiler-states-short-cycling-and-v3.md) |
+| **Adding clamp turns moved pump-only onto a threshold** (0.35 → 0.38 A) and caused false light-offs | Next morning's replay | [16](docs/16-boiler-states-short-cycling-and-v3.md) |
+| **The inlet "height gap" was the check valves holding peaks**, not a sensor error | Overnight mains − inlet = 0.55-0.58 bar = the 5.87 m height | [17](docs/17-cylinder-inlets-height-offset-tests-and-trend.md) |
+| **A pump start dips the boiler pressure ~0.1 bar for ~14 min**, enough to fake a leak signal | Cold minimum read 0.99 then 0.0; fixed by counting only while the boiler is off | [04](docs/04-pressure-and-leak-diagnosis.md) |
 | **A 3.5 bar vessel pre-charge on a ~2.5 bar supply** leaves the first part of expansion uncushioned (3.7-4.1 bar peaks) | Boyle's law vs measured peaks | [17](docs/17-cylinder-inlets-height-offset-tests-and-trend.md) |
 
 ## Architecture
@@ -162,11 +169,13 @@ As built 11 Nov 2026: [doc 12](docs/12-control-room-wiring-schematic.md). CSV: [
 | [`config/esphome/esp32-control-room-heating.yaml`](config/esphome/esp32-control-room-heating.yaml) | Current control-room firmware: NTCs, pressure, clamp + state machine, opto inputs, tundishes |
 | [`config/esphome/esp32-control-room-heating-proposed.yaml`](config/esphome/esp32-control-room-heating-proposed.yaml) | Proposed: 10k/20k dividers, noise filters, cylinder NTCs and pressures, opto pin moves |
 | [`config/esphome/understairs-monitor.yaml`](config/esphome/understairs-monitor.yaml) | UFH pump and cooker clamps, UFH manifold NTCs |
-| [`config/homeassistant/packages/heating_plant_alerts.yaml`](config/homeassistant/packages/heating_plant_alerts.yaml) | Alerts package: 23 automations, commissioning gates, derived sensors ([doc 15](docs/15-alerts.md)) |
+| [`config/homeassistant/packages/heating_plant_alerts.yaml`](config/homeassistant/packages/heating_plant_alerts.yaml) | Alerts package: commissioning gates, derived sensors, robust cold minimum, IN1 no-heat check, digest ([doc 15](docs/15-alerts.md)) |
 | [`config/homeassistant/packages/dhw_hot_water_available.yaml`](config/homeassistant/packages/dhw_hot_water_available.yaml) | Hot water available v4: top used = max(outlet, bottom probe), usable 42-45 °C ramp ([doc 14](docs/14-hot-water-stratification.md)) |
 | [`config/homeassistant/packages/cylinder_inlet_head.yaml`](config/homeassistant/packages/cylinder_inlet_head.yaml) | Expected pressure at the cylinders and each side's deviation ([doc 17](docs/17-cylinder-inlets-height-offset-tests-and-trend.md)) |
 | [`config/homeassistant/packages/cylinder_inlet_floor_trend.yaml`](config/homeassistant/packages/cylinder_inlet_floor_trend.yaml) | Overnight inlet floor per side and a drift alert ([doc 17](docs/17-cylinder-inlets-height-offset-tests-and-trend.md)) |
-| [`config/homeassistant/dashboards/`](config/homeassistant/dashboards/) | Boiler plant card (with the cylinders), hot water card (v4) and cylinder inlet card |
+| [`config/homeassistant/packages/boiler_kpis.yaml`](config/homeassistant/packages/boiler_kpis.yaml) | Starts and firing time today, from boiler state v3's Burner On ([doc 16](docs/16-boiler-states-short-cycling-and-v3.md)) |
+| [`config/homeassistant/packages/boiler_pressure_peak.yaml`](config/homeassistant/packages/boiler_pressure_peak.yaml) | Daily boiler pressure peak, 14-day history and a threshold message ([doc 04](docs/04-pressure-and-leak-diagnosis.md)) |
+| [`config/homeassistant/dashboards/`](config/homeassistant/dashboards/) | Boiler plant card (with the cylinders), boiler state v3 + relays-vs-optos card, hot water card (v4) and cylinder inlet card |
 | [`hardware/gauge-box/`](hardware/gauge-box/) | Printed gauge boxes (boiler and cylinder bases, lid, OpenSCAD source) |
 | [`config/homeassistant/pressure-statistics.example.yaml`](config/homeassistant/pressure-statistics.example.yaml) | Noise floor (1 h std dev), mean, 7-day change |
 

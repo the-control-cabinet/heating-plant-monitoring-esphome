@@ -1,0 +1,84 @@
+# Boiler pressure daily peak (16 Nov 2026)
+# Purpose: a check on the slow pressure-loss theory. If the boiler pressure relief valve (3 bar) were
+# discharging on hot peaks, the hot pressure would have to climb well above normal first. Normal so far:
+# ~1.0-1.1 bar cold, ~1.35-1.65 bar hot. This records each day's peak and flags any peak above the
+# threshold helper (default 2.0 bar). The urgent alert (> 2.5 bar for 5 min) stays in heating_plant_alerts.
+# GPIO6 filtered with 10 uF on 16 Nov, so single-sample spikes no longer reach the peak.
+# Uses the existing switch input_boolean.alerts_boiler_pressure (pressure alerts on/off).
+
+input_number:
+  boiler_pressure_peak_threshold:
+    name: "Boiler pressure peak threshold"
+    min: 1.5
+    max: 2.5
+    step: 0.05
+    mode: slider
+    unit_of_measurement: "bar"
+    icon: mdi:gauge-full
+    # no "initial": set 2.0 once after installing
+
+sensor:
+  - platform: statistics
+    name: "Boiler pressure max 24h"
+    unique_id: boiler_pressure_max_24h
+    entity_id: sensor.control_room_esp32_control_room_boiler_system_pressure
+    state_characteristic: value_max
+    max_age:
+      hours: 24
+    sampling_size: 20000
+    keep_last_sample: true
+
+template:
+  # Each day's peak, recorded at 23:59:30, with a 14-day history
+  - triggers:
+      - trigger: time
+        at: "23:59:30"
+    sensor:
+      - name: "Boiler pressure daily peak"
+        unique_id: boiler_pressure_daily_peak
+        unit_of_measurement: "bar"
+        device_class: pressure
+        icon: mdi:gauge-full
+        state: "{{ states('sensor.boiler_pressure_max_24h') | float(0) | round(2) }}"
+        attributes:
+          history: >
+            {% set h = this.attributes.history | default([], true) %}
+            {% set h = h + [{'date': now().strftime('%Y-%m-%d'), 'peak': states('sensor.boiler_pressure_max_24h') | float(0) | round(2)}] %}
+            {{ h[-14:] }}
+
+automation:
+  - id: boiler_pressure_peak_flag
+    alias: "Boiler pressure peak above threshold"
+    mode: single
+    triggers:
+      - trigger: numeric_state
+        entity_id: sensor.control_room_esp32_control_room_boiler_system_pressure
+        above: input_number.boiler_pressure_peak_threshold
+        for:
+          minutes: 2
+    conditions:
+      - condition: state
+        entity_id: input_boolean.alerts_boiler_pressure
+        state: "on"
+      # once a day at most
+      - condition: template
+        value_template: >
+          {{ this.attributes.last_triggered is none
+             or (now() - this.attributes.last_triggered).total_seconds() > 86400 }}
+    actions:
+      - action: logbook.log
+        data:
+          name: "Boiler pressure peak"
+          message: >
+            {{ states('sensor.control_room_esp32_control_room_boiler_system_pressure') | float(0) | round(2) }} bar
+            (threshold {{ states('input_number.boiler_pressure_peak_threshold') }}), flow
+            {{ states('sensor.control_room_esp32_control_room_boiler_flow_temperature') | float(0) | round(1) }} °C
+          entity_id: sensor.control_room_esp32_control_room_boiler_system_pressure
+      - action: notify.mobile_app_jamess_iphone
+        data:
+          title: "Boiler pressure peak"
+          message: >
+            Hot peak {{ states('sensor.control_room_esp32_control_room_boiler_system_pressure') | float(0) | round(2) }} bar
+            (normal ~1.35-1.65; threshold {{ states('input_number.boiler_pressure_peak_threshold') }}) at flow
+            {{ states('sensor.control_room_esp32_control_room_boiler_flow_temperature') | float(0) | round(1) }} °C.
+            Not urgent: relief valve is 3 bar. Worth noting for the slow-leak / expansion vessel question.
