@@ -1,3 +1,10 @@
+# 19 Nov 2026 (late): new "Evohome hub faults" binary sensor (every hub-reported activeFault on the cloud
+#   water_heater and climate entities) and a phone alert whenever that list changes.
+# 19 Nov 2026: short-cycling alert wording now comes from the data instead of fixed text: flow, return and
+#   their difference at the start that triggered it, which circuits are calling (opto IN5-IN8, found by
+#   search so no entity ID is hard-coded), and a verdict from the difference (<5 °C little heat taken,
+#   5-15 some, >=15 plenty). The old text always said "only the UFH zone open, no bypass", which was wrong
+#   at 15:49 on 19 Nov (return 35 °C, a UFH recovery).
 # 18 Nov 2026: 06:00 cold minimum read 0.0 because "Boiler pressure pump off" went unavailable when the
 #   boiler started at 03:01 and took the 24 h minimum with it. The pump-off sensor now holds its last value,
 #   the 24 h minimum keeps its last sample, and the cold minimum never falls back to 0. Real 18 Nov
@@ -296,7 +303,63 @@ template:
           {% if trigger.id == 'reset' and now().weekday() == 6 %}{{ now_v | round(1) }}
           {% else %}{{ [prev, now_v] | max | round(1) }}{% endif %}
  
+  # 19 Nov 2026: Evohome hub faults from the cloud integration (each hub's own activeFaults, e.g.
+  # "dhw actuator communication lost", low batteries, lost sensors), across every water_heater and climate
+  # entity. On 19 Nov the left hot water BDR91 was left off its backplate from the afternoon; the upstairs
+  # hub logged the fault at 18:40 but nothing reached the phone until the 21:30 digest showed 39 %.
+  - binary_sensor:
+      - name: "Evohome hub faults"
+        unique_id: evohome_hub_faults
+        device_class: problem
+        icon: mdi:alert-circle-outline
+        state: >
+          {% set ns = namespace(f=[]) %}
+          {% for s in (states.water_heater | list) + (states.climate | list) %}
+            {% set st = s.attributes.status %}
+            {% if st is mapping and st.activeFaults is defined %}
+              {% for f in st.activeFaults %}
+                {% set t = as_datetime(f.since | string) %}
+                {% set ns.f = ns.f + [s.name ~ ': ' ~ (f.fault_type | replace('_', ' ')) ~ ' since ' ~ (as_local(t).strftime('%H:%M %d %b') if t else f.since | string)] %}
+              {% endfor %}
+            {% endif %}
+          {% endfor %}
+          {{ ns.f | count > 0 }}
+        attributes:
+          faults: >
+            {% set ns = namespace(f=[]) %}
+            {% for s in (states.water_heater | list) + (states.climate | list) %}
+              {% set st = s.attributes.status %}
+              {% if st is mapping and st.activeFaults is defined %}
+                {% for f in st.activeFaults %}
+                  {% set t = as_datetime(f.since | string) %}
+                  {% set ns.f = ns.f + [s.name ~ ': ' ~ (f.fault_type | replace('_', ' ')) ~ ' since ' ~ (as_local(t).strftime('%H:%M %d %b') if t else f.since | string)] %}
+                {% endfor %}
+              {% endif %}
+            {% endfor %}
+            {{ ns.f }}
+ 
 automation:
+  # ---------- Evohome hub faults (19 Nov 2026) ----------
+  # One message each time the list of hub faults changes (a new fault, or one clearing), not repeated.
+  - id: plant_alert_evohome_hub_faults
+    alias: "Plant alert: Evohome hub fault"
+    mode: queued
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.evohome_hub_faults
+        attribute: faults
+    condition:
+      - condition: template
+        value_template: "{{ trigger.from_state is not none and trigger.to_state is not none }}"
+    action:
+      - service: notify.mobile_app_jamess_iphone
+        data:
+          title: "Evohome hub fault"
+          message: >
+            {% set now_f = state_attr('binary_sensor.evohome_hub_faults', 'faults') or [] %}
+            {% if now_f | count > 0 %}{{ now_f | join('; ') }}
+            {% else %}All Evohome hub faults have cleared.{% endif %}
+ 
   # ---------- Boiler ----------
   - id: plant_alert_short_cycling
     alias: "Plant alert: boiler short cycling"
@@ -310,10 +373,20 @@ automation:
         data:
           title: "Boiler short cycling"
           message: >
-            {{ states('sensor.boiler_starts_last_hour') }} starts in the last hour
-            (flow {{ states('sensor.control_room_esp32_control_room_boiler_flow_temperature') | float(0) | round(1) }} °C,
-            return {{ states('sensor.control_room_esp32_control_room_boiler_return_temperature') | float(0) | round(1) }} °C).
-            Likely low flow: only the UFH zone open, no bypass.
+            {% set f = states('sensor.control_room_esp32_control_room_boiler_flow_temperature') | float(0) %}
+            {% set r = states('sensor.control_room_esp32_control_room_boiler_return_temperature') | float(0) %}
+            {% set dt = (f - r) | round(1) %}
+            {% set ns = namespace(calling=[]) %}
+            {% for key, label in [('opto_in7', 'UFH'), ('opto_in8', 'radiators'), ('opto_in5', 'left cylinder'), ('opto_in6', 'right cylinder')] %}
+              {% set e = states.binary_sensor | selectattr('entity_id', 'search', key ~ '_') | list | first %}
+              {% if e is defined and e.state == 'on' %}{% set ns.calling = ns.calling + [label] %}{% endif %}
+            {% endfor %}
+            {{ states('sensor.boiler_starts_last_hour') }} starts in the last hour.
+            At this start: flow {{ f | round(1) }} °C, return {{ r | round(1) }} °C (difference {{ dt }} °C).
+            Calling: {{ ns.calling | join(', ') if ns.calling else 'nothing on the opto inputs' }}.
+            {% if dt < 5 %}Little heat being taken: water is coming back almost as hot as it left (low flow, few loops or radiators open, or the UFH mixing valve drawing little).
+            {% elif dt < 15 %}Some heat being taken: the load is close to the boiler's minimum output.
+            {% else %}Plenty of heat being taken, so not low flow: likely a warm-up or recovery, with the boiler cycling on its own limits.{% endif %}
       - delay: "01:00:00"
  
   - id: plant_alert_flow_overheat

@@ -1,5 +1,11 @@
 # =============================================================================
 # esp32-control-room-heating.yaml - boiler plant monitoring (10 Nov 2026: off-board rewiring)
+# 19 Nov 2026: the flow-falling "burner out" rule now also needs flow - return below 12 C. A cold
+#   return at 06:30 made the boiler modulate up while the flow dipped; v3 called it out and missed
+#   18 min of low fire, giving a false "lockout suspected" (see the text_sensor notes).
+# 18 Nov 2026 (evening): v3 ends a burn the moment IN1 (boiler call) switches off. A call ending
+#   mid-burn at 21:22 gave a false "Firing Without Call": the 4 min pump overrun with every valve shut
+#   kept v3 saying "Burning" until the pump stopped (see the text_sensor notes).
 # 18 Nov 2026: light-off threshold 0.38 -> 0.42 A. With 2 clamp turns, pump only reads 0.375-0.384 A
 #   (was 0.34-0.36 at 1 turn), which sat on the old threshold and gave false "Burner Lighting" during
 #   anti-cycle waits; light-off jumps are 0.43-0.53 A. Replayed on 18 Nov 00:00-08:38: no false burns.
@@ -19,7 +25,8 @@
 #   - Tundish plates: commissioned, wet + running two-sensitivity sensing (docs/05)
 #   - Current clamp (GPIO3): on the boiler permanent live (marker 33), 2 turns (17 Nov 2026), multiply 7.5
 #   - Pressure gauges (10 Nov 2026 rewire): dividers (10k/20k) + 100 nF now in each GAUGE's junction
-#     box; signal cores land directly on: boiler GPIO6, left cylinder GPIO2, right cylinder GPIO1.
+#     box; signal cores land directly on: boiler GPIO6, left cylinder GPIO1, right cylinder GPIO2
+#     (left/right swapped 11 Nov to match the fitted gauges; header corrected 18 Nov).
 #     5 V / GND via the bus strip (470 uF across the buses to be added).
 #   - Off-board NTC wiring: IO4/IO5 3.3k to 3V3 pins; IO8/IO9 3.3k to IO10, a 3V3 POST (keep IO10
 #     out of this YAML). IO13 stays the current clamp's post.
@@ -128,6 +135,9 @@ globals:
     type: int
     restore_value: true
     initial_value: '0'
+  - id: b3_call_prev              # IN1 on the previous pass, to catch the call dropping (18 Nov)
+    type: bool
+    initial_value: 'false'
   # --- Tundish: wet (any water, 2.2 MOhm only) ---
   - id: t1_streak
     type: int
@@ -727,9 +737,20 @@ text_sensor:
   #     to 1-2 s), or sits at 0.13-0.28 A while the flow rises faster than 0.08 C/s.
   #   GOES OUT (any of):
   #     - current < 0.13 A for 10 s (pump stopped);
-  #     - current in 0.28-0.42 A and the flow falling faster than 0.12 C/s (not in the first 45 s):
-  #       the end is dated back to when the current entered that band (flame-off -> pump-only step);
+  #     - current in 0.28-0.42 A and the flow falling faster than 0.12 C/s (not in the first 45 s),
+  #       with flow - return already below 12 C: the end is dated back to when the current entered
+  #       that band (flame-off -> pump-only step). The 12 C check was added 19 Nov 2026 after a false
+  #       "lockout suspected" at 06:45: at 06:30 a cold return (52.9 -> 46.9 C) made the boiler
+  #       modulate up to 0.37-0.41 A while the flow dipped, which this rule read as flame-out; the
+  #       burner then fired on low fire until 06:49 unseen. Real outs on 19 Nov had a gap of
+  #       5.7-9.1 C at the decision, both false ones 15.1-16.9 C (and still rising);
   #     - current in 0.28-0.42 A with flow - return < 4 C for 30 s (not in the first 60 s);
+  #     - IN1 (boiler call) switching from on to off: no switched live, so the burner has stopped.
+  #       Added 18 Nov 2026 after a false "Firing Without Call" at 21:22: the call ended mid-burn,
+  #       the pump ran its 4 min overrun at 0.38 A with every valve shut, the still water kept the
+  #       flow from falling and dT above 4 C, so v3 held "Burning" until the pump stopped. Only the
+  #       on -> off change ends a burn, so a wiring fault where IN1 never comes on is still caught by
+  #       the "Firing Without Call" check.
   #   FAILED IGNITION: lit by a jump but no flow rise (> 0.05 C/s) within 120 s.
   # Replayed on 15-17 Nov: starts within 1-2 s, ends within 3-15 s of the video; anti-cycle gaps
   # 118-120 s. Pump running with the burner out: IN1 on = Anti-Cycle Wait, IN1 off = Pump Overrun.
@@ -749,6 +770,7 @@ text_sensor:
       const float ROSE = 0.05f;       // C/s, proves the burner lit
       const float FALL = -0.12f;      // C/s, burner out while the pump runs
       const float DT_MIN = 4.0f;      // C, flow - return below this = no heat going in
+      const float DT_OUT = 12.0f;     // C, flow-falling "out" only counts below this (19 Nov; see notes above)
       uint32_t now = millis();
       float a = id(boiler_current_smooth).state;
 
@@ -787,6 +809,11 @@ text_sensor:
       if (mid) { if (id(b3_mid_since) == 0) id(b3_mid_since) = now; }
       else id(b3_mid_since) = 0;
 
+      // IN1: the call dropping (on -> off) means the switched live has gone
+      bool call_now = id(boiler_call_for_heat).state;
+      bool call_dropped = id(b3_call_prev) && !call_now;
+      id(b3_call_prev) = call_now;
+
       if (!id(b3_lit)) {
         bool spike = (a >= HI_A);
         bool quiet = (id(b3_last_end) == 0 || now - id(b3_last_end) > 40000);
@@ -804,13 +831,18 @@ text_sensor:
       } else {
         uint32_t age = now - id(b3_start);
         if (slope_ok && slope > ROSE) id(b3_rose) = true;
+        // call ended: no switched live, so the burner is out (not a failed ignition)
+        if (call_dropped) end_burn(now, false);
         // pump stopped
         if (a < IDLE_A) {
           if (id(b3_low_since) == 0) id(b3_low_since) = now;
           if (now - id(b3_low_since) >= 10000) end_burn(id(b3_low_since), false);
         } else id(b3_low_since) = 0;
-        // flame out, pump running: flow falling in the pump-only band
-        if (id(b3_lit) && mid && slope_ok && slope < FALL && age > 45000) {
+        // flame out, pump running: flow falling in the pump-only band, and the flow-return gap already
+        // closing (a cold return arriving while the burner modulates up also drops the flow, but the
+        // gap then stays at 15-20 C). If the return sensor is missing (dT = 99), the old rule applies.
+        bool gap_closing = (dT >= 98.0f) || (dT < DT_OUT);
+        if (id(b3_lit) && mid && slope_ok && slope < FALL && age > 45000 && gap_closing) {
           uint32_t e = (now - id(b3_mid_since) <= 60000) ? id(b3_mid_since) : now;
           end_burn(e, false);
         }
@@ -947,6 +979,10 @@ binary_sensor:
     id: firing_without_call
     lambda: |-
       return id(b3_lit) && !id(boiler_call_for_heat).state;
+    filters:
+      # 18 Nov 2026: IN1 is read every loop, the boiler state once a second, so a call ending
+      # mid-burn could show this for up to 1 s before v3 ends the burn. 5 s hides that blip.
+      - delayed_on: 5s
  
   # Tundish sense pins (MOSFET drains): configured here for their pull-ups; the interval
   # lambda reads them directly within each plate pulse.

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.12.0] - 2026-11-19
+- **Boiler states v3, go-live fixes** (doc 16 §10): the boiler call (IN1) dropping now ends a burn at once (18 Nov 21:22 false Firing Without Call during a 4-minute overrun with the valves shut) and Firing Without Call needs 5 s; the mid-band flow-falling rule also needs flow − return < 12 °C (19 Nov 06:45 false lockout: a cold return made the boiler modulate up). Off gap checked: 86-97 s. 19 Nov: first day with no false alerts.
+- **Alerts** (doc 15): short-cycling message built from the data (flow − return at the triggering start, what's calling from IN5-IN8, a verdict); new **Evohome hub faults** sensor and alert (every hub-reported fault from the cloud integration, one message per change), after a hot water relay left off its backplate went unreported for 4 hours.
+- **New doc 18:** short cycling: automatic bypass (flow) vs open loads (heat), the TPI floor on starts, flow temperature not a cure, two open-load trials (Lounge UFH loop from 14:41, Landing radiator from ~19:15) with method, excluded windows and the first evening's result (an open UFH loop doesn't stop UFH-only cycling).
+- Firmware and alerts package updated to the live versions (flashed 19 Nov 10:24; alerts applied 22:15).
+- Tracker and README: latest, status, findings, documents.
+
 ## [0.11.0] - 2026-11-18
 - **Boiler states v3 live** (doc 16 sections 5-9): two videos of the boiler display as ground truth (radiators only: cut-out at 72-73 °C, fixed ~120 s anti-cycle wait; all zones: one full-fire burn); v2 found inverted; v3 rules (light-off jump, flow slope and flow-return to decide burning, IN1 to split anti-cycle wait from pump overrun), validation and replays 15-18 Nov; Burner On, Last Burn, Last Gap, Failed Ignitions on the board; flow/return/ΔT to HA on 0.5 °C or 30 s. Clamp 2 turns, multiply 7.5; light-off threshold 0.38 → 0.42 A after the turns moved pump-only to 0.38 A. Debug component and heap/loop sensors removed.
 - **Opto board installed and commissioned** (doc 11 section 6): cable cores as wired, all 8 inputs proven on and off; IN8 live via W8 built early; opto alerts on.

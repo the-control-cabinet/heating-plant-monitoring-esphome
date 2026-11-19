@@ -25,7 +25,7 @@ So v2 reads low-fire burning as "off", and the pump overrun as "firing". The two
 
 ## 3. Short cycling (radiators only)
 
-15 Nov 04:15-04:37, flow-confirmed: **~50 s burns every ~2.6 minutes** with only the radiators calling. The boiler's minimum output exceeds the load, there is no automatic bypass, and every radiator has a TRV. Not a safety issue; fixed properly by the **automatic bypass** (plumber). Interim option: one radiator head (landing or towel rail) left unclipped as a guaranteed load. Lowering the flow temperature would make it worse. At the service: ask whether the heating output range (range rating) or anti-cycle time can be reduced.
+15 Nov 04:15-04:37, flow-confirmed: **~50 s burns every ~2.6 minutes** with only the radiators calling. The boiler's minimum output exceeds the load, there is no automatic bypass, and every radiator has a TRV. Not a safety issue; fixed properly by the **automatic bypass** (plumber). Interim option: one radiator head (landing or towel rail) left unclipped as a guaranteed load (running from 19 Nov: [doc 18](18-bypass-trials-open-loads.md)). Lowering the flow temperature would make it worse. At the service: ask whether the heating output range (range rating) or anti-cycle time can be reduced.
 
 ## 4. v3 design
 
@@ -95,3 +95,17 @@ Flow, return and ΔT now go to Home Assistant on a 0.5 °C change or every 30 s 
 2. On a modulating boiler, **current doesn't rank by "how much is happening"**: the pump alone can draw more than burning at low fire.
 3. **Changing the sensor changes the bands.** Adding clamp turns shifted pump-only from 0.35 to 0.38 A and onto a threshold. Re-check the bands after any change to the measurement chain.
 
+## 10. Fixes after go-live (18-19 Nov)
+
+Two false alerts in the first two days, each traced to one rule and fixed with one change.
+
+| When | Alert | What really happened | Fix |
+|---|---|---|---|
+| 18 Nov 21:22 | **Firing Without Call** | The burner went out when the UFH and radiator relays dropped (21:22:14). The pump ran on for its 4-minute overrun at 0.38 A with the valves shut, so the flow fell only slowly (70.3 → 63.8 °C). No rule saw a fast fall, and v3 kept "Burning" until the pump stopped at 21:26:30. | **The boiler call (IN1) dropping now ends a burn at once.** It's an on→off edge, so a call wire that never comes on still trips the alarm. Firing Without Call also needs 5 s (`delayed_on`), because IN1 is read every loop and the state once a second. |
+| 19 Nov 06:45 | **Boiler lockout suspected** | No lockout. At 06:30 a zone sent cold water back (return 52.9 → 46.9 °C); the boiler modulated up to 0.37-0.41 A while the flow dipped. The mid-band "flow falling" rule read that as flame-out, but the burner ran on low fire until a real cut-out at 06:49:30 (72.2 °C). | **The flow-falling rule now also needs flow − return < 12 °C** (`DT_OUT`). At the decision point, real outs had 5.7-9.1 °C and shrinking; the false ones 15.1-16.9 °C and rising. If the return sensor is missing, the old rule applies. |
+
+Both flashed (18 Nov ~22:00, 19 Nov 10:24). The 18 Nov fix was confirmed the next morning (07:04:34: call dropped mid-burn → straight to Pump Overrun), and **19 Nov was the first day with no false alerts**: 78 starts, 7.5 h firing, 0 failed ignitions, 0 calls without heat.
+
+**Off-gap check, closed:** the cut-out-to-relight wait measured **86-97 s** on every cycle on 19 Nov (the ~120 s on the 17 Nov video was a different situation). The logic is fine.
+
+**Lesson 4:** a rule that infers an event from a *rate* (flow falling) needs a second, independent condition that separates the real event from a look-alike. Here, the direction of flow − return did it.

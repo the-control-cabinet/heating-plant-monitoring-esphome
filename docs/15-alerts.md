@@ -18,7 +18,7 @@ Gates keep an unconnected or floating sensor from raising false alarms (the boil
 
 | Area | Alert | Logic (persistence) | FDD |
 |---|---|---|---|
-| Boiler | Short cycling | > 6 ignition attempts in the last hour (history_stats), repeat after 1 h | F1/F17 |
+| Boiler | Short cycling | > 6 starts (Burner On) in the last hour, repeat after 1 h; message gives flow − return at the start, what's calling and a verdict | F1/F17 |
 | Boiler | Flow above 80 °C | 2 min | - |
 | Boiler | Pressure low / high / sensor | < 0.8 bar 10 min; > 2.5 bar 5 min; pin < 0.2 V | F20 |
 | Boiler | Pressure falling | 24 h change < −0.1 bar, checked cold at 05:00 (statistics `change`) | F5 |
@@ -40,6 +40,7 @@ Gates keep an unconnected or floating sensor from raising false alarms (the boil
 | Zones | Zone below 5.5 °C | Any climate entity, 10 min | - |
 | Zones | Calling but not warming | Heat demand ≥ 95% and > 1 °C below setpoint, 2 h | F7 |
 | Zones | Evohome battery low | Any thm/trv/dhw battery sensor on, 1 h | - |
+| Zones | Evohome hub fault | Any fault a hub reports through the cloud integration (relay lost, battery, sensor); one message when the list changes, one when it clears | F10 |
 | Digest | Daily heating digest | 21:30: starts, firing hours, cylinder tops, tundish events, pressures when enabled | - |
 
 Existing automations kept separate: the RAMSES gateway down/restart/reconnect alerts and the tundish drip/discharge alerts.
@@ -69,3 +70,9 @@ Existing automations kept separate: the RAMSES gateway down/restart/reconnect al
 - **Pressure peak** (new package `boiler_pressure_peak.yaml`) and the **robust cold minimum** ([doc 04](04-pressure-and-leak-diagnosis.md)).
 - **Digest additions:** morning UFH shortfall per zone (Family, Dining, Hall: temperature minus setpoint when the morning period ends) and calls without heat today. The shortfall sensors stay empty (not "unknown") outside their window, so reloads no longer log invalid-state errors.
 - **RAMSES device health** (not-heard alert) lives in the Evohome repo ([B11](https://github.com/the-control-cabinet/evohome-heating-controls-ramses-integration/blob/main/docs/B11-rf-health-and-hub-checks.md)).
+
+## Changes 19 Nov 2026
+
+- **Short-cycling wording from the data.** The message used to end "Likely low flow: only the UFH zone open, no bypass" every time; at 15:49 on 19 Nov that was wrong (return 35 °C: the floor was taking plenty of heat). It now gives the flow, return and their difference at the start that triggered it, **what's calling** (opto IN5-IN8, looked up by search so no entity ID is hard-coded), and a verdict: under 5 °C little heat taken (low flow); 5-15 °C load near the boiler's minimum; 15 °C or more not low flow. Example, 19:35: *"difference 0.3 °C. Calling: UFH. Little heat being taken…"* ([doc 18](18-bypass-trials-open-loads.md)).
+- **New: Evohome hub faults.** A binary sensor collects every `activeFaults` entry the hubs report through the cloud integration, across all water heater and climate entities, and a phone alert fires whenever that list changes. **Why:** on 19 Nov the left hot water BDR91 was left off its backplate after mounting work (~15:40). The upstairs hub logged *dhw actuator communication lost* at 18:40 when the evening reheat started, but nothing reached the phone; the RAMSES not-heard check only messages at 08:05, and the 21:30 digest showed the left cylinder at 39 %. With this alert the fault arrives within one cloud update (~5 min). First live test: the "all cleared" message arrived after the relay was refitted at 22:13.
+- **Lesson:** a device that disappears is best caught by the controller that depends on it. The hub knew within 10 minutes of needing the relay; the radio-silence check needed 3 hours.
