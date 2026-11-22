@@ -1,5 +1,7 @@
 # =============================================================================
 # esp32-control-room-heating.yaml - boiler plant monitoring (10 Nov 2026: off-board rewiring)
+# 20 Nov 2026: no relight by a current jump for 120 s after the boiler call (IN1) drops, unless the
+#   call returns: six false ~50 s burns on 20 Nov came 1 s after a call ended (see the v3 notes).
 # 19 Nov 2026: the flow-falling "burner out" rule now also needs flow - return below 12 C. A cold
 #   return at 06:30 made the boiler modulate up while the flow dipped; v3 called it out and missed
 #   18 min of low fire, giving a false "lockout suspected" (see the text_sensor notes).
@@ -751,6 +753,9 @@ text_sensor:
   #       flow from falling and dT above 4 C, so v3 held "Burning" until the pump stopped. Only the
   #       on -> off change ends a burn, so a wiring fault where IN1 never comes on is still caught by
   #       the "Firing Without Call" check.
+  #   NO RELIGHT BY A JUMP for 120 s after IN1 drops, unless the call returns (20 Nov 2026: the current
+  #     median stayed above 0.42 A for a few seconds after the call ended and v3 "relit" 1 s later: six
+  #     false ~50 s burns with no call and the flow falling).
   #   FAILED IGNITION: lit by a jump but no flow rise (> 0.05 C/s) within 120 s.
   # Replayed on 15-17 Nov: starts within 1-2 s, ends within 3-15 s of the video; anti-cycle gaps
   # 118-120 s. Pump running with the burner out: IN1 on = Anti-Cycle Wait, IN1 off = Pump Overrun.
@@ -813,9 +818,17 @@ text_sensor:
       bool call_now = id(boiler_call_for_heat).state;
       bool call_dropped = id(b3_call_prev) && !call_now;
       id(b3_call_prev) = call_now;
+      // 20 Nov: after the call drops, the 5 s current median stays high for a few seconds (fan post-purge /
+      // the burner was at mid-high fire), which re-triggered "lights" 1 s after the IN1 end: 6 false ~50 s
+      // burns on 20 Nov, all with no call and the flow falling. No switched live = no light-off by a jump
+      // for 120 s after a call ends, unless a new call arrives. A wiring fault where IN1 never comes on is
+      // still caught (no recent drop), and the flow-rise rule is unchanged.
+      static uint32_t drop_t = 0;
+      if (call_dropped) drop_t = now;
+      bool just_dropped = (drop_t != 0 && now - drop_t < 120000);
 
       if (!id(b3_lit)) {
-        bool spike = (a >= HI_A);
+        bool spike = (a >= HI_A) && !(just_dropped && !call_now);
         bool quiet = (id(b3_last_end) == 0 || now - id(b3_last_end) > 40000);
         bool rise = (a >= IDLE_A && a < LO_A && slope_ok && slope > RISE && quiet);
         if (spike || rise) {

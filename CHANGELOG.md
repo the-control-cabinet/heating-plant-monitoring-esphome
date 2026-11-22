@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.13.0] - 2026-11-22
+- **Signal truth table** (doc 16 §11): IN8 is the boiler switched live from any circuit until Stage 2; radiators from the RAMSES relay; radiator zone valves latched open. Doc 18 method corrected; README findings.
+- **v3 fix** (doc 16 §11): no light-off by a current jump for 120 s after the call drops, unless it returns (flashed 20 Nov ~20:25; 11+ call drops clean).
+- **Boiler manual findings** (doc 16 §11): installer menu has no anti-cycle setting or range rating; minimum output 6.1 kW; pump minimum speed P1/P7 the only free setting.
+- **Doc 18 §6-9:** corrected radiators-only figures (median 1.8 → 2.8 min with the Landing radiator open), Lounge loop A/B test (both hours one continuous burn), 19-22 Nov data check, open loop closed as a cure, next steps (towel rail from 22 Nov, pump speed trial).
+- **Doc 04 addendum:** cold point with water temperature; temperature-corrected leak rate 0.04-0.055 bar/day (~0.2 L/day); low alert on long pump runs; top-up 22 Nov; fault history F1, FU, F1; limits of single-sensor leak location.
+- **Doc 05 addendum:** right relief valve weeping (two drips 22 Nov, idle, steady 3.7-4.0 bar, below pressures held dry); what sets the held pressure; interim draw; vessel watch; tundish "running" note.
+- **Alerts** (doc 15): short-cycling "Calling" from named signals (no IN8); cold point; hub faults only on real changes, logged; card IN8 footnote.
+- Firmware, alerts package and boiler-and-demand card updated to the live versions.
+
 ## [0.12.0] - 2026-11-19
 - **Boiler states v3, go-live fixes** (doc 16 §10): the boiler call (IN1) dropping now ends a burn at once (18 Nov 21:22 false Firing Without Call during a 4-minute overrun with the valves shut) and Firing Without Call needs 5 s; the mid-band flow-falling rule also needs flow − return < 12 °C (19 Nov 06:45 false lockout: a cold return made the boiler modulate up). Off gap checked: 86-97 s. 19 Nov: first day with no false alerts.
 - **Alerts** (doc 15): short-cycling message built from the data (flow − return at the triggering start, what's calling from IN5-IN8, a verdict); new **Evohome hub faults** sensor and alert (every hub-reported fault from the cloud integration, one message per change), after a hot water relay left off its backplate went unreported for 4 hours.

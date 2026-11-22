@@ -24,10 +24,10 @@ The boiler short-cycles whenever the heat being taken is below its minimum outpu
 
 | Trial | Side | Open since | Ends |
 |---|---|---|---|
-| **Lounge door-end UFH loop** open, uncontrolled | Underfloor (behind the mixing valve) | **19 Nov 14:41** (its actuator failed internally and was removed: [Evohome B9](https://github.com/the-control-cabinet/evohome-heating-controls-ramses-integration/blob/main/docs/B9-ufh-and-radiator-behaviour.md)) | When the replacement actuator is fitted |
-| **Far-end Landing radiator** open | Radiators | **19 Nov ~19:15 ± 30 min** (HR92 and its adapter removed; the HR92 stays powered nearby so the hub sees no fault; the zone is controlled by its T87RF through the other HR92) | Swapped to a towel rail, or ended after the bypass |
+| **Lounge door-end UFH loop** open, uncontrolled | Underfloor (behind the mixing valve) | **19 Nov 14:41** (its actuator failed internally and was removed: [Evohome B9](https://github.com/the-control-cabinet/evohome-heating-controls-ramses-integration/blob/main/docs/B9-ufh-and-radiator-behaviour.md)) | Ended 21 Nov ~15:37 (replacement actuator fitted, proven ~16:55) |
+| **Far-end Landing radiator** open (ended 22 Nov ~17:50, swapped to the master en-suite towel rail) | Radiators | **19 Nov ~19:15 ± 30 min** (HR92 and its adapter removed; the HR92 stays powered nearby so the hub sees no fault; the zone is controlled by its T87RF through the other HR92) | Swapped to a towel rail, or ended after the bypass |
 
-**Method.** Burns are split by what is calling, from the opto inputs (IN7 UFH relay, IN8 radiator relay, IN5/IN6 cylinder valve drives):
+**Method.** Burns are split by what is calling: IN7 (UFH relay) and IN5/IN6 (cylinder valve drives) from the opto board; **radiators from the RAMSES state of the upstairs heat-demand relay**. *Corrected 21 Nov: IN8 was first used for the radiators, but W8 is linked to W7 until Stage 2, so IN8 is the boiler switched live from any circuit ([doc 16 §11](16-boiler-states-short-cycling-and-v3.md#11-fix-and-findings-20-22-nov)).*
 
 | Period | Judges |
 |---|---|
@@ -51,10 +51,52 @@ Measured: starts per hour, burn length, off gap, flow and return. **Success:** r
 
 **Cost seen:** the Landing overshot its setpoint by 20:20, as expected for an uncontrolled radiator.
 
-## 5. Next
+## 5. Next (as planned 19 Nov)
 
 1. **Towel rail comparison:** refit the Landing HR92 and open the master en-suite towel rail instead (warmth more welcome there, smaller load). Compare burn lengths.
 2. **After the automatic bypass is fitted:** one week with every TRV back on, against the open-load data, to decide whether a permanent open load is still wanted.
 3. **UFH-only cycling** needs a control-side answer: a longer boiler anti-cycle time (service question), or the relay decided by HA from real zone demand ([Evohome D1](https://github.com/the-control-cabinet/evohome-heating-controls-ramses-integration/blob/main/docs/D1-roadmap.md)), then OpenTherm.
 
 **For the plumber:** automatic bypass (for S-plan zone valve control); the boiler's heating range and anti-cycle time; his view on flow temperature; a permanent bypass radiator after the trials; the cylinder expansion vessel pre-charge (3.5 bar on ~2.5 bar supply); the slow pressure loss.
+
+## 6. Corrected figures (21 Nov)
+
+Re-run with the radiators from the RAMSES relay (see the method note above):
+
+| Calling | Period | Burns | Median | Under 3 min |
+|---|---|---|---|---|
+| Radiators only | Before the Landing radiator opened | 83 | 1.8 min | 76 % |
+| Radiators only | Landing radiator open | 84 | 2.8 min | 63 % |
+| UFH only | 19-21 Nov | 55 | — | — |
+
+- **The open Landing radiator lengthened radiators-only burns** (median 1.8 → 2.8 min) but most are still under 3 minutes. The radiator zone valves are latched open, so it also heats on every UFH and cylinder call, wanted or not.
+- **UFH-only before/after couldn't be split on 19 Nov**: the Lounge loop and the Landing radiator both changed that day. Hence the A/B test below.
+
+## 7. Lounge loop A/B test (21-22 Nov)
+
+| | Test A, 21 Nov 14:42-15:42 | Test B, 22 Nov 14:46-15:46 |
+|---|---|---|
+| Set-up | Upstairs off, Hall 22 °C, door-end loop open | Upstairs off, meant Hall 22 °C with the loop closed; **the override went on the Lounge by mistake**, so its loops were open and calling |
+| Burns | **1 continuous, 53.7 min** | **1 continuous, 56.2 min** |
+| Flow / return settled | 68 / 50-52 °C | 68 / 47-50 °C |
+
+**Neither hour could answer the question.** On a frosty afternoon the cooled screed took everything the boiler gave, so there was no cycling for a loop to change. The cycling problem is a **warm-screed** problem.
+
+## 8. Data check instead of a third test (22 Nov)
+
+UFH-only burns with the Landing radiator open throughout both periods (test hours, the actuator fitting and the HA update excluded):
+
+| | Loop open (19 Nov 19:15 → 21 Nov 14:40) | Loop closed (21 Nov 17:00 → 22 Nov 17:50) |
+|---|---|---|
+| UFH-only burns | 30 | 16 |
+| Median | 3.7 min | 4.1 min |
+| Under 3 min | 37 % | 12 % |
+| Return already ≥ 50 °C | median 1.7 min, 83 % under 3 min | median 6.5 min, 0 % under 3 min |
+
+No sign that the open loop helped; the closed period also had colder weather, so it isn't evidence the other way either. **Conclusion: an open UFH loop is not a cure for UFH-only cycling** (with 19 Nov evening's 0.3 °C flow − return at 7 starts an hour). The mixing valve lets in only a trickle of boiler water once the screed is warm, whatever the loops do, and the boiler's 6.1 kW minimum is far above that load ([doc 16 §11](16-boiler-states-short-cycling-and-v3.md#11-fix-and-findings-20-22-nov)).
+
+## 9. Next (22 Nov)
+
+1. **Towel rail trial** from 22 Nov ~17:50: Landing HR92 refitted, master en-suite towel rail fully open. Compare radiators-only burns with the Landing period (§6).
+2. **Pump minimum speed** P1 (100 %) vs P7 (70 %): one change, after the towel rail's first results.
+3. **UFH-only cycling:** control side only: HA deciding the UFH relay from real zone demand, then OpenTherm modulation. The boiler has no anti-cycle setting to lengthen.

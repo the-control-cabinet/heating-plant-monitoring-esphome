@@ -1,3 +1,15 @@
+# 22 Nov 2026: Evohome hub fault alert only fires on a real change in the fault list (not on a reload or
+#   restart, which sent two false "all cleared" messages on 21 Nov), and each message is also written to
+#   the logbook so the fault text can be found later.
+# 21 Nov 2026 (15:00): short-cycling "Calling:" now takes the radiators from the RAMSES relay state
+#   (binary_sensor.bdr_13_258561_active). Opto IN8 is on joint W8, which is linked to W7 (boiler switched
+#   live) until Stage 2, so it lights whenever ANY circuit calls and can't tell the radiators apart.
+#   UFH (IN7) and the cylinder valve drives (IN5/IN6) stay on the optos.
+# 21 Nov 2026 (11:50): 'this' moved out of the action variables (not defined there; logged a TemplateError)
+#   into the entity templates.
+# 21 Nov 2026: new "Boiler cold point" (lowest pump-off pressure since 06:00 and the water
+#   temperature at that moment); the daily cold minimum and the digest now show the water temperature with
+#   each figure, so a colder night isn't mistaken for a faster leak. The pressure figure itself is unchanged.
 # 19 Nov 2026 (late): new "Evohome hub faults" binary sensor (every hub-reported activeFault on the cloud
 #   water_heater and climate entities) and a phone alert whenever that list changes.
 # 19 Nov 2026: short-cycling alert wording now comes from the data instead of fixed text: flow, return and
@@ -161,7 +173,51 @@ template:
           {% elif is_number(this.state) %}{{ this.state }}
           {% else %}{{ none }}{% endif %}
 
+  # 21 Nov 2026: the water temperature at the cold point. Every minute while the boiler has been Off for
+  # 20 min, the pump-off pressure is compared with the lowest so far since 06:00; when it's a new low, the
+  # water temperature (mean of the flow and return NTCs) is stored with it. Reset just after 06:00, once the
+  # daily cold minimum below has copied it. Water a few degrees colder reads ~0.02-0.05 bar lower with no
+  # water lost (21 Nov: 0.98 bar after a much colder night), so each day's figure needs its temperature.
+  - trigger:
+      - platform: time_pattern
+        minutes: "/1"
+        id: tick
+      - platform: time
+        at: "06:00:30"
+        id: reset
+    action:
+      - variables:
+          off20: >
+            {% set s = states.sensor.control_room_esp32_control_room_boiler_electrical_state %}
+            {{ s is not none and s.state == 'Off' and (now() - s.last_changed).total_seconds() > 1200 }}
+          p: "{{ states('sensor.boiler_pressure_pump_off') }}"
+          f: "{{ states('sensor.control_room_esp32_control_room_boiler_flow_temperature') }}"
+          r: "{{ states('sensor.control_room_esp32_control_room_boiler_return_temperature') }}"
+          w: "{{ ((f | float + r | float) / 2) | round(1) if is_number(f) and is_number(r) else none }}"
+    sensor:
+      - name: "Boiler cold point"
+        unique_id: boiler_cold_point_since_0600
+        unit_of_measurement: "bar"
+        icon: mdi:thermometer-water
+        state: >
+          {% set prev = this.state | float if is_number(this.state) else none %}{% set low = trigger.id == 'tick' and off20 and is_number(p) and (prev is none or (p | float) < prev) %}
+          {% if trigger.id == 'reset' %}{{ none }}
+          {% elif low %}{{ p | float | round(3) }}
+          {% else %}{{ prev }}{% endif %}
+        attributes:
+          water_temperature: >
+            {% set prev = this.state | float if is_number(this.state) else none %}{% set low = trigger.id == 'tick' and off20 and is_number(p) and (prev is none or (p | float) < prev) %}
+            {% if trigger.id == 'reset' %}{{ none }}
+            {% elif low %}{{ w }}
+            {% else %}{{ this.attributes.get('water_temperature') }}{% endif %}
+          at: >
+            {% set prev = this.state | float if is_number(this.state) else none %}{% set low = trigger.id == 'tick' and off20 and is_number(p) and (prev is none or (p | float) < prev) %}
+            {% if trigger.id == 'reset' %}{{ none }}
+            {% elif low %}{{ now().strftime('%H:%M') }}
+            {% else %}{{ this.attributes.get('at') }}{% endif %}
+
   # Daily cold minimum (the lowest pressure in the 24 h to 06:00), with the previous day's kept for comparison.
+  # 21 Nov: also the water temperature at that point (from the cold point sensor above), and the previous day's.
   - trigger:
       - platform: time
         at: "06:00:00"
@@ -177,6 +233,9 @@ template:
           {% else %}{{ none }}{% endif %}
         attributes:
           previous: "{{ this.state if this.state not in ['unknown', 'unavailable', None] else none }}"
+          water_temperature: "{{ state_attr('sensor.boiler_cold_point', 'water_temperature') }}"
+          at: "{{ state_attr('sensor.boiler_cold_point', 'at') }}"
+          previous_water_temperature: "{{ this.attributes.get('water_temperature') if this.attributes is defined else none }}"
 
   # Morning UFH shortfall: room temperature minus the setpoint, recorded when a zone's morning period
   # ends (its setpoint drops between 06:30 and 10:30). Negative = short. Kept until the next morning.
@@ -348,17 +407,33 @@ automation:
       - platform: state
         entity_id: binary_sensor.evohome_hub_faults
         attribute: faults
+    # 22 Nov: only a real change in the list counts. A reload or restart recreates the sensor (its old
+    # state is unavailable, with no list), which sent two false "all cleared" messages on 21 Nov 11:49.
     condition:
       - condition: template
-        value_template: "{{ trigger.from_state is not none and trigger.to_state is not none }}"
+        value_template: >
+          {{ trigger.from_state is not none and trigger.to_state is not none
+             and trigger.from_state.state in ['on', 'off'] and trigger.to_state.state in ['on', 'off']
+             and trigger.from_state.attributes.get('faults') is not none
+             and trigger.to_state.attributes.get('faults') is not none
+             and (trigger.from_state.attributes.get('faults') | list | sort)
+                 != (trigger.to_state.attributes.get('faults') | list | sort) }}
     action:
+      - variables:
+          msg: >
+            {% set now_f = trigger.to_state.attributes.get('faults') or [] %}
+            {% if now_f | count > 0 %}{{ now_f | join('; ') }}
+            {% else %}All Evohome hub faults have cleared.{% endif %}
       - service: notify.mobile_app_jamess_iphone
         data:
           title: "Evohome hub fault"
-          message: >
-            {% set now_f = state_attr('binary_sensor.evohome_hub_faults', 'faults') or [] %}
-            {% if now_f | count > 0 %}{{ now_f | join('; ') }}
-            {% else %}All Evohome hub faults have cleared.{% endif %}
+          message: "{{ msg }}"
+      # 22 Nov: also written to the logbook, so the fault text survives reloads (traces don't).
+      - service: logbook.log
+        data:
+          name: "Evohome hub fault"
+          message: "{{ msg }}"
+          entity_id: binary_sensor.evohome_hub_faults
  
   # ---------- Boiler ----------
   - id: plant_alert_short_cycling
@@ -377,13 +452,12 @@ automation:
             {% set r = states('sensor.control_room_esp32_control_room_boiler_return_temperature') | float(0) %}
             {% set dt = (f - r) | round(1) %}
             {% set ns = namespace(calling=[]) %}
-            {% for key, label in [('opto_in7', 'UFH'), ('opto_in8', 'radiators'), ('opto_in5', 'left cylinder'), ('opto_in6', 'right cylinder')] %}
-              {% set e = states.binary_sensor | selectattr('entity_id', 'search', key ~ '_') | list | first %}
-              {% if e is defined and e.state == 'on' %}{% set ns.calling = ns.calling + [label] %}{% endif %}
+            {% for e, label in [('binary_sensor.bdr_13_258561_active', 'radiators'), ('binary_sensor.control_room_esp32_control_room_opto_in7_ufh_relay', 'UFH'), ('binary_sensor.control_room_esp32_control_room_opto_in5_cylinder_left_valve_drive', 'left cylinder'), ('binary_sensor.control_room_esp32_control_room_opto_in6_cylinder_right_valve_drive', 'right cylinder')] %}
+              {% if is_state(e, 'on') %}{% set ns.calling = ns.calling + [label] %}{% endif %}
             {% endfor %}
             {{ states('sensor.boiler_starts_last_hour') }} starts in the last hour.
             At this start: flow {{ f | round(1) }} °C, return {{ r | round(1) }} °C (difference {{ dt }} °C).
-            Calling: {{ ns.calling | join(', ') if ns.calling else 'nothing on the opto inputs' }}.
+            Calling: {{ ns.calling | join(', ') if ns.calling else 'nothing (no relay or valve on)' }}.
             {% if dt < 5 %}Little heat being taken: water is coming back almost as hot as it left (low flow, few loops or radiators open, or the UFH mixing valve drawing little).
             {% elif dt < 15 %}Some heat being taken: the load is close to the boiler's minimum output.
             {% else %}Plenty of heat being taken, so not low flow: likely a warm-up or recovery, with the boiler cycling on its own limits.{% endif %}
@@ -1005,7 +1079,7 @@ automation:
             right {{ state_attr('sensor.right_cylinder_hot_water_available', 'top_used') | float(0) | round(1) }} °C ({{ states('sensor.right_cylinder_hot_water_charge') }} %).
             Tundish discharge events: left {{ states('sensor.control_room_esp32_control_room_tundish_left_discharge_events') | int(0) }},
             right {{ states('sensor.control_room_esp32_control_room_tundish_right_discharge_events') | int(0) }}.
-            {% if is_state('input_boolean.alerts_boiler_pressure', 'on') %}System pressure {{ states('sensor.control_room_esp32_control_room_boiler_system_pressure') | float(0) | round(2) }} bar; cold minimum {{ states('sensor.boiler_pressure_daily_cold_minimum') }} bar (previous {{ state_attr('sensor.boiler_pressure_daily_cold_minimum', 'previous') or 'n/a' }}).{% endif %}
+            {% if is_state('input_boolean.alerts_boiler_pressure', 'on') %}System pressure {{ states('sensor.control_room_esp32_control_room_boiler_system_pressure') | float(0) | round(2) }} bar; cold minimum {{ states('sensor.boiler_pressure_daily_cold_minimum') }} bar{% set cw = state_attr('sensor.boiler_pressure_daily_cold_minimum', 'water_temperature') %}{% if cw is not none %} at {{ cw }} °C water{% endif %} (previous {{ state_attr('sensor.boiler_pressure_daily_cold_minimum', 'previous') or 'n/a' }}{% set pw = state_attr('sensor.boiler_pressure_daily_cold_minimum', 'previous_water_temperature') %}{% if pw is not none %} at {{ pw }} °C{% endif %}).{% endif %}
             UFH mornings (temp vs setpoint at period end): Family {{ states('sensor.family_room_morning_shortfall') }},
             Dining {{ states('sensor.dining_room_morning_shortfall') }}, Hall {{ states('sensor.hall_morning_shortfall') }} °C.
             Calls without heat today: {{ states('counter.boiler_no_heat_calls_today') | int(0) }}.

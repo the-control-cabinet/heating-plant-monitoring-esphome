@@ -130,3 +130,25 @@ Each has its own debounce and counter (Wet Events, **Discharge Events**). Test s
 - **Mains under flow:** the mains sags ~3.0 → ~2.4 bar at 7-9 L/min; each inlet group loses a further ~0.55-1.0 bar under flow. The left "settling below mains" was a part-closed cold isolating valve, fixed. Hot-only tap tests and the strainers: [doc 17](17-cylinder-inlets-height-offset-tests-and-trend.md#5-inlet-group-losses-12-nov).
 - **Right tundish counter (10):** real discharges on 10 Nov evening and 11 Nov morning (the old, failed vessels) plus the 11 Nov water test; none since the new vessels, including two reheats from empty peaking ~4.1 bar. Counter reset 12 Nov.
 - **Vessel pre-charge** (3.5 bar on a ~2.5 bar supply) and the 3.7-3.8 bar post-reheat level: [doc 17](17-cylinder-inlets-height-offset-tests-and-trend.md#2-why-the-inlets-sit-at-37-38-bar-after-a-reheat).
+
+## Addendum (22 Nov 2026): the right relief valve starts to weep
+
+Two wet events on the right tundish, the first since the new vessels (11 Nov):
+
+| | 08:45:23 | 16:11:57 |
+|---|---|---|
+| Right cylinder heating? | No: idle 17 min (reheat ended 08:28) | No: idle 6 h 11 min (reheat ended 10:00) |
+| Draw on the right? | No | No (none since ~09:35) |
+| Inlet pressure | 3.96-4.00 bar, steady | 3.68-3.72 bar, steady |
+| Spike or transient (2 s data) | None | None |
+| Held near that pressure first | ~14.5 h (after the 21 Nov 18:30 reheat from the coldest start yet, 11.7 °C) | ~6 h |
+
+**History (12 Nov onwards):** the same cylinder held **4.09 bar** (12 Nov, 2.4 h at or above 4.0 bar) and **3.99 bar for 8.6 h** (21-22 Nov overnight) with no drip. So it isn't a new high in pressure: a relief valve seat no longer seals reliably at ~3.7-4.0 bar, and it got worse within the day. The expansion relief valve is the likeliest (it discharged on 10-11 Nov with the old vessels); the T&P relief valve can't be ruled out from here because the two discharge pipes join before the tundish. Unvented safety kit: a G3 plumber job.
+
+**What sets the held pressure:** a full reheat from cold after a big draw (probe at the start 11.7-17.9 °C → 3.9-4.1 bar); top-ups from 35-55 °C settle at 3.6-3.86 bar. Frost only matters through a colder mains (~0.05-0.1 bar). The 3.5 bar vessel pre-charge on a ~2.5 bar supply is why the cylinder sits near 4 bar for hours after each full reheat.
+
+**Interim:** a ~10 s hot draw from a right-cylinder tap after each reheat drops it to supply pressure (~2.5 bar) until the next one.
+
+**Vessel watch:** if the vessel were losing its air charge, peaks after full reheats would rise. They haven't (4.09 on 12 Nov, 3.7-4.0 since); a daily check for peaks above ~4.1 bar is on the list.
+
+**Sensor note:** a drop left sitting across the plates keeps "running" on until it dries (08:45-09:12, 16:12-16:37). Read the **start time** as the event and the duration as nothing more than how long the plate stayed wet.

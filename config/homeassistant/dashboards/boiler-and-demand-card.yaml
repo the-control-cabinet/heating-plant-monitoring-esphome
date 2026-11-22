@@ -1,4 +1,6 @@
-# Boiler state v3 and the opto demand inputs (18 Nov 2026).
+# Boiler state v3 and the opto demand inputs (18 Nov 2026; IN8 note 21 Nov).
+# IN8 sits on joint W8, linked to W7 (boiler switched live) until Stage 2: it lights whenever ANY circuit
+# calls, so for the radiators the RAMSES relay column is the one to read until the link is removed.
 # A relay row with the relay on but its opto input off is a fault; for a cylinder, IN3/IN4 on with
 # IN5/IN6 off means its own stat or cut-out is holding the valve shut.
 type: vertical-stack
@@ -42,10 +44,12 @@ cards:
       {% set p = 'binary_sensor.control_room_esp32_control_room_opto_' %}
       | Circuit | Evohome relay | Relay out | Downstream | Boiler call |
       |---|:-:|:-:|:-:|:-:|
-      | Radiators | {{ d('binary_sensor.bdr_13_258561_active') }} | {{ d(p ~ 'in8_radiator_relay') }} IN8 | — | {{ d(p ~ 'in1_boiler_call') }} IN1 |
+      | Radiators | {{ d('binary_sensor.bdr_13_258561_active') }} | {{ d(p ~ 'in8_radiator_relay') }} IN8 * | — | {{ d(p ~ 'in1_boiler_call') }} IN1 |
       | UFH | {{ d('binary_sensor.bdr_13_039497_active') }} | {{ d(p ~ 'in7_ufh_relay') }} IN7 | — | {{ d(p ~ 'in1_boiler_call') }} IN1 |
       | Left cylinder | {{ d('binary_sensor.bdr_13_073145_active') }} | {{ d(p ~ 'in3_hw_relay_left') }} IN3 | {{ d(p ~ 'in5_cylinder_left_valve_drive') }} IN5 valve | {{ d(p ~ 'in1_boiler_call') }} IN1 |
       | Right cylinder | {{ d('binary_sensor.bdr_13_036609_active') }} | {{ d(p ~ 'in4_hw_relay_right') }} IN4 | {{ d(p ~ 'in6_cylinder_right_valve_drive') }} IN6 valve | {{ d(p ~ 'in1_boiler_call') }} IN1 |
 
       Hot water timer (IN2): {{ d(p ~ 'in2_hot_water_timer') }} {{ 'permanent ON' if is_state(p ~ 'in2_hot_water_timer','on') else '**OFF: hot water blocked**' }}
       Opto alerts: {{ states('input_boolean.alerts_opto_inputs') }}
+
+      \* IN8 = boiler switched live (any circuit) until Stage 2 removes the W8-W7 link; read the Evohome relay column for the radiators.

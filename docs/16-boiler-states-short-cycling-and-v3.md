@@ -109,3 +109,20 @@ Both flashed (18 Nov ~22:00, 19 Nov 10:24). The 18 Nov fix was confirmed the nex
 **Off-gap check, closed:** the cut-out-to-relight wait measured **86-97 s** on every cycle on 19 Nov (the ~120 s on the 17 Nov video was a different situation). The logic is fine.
 
 **Lesson 4:** a rule that infers an event from a *rate* (flow falling) needs a second, independent condition that separates the real event from a look-alike. Here, the direction of flow − return did it.
+
+## 11. Fix and findings, 20-22 Nov
+
+**False starts after a call ends (fixed 20 Nov).** When the boiler call (IN1) dropped, the pump's overrun current sometimes jumped across the light-off threshold, and v3 logged a burn with no call. **Fix:** for 120 s after IN1 drops, a current jump doesn't count as a light-off unless the call comes back (`just_dropped` gate on the board). Flashed 20 Nov ~20:25; checked over the next 11+ call drops: no starts without a call.
+
+**Signal truth table (21 Nov).** An analysis mistake (IN8 read as "radiators calling") made it worth writing down what each signal physically measures:
+
+| Signal | What it really is | Until when |
+|---|---|---|
+| IN1 | Boiler call (switched live at the boiler) | Permanent |
+| IN5 / IN6 | Left / right cylinder valve drive | Permanent |
+| IN7 | UFH relay (downstairs hub) | Permanent |
+| **IN8** | **Boiler switched live from any circuit**: terminal W8 is linked to W7 | Junction box Stage 2 (radiator zone valve heads re-powered, W8-W7 link removed) |
+| Radiators calling | RAMSES state of the upstairs hub's heat-demand relay (`binary_sensor.bdr_13_258561_active`) | Use this until Stage 2 |
+| Radiator flow | The two radiator zone valves are **latched open** (heads unpowered until Stage 2), so any radiator without a working TRV heats whenever the boiler pump runs, for **any** call | Stage 2 |
+
+**What the boiler can and can't be set to do (manual checked 22 Nov).** The Ideal Logic+ System installer menu (function + RESTART for more than 5 s) shows the last 3 faults, then SL / SH (run at minimum / maximum rate), VF (5-minute venting) and P1 / P7 (pump minimum speed 100 % / 70 %, default). **There is no anti-cycle setting and no range rating**: the 86-97 s wait is fixed in firmware, and the gas input follows the fan. Minimum heating output is **6.1 kW** (6.1-30.3 kW at 70 °C mean). A warm screed behind a mixing valve takes far less, so UFH-only cycling is built into this boiler; the fixes are on the control side ([doc 18](18-bypass-trials-open-loads.md), [OpenTherm](07-opentherm-and-pid-plan.md)). The pump minimum speed (P1) is the only free setting; a one-change trial is queued.
