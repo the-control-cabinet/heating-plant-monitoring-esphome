@@ -152,3 +152,28 @@ Two wet events on the right tundish, the first since the new vessels (11 Nov):
 **Vessel watch:** if the vessel were losing its air charge, peaks after full reheats would rise. They haven't (4.09 on 12 Nov, 3.7-4.0 since); a daily check for peaks above ~4.1 bar is on the list.
 
 **Sensor note:** a drop left sitting across the plates keeps "running" on until it dries (08:45-09:12, 16:12-16:37). Read the **start time** as the event and the duration as nothing more than how long the plate stayed wet.
+
+## Addendum (23-26 Nov 2026): six right tundish events, water hammer tested and ruled out
+
+**Events on the right cylinder's tundish** (the left has had none):
+
+| # | When | What the cylinder was doing | Right inlet pressure |
+|---|---|---|---|
+| 1 | 22 Nov 08:45 | idle, reheat ended 08:28 | steady 3.96-4.00 bar |
+| 2 | 22 Nov 16:11 | idle since 10:00 | steady 3.66-3.73 bar |
+| 3 | 23 Nov 07:25 | during a long shower, reheat running | 0.7-1.5 bar (drawing) |
+| 4 | 24 Nov 07:21 | 18 s after a long shower stopped | rising from 1.55 bar |
+| 5 | 25 Nov 07:18 | during a long shower, reheat running | 0.75-0.8 bar (drawing) |
+| 6 | 26 Nov 03:12 | idle overnight, no draw, no reheat since the previous morning | steady 3.45 bar |
+
+**Water hammer (24-25 Nov): ruled out.** Event 4 came seconds after a shower closed, so the first theory was a pressure surge lifting a weak expansion relief valve. The normal inlet sensors can't see a surge: they sample once a second and then take a median of 7 and an average of 5. So two temporary diagnostic sensors were added to the control-room firmware ("Cylinder Left/Right Inlet Pressure Peak (diag)": a 20 ms ADC read, maximum over 2 s; flashed 24 Nov 22:08). At rest they read within 0.05 bar of the normal sensors. When the shower closed on 25 Nov (07:28:50), the right inlet rose from 1.5 to 2.96 bar and then climbed smoothly to 3.5 bar over the next few minutes: **no spike, no overshoot**. The same held on both cylinders all morning. The 24 Nov "jump" was a smoothed level change, not a surge.
+
+**Condensation (25-26 Nov): ruled out.** Events 3-5 all came during or just after long morning showers, so cold mains running through the inlet group could have made the pipework sweat into the tundish. Event 6 came at 03:12 with no water flowing, and after the next morning's showers there were no water beads on the pipes above the tundish.
+
+**Working theory: the right expansion relief valve's seat is passing.** A dirty or worn seat lets water through at any pressure, not only near its 6 bar setting. Drops collect in the discharge pipe and reach the tundish plates at irregular times, whatever the cylinder is doing. That fits all six events, including the idle ones at 3.45-4.0 bar, well below pressures this cylinder has held dry for days. The two discharge pipes (expansion relief and T&P) join before the tundish, so the tundish can't say which valve; the T&P discharge would be hot, and none of the events followed a temperature excursion. **This is a G3 job for the plumber.**
+
+**Also for the plumber:** under a long draw the right inlet falls to **0.75 bar**, against 1.15 bar on the left. That points to a partly blocked inlet strainer or a weak pressure reducing valve on the right inlet group. The right inlet's highest reading after a full reheat was 3.96 bar (25 Nov), within the vessel watch limit (≤ ~4.1 bar).
+
+**Why the left inlet reads ~2.4 bar overnight:** with no reheat and no draw for many hours, the trapped pressure above the pressure reducing valve relaxes back towards the mains supply level. The right held 3.45 bar on the same night.
+
+The peak sensors stay in for now: they turned out to matter for something else (see [doc 19](19-control-room-esp-api-drops.md)).

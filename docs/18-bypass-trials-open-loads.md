@@ -100,3 +100,21 @@ No sign that the open loop helped; the closed period also had colder weather, so
 1. **Towel rail trial** from 22 Nov ~17:50: Landing HR92 refitted, master en-suite towel rail fully open. Compare radiators-only burns with the Landing period (§6).
 2. **Pump minimum speed** P1 (100 %) vs P7 (70 %): one change, after the towel rail's first results.
 3. **UFH-only cycling:** control side only: HA deciding the UFH relay from real zone demand, then OpenTherm modulation. The boiler has no anti-cycle setting to lengthen.
+
+## 10. Towel rail trial: first result (22-26 Nov)
+
+From 22 Nov ~17:50 the Landing radiator was back on its HR92 and the **master en-suite towel rail** fully open (TRV head off, kept powered in the room). With the radiator zone valve heads latched open, the rail takes heat on every pump run.
+
+| Radiators-only burns | Before any trial | Landing radiator open | Towel rail open (22 Nov 17:50 → 23 Nov 22:30) |
+|---|---|---|---|
+| Median | 1.8 min | 2.8 min | **6.0 min** |
+| Under 3 min | 76 % | 63 % | **27 %** |
+
+**Provisional.** The towel rail period was colder, and colder weather lengthens burns on its own, so it is being rechecked at like return temperatures. The en-suite didn't overheat. What remains short is mostly the **one-room radiator calls** (e.g. the office on a weekday afternoon): 12-15 min burns, the 90 s anti-cycle wait, then sub-minute relights ([doc 16 §12](16-boiler-states-short-cycling-and-v3.md#12-short-cycling-23-26-nov-where-the-short-burns-come-from)).
+
+## 11. Next (26 Nov)
+
+1. **Towel rail** stays open; recheck against like return temperatures.
+2. **Pump minimum speed P1 (100 %)** running since 25 Nov 21:03 (first result in doc 16 §12).
+3. **Flow temperature test** after the pump trial (the CH knob also sets the cylinder reheat flow; cylinders must still reach 60 °C).
+4. **Automatic bypass** (plumber), then the radiator valve heads re-powered and the upstairs relay rebound as a heating zone valve; then Home Assistant / OpenTherm control.

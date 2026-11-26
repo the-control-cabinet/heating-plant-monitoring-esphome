@@ -1,3 +1,12 @@
+# 23 Nov 2026 (b): the daily cold minimum takes its value from the cold point (was the 24 h minimum, which kept
+#   the held pre-top-up 0.93 bar). (a): "reheat cut short" now judges the best probe reading (at switch-off vs 30 min later) and only if
+#   the relay is still off. 07:24 false alert: the right reheat finished at 61.0 C (06:54), a shower dropped the
+#   probe to 23.9 C and a new reheat started at 07:17; the old rule read the probe after the draw.
+# 22 Nov 2026 (evening): "Plant alert: hot water relay commanded but output off" REMOVED.
+#   Its "commanded" half could only come from RAMSES, which can miss messages: at 18:57 it fired falsely when the
+#   left relay had switched off correctly at 18:52:53 (IN3/IN5 off, probe 60.0 C) but RAMSES showed it on until
+#   19:28. Cover kept: a dead or unpowered relay -> Evohome hub faults alert (~10 min); a relay whose contact
+#   doesn't close -> "cylinder reheat over 90 minutes"; relay output vs valve drive -> "cylinder stat not passing".
 # 22 Nov 2026: Evohome hub fault alert only fires on a real change in the fault list (not on a reload or
 #   restart, which sent two false "all cleared" messages on 21 Nov), and each message is also written to
 #   the logbook so the fault text can be found later.
@@ -226,9 +235,14 @@ template:
         unique_id: boiler_pressure_daily_cold_minimum
         unit_of_measurement: "bar"
         icon: mdi:gauge-low
+        # 23 Nov: the value now comes from the cold point (the same reading as its water temperature and time).
+        # The 24 h statistics minimum used before included the pump-off value HELD from the previous night, so
+        # after the 22 Nov 18:12 top-up it still read 0.93 bar while the real overnight low was ~1.17 bar.
         state: >
+          {% set c = states('sensor.boiler_cold_point') %}
           {% set m = states('sensor.boiler_pressure_min_24h') %}
-          {% if is_number(m) %}{{ m | float | round(2) }}
+          {% if is_number(c) %}{{ c | float | round(2) }}
+          {% elif is_number(m) %}{{ m | float | round(2) }}
           {% elif is_number(this.state) %}{{ this.state }}
           {% else %}{{ none }}{% endif %}
         attributes:
@@ -630,20 +644,28 @@ automation:
         to: "off"
         id: right
     action:
-      # Wait for the probe's next reports to reach HA (they can be ~25 min apart via the gateway).
-      - delay: "00:30:00"
       - variables:
           probe: "{{ 'sensor.dhw_07_045307_temperature' if trigger.id == 'left' else 'sensor.dhw_07_040975_temperature' }}"
           heater: "{{ 'water_heater.stored_hw_2' if trigger.id == 'left' else 'water_heater.stored_hw' }}"
+          probe_at_off: "{{ states(probe) | float(0) }}"
+      # Wait for the probe's next reports to reach HA (they can be ~25 min apart via the gateway).
+      - delay: "00:30:00"
+      - variables:
           setpoint: "{{ state_attr(heater, 'temperature') | float(58) }}"
+          best: "{{ [probe_at_off | float(0), states(probe) | float(0)] | max }}"
+      # Cut short = the cylinder never got near its setpoint (the best of the reading at switch-off and the
+      # late report 30 min on), AND it hasn't started heating again. A draw after a finished reheat can only
+      # lower the probe, so it no longer counts (23 Nov 07:24 false alert: 61 C at 06:54, shower, new reheat).
       - condition: template
-        value_template: "{{ has_value(probe) and states(probe) | float(0) < setpoint - 4 }}"
+        value_template: >
+          {{ has_value(probe) and best | float(0) < setpoint - 4
+             and is_state(trigger.entity_id, 'off') }}
       - service: notify.mobile_app_jamess_iphone
         data:
           title: "Reheat cut short"
           message: >
             The {{ trigger.id }} cylinder stopped heating with its probe at
-            {{ states(probe) | float(0) | round(1) }} °C (setpoint {{ setpoint | round(0) }} °C):
+            {{ best | float(0) | round(1) }} °C (setpoint {{ setpoint | round(0) }} °C):
             the hot water window probably closed before it was satisfied.
             It will finish in the next window; lengthen the window if this recurs.
  
@@ -761,34 +783,6 @@ automation:
         data:
           title: "Hot water timer off"
           message: "Evohome is calling for hot water but the Danfoss timer output (IN2) is off. Set the TS715Si back to permanent ON."
- 
-  - id: plant_alert_relay_not_switching
-    alias: "Plant alert: hot water relay commanded but output off"
-    mode: single
-    trigger:
-      - platform: template
-        value_template: >
-          {{ states('sensor.stored_hw_heat_demand_2') | float(0) > 0
-             and is_state('binary_sensor.control_room_esp32_control_room_opto_in2_hot_water_timer', 'on')
-             and is_state('binary_sensor.control_room_esp32_control_room_opto_in3_hw_relay_left', 'off') }}
-        for: "00:05:00"
-        id: left
-      - platform: template
-        value_template: >
-          {{ states('sensor.stored_hw_heat_demand') | float(0) > 0
-             and is_state('binary_sensor.control_room_esp32_control_room_opto_in2_hot_water_timer', 'on')
-             and is_state('binary_sensor.control_room_esp32_control_room_opto_in4_hw_relay_right', 'off') }}
-        for: "00:05:00"
-        id: right
-    condition:
-      - condition: state
-        entity_id: input_boolean.alerts_opto_inputs
-        state: "on"
-    action:
-      - service: notify.mobile_app_jamess_iphone
-        data:
-          title: "Hot water relay not switching"
-          message: "The {{ trigger.id }} cylinder's BDR91 is commanded on (RAMSES) but its output is off. Check the relay (RF link, LED, power)."
  
   - id: plant_alert_stat_not_passing
     alias: "Plant alert: cylinder stat not passing"

@@ -117,3 +117,16 @@ Pressure with 7-day history, the daily 05:00 reading, decay rate, and the boiler
 - **Top-up:** to 1.3 bar at 18:12 on 22 Nov. At this rate the next is due in ~9-12 days. The rate at the higher pressure is being compared over the following nights (a seat or gland weep should speed up with pressure; a vent spitting on heat-up should follow the heating hours instead). The first night or two may include air released from the fresh water.
 - **Boiler fault history (installer mode, undated): F1, FU, F1.** F1 = low water pressure (twice); FU = flow-return difference above 50 °C. The HA sensor has never gone near the cut-out since it was fitted, so both F1s predate the monitoring: the leak has run the system low before. FU fits a cold-return start (03:00 on 22 Nov reached 67/20 °C) or poor flow after low pressure (air).
 - **What the data can't do:** one pressure sensor sees the sealed system as one volume, so the rate says nothing about *where*. Next: a look-and-tissue round of vents, valve glands and manifold fittings; the plumber (inside the boiler casing is Gas Safe work; a section pressure test needs his kit). Isolating the boiler with the house's own gauges isn't a useful DIY test: the system side, with no vessel, swings with fractions of a degree and can go negative and draw air through the automatic air vents. A UFH isolation needs 2-3 alternated nights or ~24 h on a mild day.
+
+## Addendum (23-26 Nov 2026): the leak rate after the top-up
+
+Topped up to 1.3 bar on 22 Nov at 18:12. Cold minimum each night (pump off, water near room temperature):
+
+| Night | Cold minimum | Water temperature | Drop since the night before |
+|---|---|---|---|
+| 1 (23 Nov) | ~1.17 bar | ~26 °C | (first night) |
+| 2 (24 Nov) | 1.08 bar | 25.2 °C | 0.09 bar |
+| 3 (25 Nov) | 1.03 bar | 25.3 °C | 0.05 bar |
+| 4 (26 Nov) | 0.96 bar | 25.5 °C | 0.07 bar |
+
+The first night's larger drop is most likely air coming out of solution after the top-up. Since then the loss is **0.05-0.07 bar a day**, back in the range measured before the top-up (0.042-0.055 bar/day, temperature-corrected). At this rate the cold minimum will pass 0.9 bar around 28 Nov: the plan is to top up to 1.3 bar then, and keep logging. The pressure data gives the rate, not the location; the tissue round and the boiler casing (Gas Safe) are still the ways to find it.

@@ -84,3 +84,15 @@ Existing automations kept separate: the RAMSES gateway down/restart/reconnect al
 - **Evohome hub faults: real changes only.** A reload or restart briefly made the entities unavailable, which sent a spurious "all cleared" (21 Nov 11:43: nothing in either hub's fault log). The alert now fires only when both the old and new states are on/off and the sorted fault lists differ, and it also writes the message to the logbook.
 - **Low boiler pressure in practice (22 Nov 14:54):** a long pump run holds the reading ~0.1 bar low, so the 0.8 bar alert arrives on a long burn before the cold minimum gets there. Treated as the top-up signal.
 - **Tundish (22 Nov):** two right-side drips; the "running" flag stays on while a drop sits on the plates, so the alert's start time is the event ([doc 05](05-dhw-cylinders-expansion-and-tundish.md#addendum-22-nov-2026-the-right-relief-valve-starts-to-weep)).
+
+## Changes 22-26 Nov 2026
+
+- **"Hot water relay commanded but output off" retired (22 Nov 20:57).** Its "commanded" half could only come from RAMSES, which missed a relay's "off" message and reported it on for 35 minutes after it had switched off. Cover is kept by the hub-fault alert, the reheat-over-90-minutes alert and the stat-not-passing check.
+- **Reheat cut short (23 Nov).** It now uses the best cylinder probe reading from just before the relay went off, and only fires while the relay is still off. A shower that drops the probe straight after a completed reheat no longer looks like a cut-short reheat.
+- **"Boiler failed ignitions" re-enabled (22 Nov ~19:03).** It had been off since 15 Nov while the boiler-state logic was rebuilt; with the v3 states and the false-burn fix it no longer counts relights inside a call as failures.
+- **Daily cold minimum (23 Nov).** Now taken from the cold point sensor, with the 24 h minimum as fallback. It had been reporting a held value from before the top-up.
+
+**Queued for the next revision:**
+1. The short-cycling message shows **n/a** for flow and return when they're unavailable. Twice it fired during a control-room connection drop and printed 0.0 °C ([doc 19](19-control-room-esp-api-drops.md)).
+2. "Zone calling but not warming" gets a **longer allowance for underfloor zones**, sized from their optimum start lead times. A UFH zone pre-heating for an evening period looks like a failure at first.
+3. "Calling: radiators" becomes **"radiators or left cylinder"** whenever IN5 (left valve) is on, because the radiator relay is the upstairs boiler relay ([doc 16 §12](16-boiler-states-short-cycling-and-v3.md#12-short-cycling-23-26-nov-where-the-short-burns-come-from)).

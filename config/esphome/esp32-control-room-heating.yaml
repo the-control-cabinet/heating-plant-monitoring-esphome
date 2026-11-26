@@ -1,3 +1,22 @@
+# 24 Nov 2026 DIAGNOSTIC (temporary, flagged): water hammer check on both cylinder inlets.
+#   The normal inlet sensors sample once a second and then median(7) + average(5), so a hammer spike
+#   (tens of ms) is invisible on them. Added, nothing else changed: a second ADC read of GPIO1/GPIO2
+#   every 20 ms, max over 2 s, published as "Cylinder Left/Right Inlet Pressure Peak (diag)".
+#   Both pins now carry allow_other_uses: true (needed for two ADC sensors on one pin).
+#   Remove once the hammer test is done: the two "Peak (diag)" sensors and the allow_other_uses lines.
+# 23 Nov 2026 22:40 (one change): wifi power_save_mode: none. 19:59-22:28 on the diagnostic build: 4 API drops,
+#   0 Wi-Fi drops, loop time 2-3 ms before each drop (no stall), same BSSID.
+# 23 Nov 2026 DIAGNOSTIC (temporary, flagged): why the board's HA connection drops for 1-2 s about hourly.
+#   HA's debug log showed the ESP closing the connection (EOF) after ~9 s of near-silent traffic; the router
+#   logged nothing, and the HA device-log subscription forwarded nothing. Added, nothing else changed:
+#     - Wi-Fi disconnect counter (on_disconnect) -> did the board lose its Wi-Fi link?
+#     - API disconnect counter (on_client_disconnected) -> confirms each drop seen in HA
+#     - debug loop_time -> a stalled main loop (several seconds) would show here
+#     - wifi_info BSSID -> which access point it is on, and whether that changes
+#   Read: API +1 with Wi-Fi +0 = link stayed up (socket/keepalive or a loop stall: check Loop Time);
+#         API +1 with Wi-Fi +1 = the Wi-Fi link dropped (radio/AP side).
+#   Remove this block once explained (globals diag_*, api on_client_disconnected, wifi on_disconnect,
+#   debug + its sensors, the two template sensors, wifi_info).
 # =============================================================================
 # esp32-control-room-heating.yaml - boiler plant monitoring (10 Nov 2026: off-board rewiring)
 # 20 Nov 2026: no relight by a current jump for 120 s after the boiler call (IN1) drops, unless the
@@ -93,6 +112,9 @@ api:
     key: !secret esp32_control_room_heating_key
   custom_services: true
   homeassistant_services: true
+  # 23 Nov DIAGNOSTIC: count HA connections closing (see the header note)
+  on_client_disconnected:
+    - lambda: 'id(diag_api_drops) += 1;'
  
 ota:
   - platform: esphome
@@ -101,6 +123,12 @@ ota:
 wifi:
   ssid: !secret wifi_ssid
   password: !secret wifi_password
+  # 23 Nov (one change): Wi-Fi power saving off. This board has no Bluetooth, so ESPHome's default was light
+  # sleep; the API kept closing with the Wi-Fi link up and the loop normal (counters 4 API / 0 Wi-Fi).
+  power_save_mode: none
+  # 23 Nov DIAGNOSTIC: count Wi-Fi link losses as the board sees them
+  on_disconnect:
+    - lambda: 'id(diag_wifi_drops) += 1;'
   ap:
     ssid: ESP32 Control Room Hotspot
     password: !secret fallback_ap_password
@@ -108,6 +136,15 @@ wifi:
 captive_portal:
  
 globals:
+  # --- 23 Nov DIAGNOSTIC counters (remove with the rest of the diagnostic block) ---
+  - id: diag_wifi_drops
+    type: int
+    restore_value: false
+    initial_value: '0'
+  - id: diag_api_drops
+    type: int
+    restore_value: false
+    initial_value: '0'
   # --- Boiler state v3 (see the text_sensor notes) ---
   - id: b3_lit
     type: bool
@@ -267,7 +304,27 @@ script:
       - delay: 15min
       - switch.turn_off: tundish_test_pulldown
  
+# 23 Nov DIAGNOSTIC: main-loop timing (a stall shows as a large max loop time)
+debug:
+  update_interval: 10s
+
 sensor:
+  # --- 23 Nov DIAGNOSTIC (remove when the connection drops are explained) ---
+  - platform: debug
+    loop_time:
+      name: "Control Room Loop Time"
+  - platform: template
+    name: "Control Room WiFi Disconnects"
+    accuracy_decimals: 0
+    state_class: total_increasing
+    update_interval: 30s
+    lambda: 'return id(diag_wifi_drops);'
+  - platform: template
+    name: "Control Room API Disconnects"
+    accuracy_decimals: 0
+    state_class: total_increasing
+    update_interval: 30s
+    lambda: 'return id(diag_api_drops);'
   # Flow / return NTCs (beta 3977): 3V3 -> 3.3k -> IO4 (flow) / IO5 (return) -> NTC -> GND
   # (swapped 10 Nov 2026 to match the off-board re-wiring: flow now GPIO4, return GPIO5)
   # (330k found fitted by mistake and replaced, 3 Nov 2026; IO4/IO5 swapped in YAML to match)
@@ -553,7 +610,9 @@ sensor:
   # Same filtering as the boiler sensor: fast (diagnostic, ~5-8 s) + 1-min main.
   # =========================================================
   - platform: adc
-    pin: GPIO1
+    pin:
+      number: GPIO1
+      allow_other_uses: true
     id: inlet_left_pin_v
     name: "Inlet (Left) Pressure Pin Voltage"
     entity_category: diagnostic
@@ -609,7 +668,9 @@ sensor:
           send_every: 5
  
   - platform: adc
-    pin: GPIO2
+    pin:
+      number: GPIO2
+      allow_other_uses: true
     id: inlet_right_pin_v
     name: "Inlet (Right) Pressure Pin Voltage"
     entity_category: diagnostic
@@ -663,6 +724,57 @@ sensor:
       - sliding_window_moving_average:
           window_size: 30
           send_every: 5
+ 
+
+  # 24 Nov DIAGNOSTIC: hammer peak capture (left). Remove after the hammer test.
+  - platform: adc
+    pin:
+      number: GPIO1
+      allow_other_uses: true
+    id: inlet_left_peak_diag
+    name: "Cylinder Left Inlet Pressure Peak (diag)"
+    entity_category: diagnostic
+    device_class: pressure
+    state_class: measurement
+    unit_of_measurement: "bar"
+    accuracy_decimals: 2
+    attenuation: 12db
+    samples: 1
+    update_interval: 20ms
+    filters:
+      - lambda: |-
+          float v_norm = (x / ${inlet_left_divider_ratio}) * (5.0 / ${pressure_supply_v});
+          float p = (v_norm - ${inlet_left_zero_v}) * (${inlet_full_scale_bar} / 4.0) * ${inlet_left_span_gain};
+          return p < 0 ? 0.0f : p;
+      - max:
+          window_size: 100
+          send_every: 100
+          send_first_at: 100
+
+  # 24 Nov DIAGNOSTIC: hammer peak capture (right). Remove after the hammer test.
+  - platform: adc
+    pin:
+      number: GPIO2
+      allow_other_uses: true
+    id: inlet_right_peak_diag
+    name: "Cylinder Right Inlet Pressure Peak (diag)"
+    entity_category: diagnostic
+    device_class: pressure
+    state_class: measurement
+    unit_of_measurement: "bar"
+    accuracy_decimals: 2
+    attenuation: 12db
+    samples: 1
+    update_interval: 20ms
+    filters:
+      - lambda: |-
+          float v_norm = (x / ${inlet_right_divider_ratio}) * (5.0 / ${pressure_supply_v});
+          float p = (v_norm - ${inlet_right_zero_v}) * (${inlet_full_scale_bar} / 4.0) * ${inlet_right_span_gain};
+          return p < 0 ? 0.0f : p;
+      - max:
+          window_size: 100
+          send_every: 100
+          send_first_at: 100
  
   # Tundish counters: wet events (dry -> wet) and discharge events (dry -> running)
   - platform: template
@@ -726,6 +838,10 @@ sensor:
     lambda: 'return (float) id(b3_failed_total);'
  
 text_sensor:
+  # --- 23 Nov DIAGNOSTIC: which access point the board is on ---
+  - platform: wifi_info
+    bssid:
+      name: "Control Room WiFi BSSID"
   # =========================================================
   # Boiler state v3 (17 Nov 2026). Ideal Logic+ S30, SCT013-015 clamp on the permanent live.
   # Checked against two videos of the boiler display (flame symbol) with the HA history:

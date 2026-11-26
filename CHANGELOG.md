@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.14.0] - 2026-11-26
+- **Doc 05 addendum:** six right tundish events; water hammer tested with temporary 20 ms peak-pressure sensors and ruled out; condensation ruled out; working theory a passing expansion relief valve seat (G3); right inlet falls to 0.75 bar under draw (strainer / pressure reducing valve for the plumber).
+- **Doc 04 addendum:** leak rate after the 22 Nov top-up, nights 1-4 (0.05-0.07 bar/day; night 1 includes air release); top-up plan.
+- **Doc 16 §12:** where the short burns come from: one-room radiator calls and relights, 48 s UFH pulses (no minimum on time on a zone valve relay), the upstairs radiator relay proved to be the boiler relay (26 Nov test), the hot water overrun firing through the end switch, the pump minimum speed trial (P7 → P1) and its first result.
+- **Doc 15 (changes):** relay-commanded rule retired, reheat-cut-short and cold-minimum fixes; next revision queued (n/a when unavailable, longer UFH allowance, radiators-or-left-cylinder wording).
+- **Doc 18 §10-11:** towel rail open-load trial, first result (radiators-only median 6.0 min, 27 % under 3 min; provisional); next steps.
+- **Doc 15:** failed-ignitions alert re-enabled 22 Nov.
+- **New doc 19:** control-room connection drops: evidence, what was ruled out, the steady-traffic lead.
+- Firmware updated to the running diagnostic build (peak-pressure sensors, connection counters, power saving off: all flagged for removal); alerts package updated to the live version.
+
 ## [0.13.0] - 2026-11-22
 - **Signal truth table** (doc 16 §11): IN8 is the boiler switched live from any circuit until Stage 2; radiators from the RAMSES relay; radiator zone valves latched open. Doc 18 method corrected; README findings.
 - **v3 fix** (doc 16 §11): no light-off by a current jump for 120 s after the call drops, unless it returns (flashed 20 Nov ~20:25; 11+ call drops clean).
