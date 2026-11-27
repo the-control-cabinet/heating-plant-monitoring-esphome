@@ -85,6 +85,10 @@ Existing automations kept separate: the RAMSES gateway down/restart/reconnect al
 - **Low boiler pressure in practice (22 Nov 14:54):** a long pump run holds the reading ~0.1 bar low, so the 0.8 bar alert arrives on a long burn before the cold minimum gets there. Treated as the top-up signal.
 - **Tundish (22 Nov):** two right-side drips; the "running" flag stays on while a drop sits on the plates, so the alert's start time is the event ([doc 05](05-dhw-cylinders-expansion-and-tundish.md#addendum-22-nov-2026-the-right-relief-valve-starts-to-weep)).
 
+## Changes 27 Nov 2026
+- **Short cycling:** flow and return show "n/a" (and no heat verdict) when a sensor is unavailable, not 0.0 °C. The upstairs radiator relay is the hub's boiler relay and also switches for left cylinder reheats, so while the left valve is on it reads "upstairs boiler relay (radiators and/or the left cylinder)". A UFH-only alert adds that the UFH relay's 1-3 min pulses near setpoint are known behaviour until HA/OpenTherm control.
+- **21:30 digest:** every figure shows "n/a" when its sensor is unavailable.
+
 ## Changes 22-26 Nov 2026
 
 - **"Hot water relay commanded but output off" retired (22 Nov 20:57).** Its "commanded" half could only come from RAMSES, which missed a relay's "off" message and reported it on for 35 minutes after it had switched off. Cover is kept by the hub-fault alert, the reheat-over-90-minutes alert and the stat-not-passing check.

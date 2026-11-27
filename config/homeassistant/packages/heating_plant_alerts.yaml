@@ -1,3 +1,9 @@
+# 27 Nov 2026: (a) short-cycling alert: flow/return show "n/a" (and no heat verdict) when a sensor is unavailable,
+#   instead of 0.0 °C; the upstairs radiator BDR91 (13:258561) is the hub's BOILER RELAY and also switches for left
+#   cylinder reheats, so while the left valve (IN5) is on it reads "upstairs boiler relay (radiators and/or the
+#   left cylinder)"; a UFH-only alert adds that the UFH relay's 1-3 min pulses near setpoint are known behaviour
+#   (no minimum on time for a zone-valve binding) until HA/OpenTherm control. (b) 21:30 digest: every figure shows
+#   "n/a" when its sensor is unavailable instead of 0 or 0.0. Nothing else changed. Reload: Automations.
 # 23 Nov 2026 (b): the daily cold minimum takes its value from the cold point (was the 24 h minimum, which kept
 #   the held pre-top-up 0.93 bar). (a): "reheat cut short" now judges the best probe reading (at switch-off vs 30 min later) and only if
 #   the relay is still off. 07:24 false alert: the right reheat finished at 61.0 C (06:54), a shower dropped the
@@ -462,19 +468,26 @@ automation:
         data:
           title: "Boiler short cycling"
           message: >
-            {% set f = states('sensor.control_room_esp32_control_room_boiler_flow_temperature') | float(0) %}
-            {% set r = states('sensor.control_room_esp32_control_room_boiler_return_temperature') | float(0) %}
+            {% set fs = states('sensor.control_room_esp32_control_room_boiler_flow_temperature') %}
+            {% set rs = states('sensor.control_room_esp32_control_room_boiler_return_temperature') %}
+            {% set have = is_number(fs) and is_number(rs) %}
+            {% set f = fs | float(0) %}
+            {% set r = rs | float(0) %}
             {% set dt = (f - r) | round(1) %}
+            {% set left = is_state('binary_sensor.control_room_esp32_control_room_opto_in5_cylinder_left_valve_drive', 'on') %}
             {% set ns = namespace(calling=[]) %}
-            {% for e, label in [('binary_sensor.bdr_13_258561_active', 'radiators'), ('binary_sensor.control_room_esp32_control_room_opto_in7_ufh_relay', 'UFH'), ('binary_sensor.control_room_esp32_control_room_opto_in5_cylinder_left_valve_drive', 'left cylinder'), ('binary_sensor.control_room_esp32_control_room_opto_in6_cylinder_right_valve_drive', 'right cylinder')] %}
-              {% if is_state(e, 'on') %}{% set ns.calling = ns.calling + [label] %}{% endif %}
-            {% endfor %}
+            {% if is_state('binary_sensor.bdr_13_258561_active', 'on') %}{% set ns.calling = ns.calling + ['upstairs boiler relay (radiators and/or the left cylinder)' if left else 'radiators'] %}{% endif %}
+            {% if is_state('binary_sensor.control_room_esp32_control_room_opto_in7_ufh_relay', 'on') %}{% set ns.calling = ns.calling + ['UFH'] %}{% endif %}
+            {% if left %}{% set ns.calling = ns.calling + ['left cylinder'] %}{% endif %}
+            {% if is_state('binary_sensor.control_room_esp32_control_room_opto_in6_cylinder_right_valve_drive', 'on') %}{% set ns.calling = ns.calling + ['right cylinder'] %}{% endif %}
             {{ states('sensor.boiler_starts_last_hour') }} starts in the last hour.
-            At this start: flow {{ f | round(1) }} °C, return {{ r | round(1) }} °C (difference {{ dt }} °C).
+            At this start: flow {{ (f | round(1)) if is_number(fs) else 'n/a' }} °C, return {{ (r | round(1)) if is_number(rs) else 'n/a' }} °C (difference {{ dt if have else 'n/a' }} °C).
             Calling: {{ ns.calling | join(', ') if ns.calling else 'nothing (no relay or valve on)' }}.
-            {% if dt < 5 %}Little heat being taken: water is coming back almost as hot as it left (low flow, few loops or radiators open, or the UFH mixing valve drawing little).
+            {% if not have %}Flow or return sensor unavailable, so no verdict on how much heat is being taken.
+            {% elif dt < 5 %}Little heat being taken: water is coming back almost as hot as it left (low flow, few loops or radiators open, or the UFH mixing valve drawing little).
             {% elif dt < 15 %}Some heat being taken: the load is close to the boiler's minimum output.
             {% else %}Plenty of heat being taken, so not low flow: likely a warm-up or recovery, with the boiler cycling on its own limits.{% endif %}
+            {% if ns.calling == ['UFH'] %}UFH only: near setpoint the UFH relay (bound as a zone valve) pulses for about 1-3 min every 20 min with no minimum on time, and each pulse fires the boiler. Known behaviour until HA/OpenTherm control (Phase 3), not a fault.{% endif %}
       - delay: "01:00:00"
  
   - id: plant_alert_flow_overheat
@@ -1068,13 +1081,28 @@ automation:
         data:
           title: "Heating today"
           message: >
-            Boiler: {{ states('sensor.boiler_starts_today') }} starts ({{ states('counter.boiler_failed_ignitions_today') }} failed ignitions), {{ states('sensor.boiler_firing_time_today') | float(0) | round(1) }} h firing.
-            Cylinders (top): left {{ state_attr('sensor.left_cylinder_hot_water_available', 'top_used') | float(0) | round(1) }} °C ({{ states('sensor.left_cylinder_hot_water_charge') }} %),
-            right {{ state_attr('sensor.right_cylinder_hot_water_available', 'top_used') | float(0) | round(1) }} °C ({{ states('sensor.right_cylinder_hot_water_charge') }} %).
-            Tundish discharge events: left {{ states('sensor.control_room_esp32_control_room_tundish_left_discharge_events') | int(0) }},
-            right {{ states('sensor.control_room_esp32_control_room_tundish_right_discharge_events') | int(0) }}.
-            {% if is_state('input_boolean.alerts_boiler_pressure', 'on') %}System pressure {{ states('sensor.control_room_esp32_control_room_boiler_system_pressure') | float(0) | round(2) }} bar; cold minimum {{ states('sensor.boiler_pressure_daily_cold_minimum') }} bar{% set cw = state_attr('sensor.boiler_pressure_daily_cold_minimum', 'water_temperature') %}{% if cw is not none %} at {{ cw }} °C water{% endif %} (previous {{ state_attr('sensor.boiler_pressure_daily_cold_minimum', 'previous') or 'n/a' }}{% set pw = state_attr('sensor.boiler_pressure_daily_cold_minimum', 'previous_water_temperature') %}{% if pw is not none %} at {{ pw }} °C{% endif %}).{% endif %}
-            UFH mornings (temp vs setpoint at period end): Family {{ states('sensor.family_room_morning_shortfall') }},
-            Dining {{ states('sensor.dining_room_morning_shortfall') }}, Hall {{ states('sensor.hall_morning_shortfall') }} °C.
+            {% set na = 'n/a' %}
+            {% set ft = states('sensor.boiler_firing_time_today') %}
+            {% set lt = state_attr('sensor.left_cylinder_hot_water_available', 'top_used') %}
+            {% set rtp = state_attr('sensor.right_cylinder_hot_water_available', 'top_used') %}
+            {% set lc = states('sensor.left_cylinder_hot_water_charge') %}
+            {% set rc = states('sensor.right_cylinder_hot_water_charge') %}
+            {% set tl = states('sensor.control_room_esp32_control_room_tundish_left_discharge_events') %}
+            {% set tr = states('sensor.control_room_esp32_control_room_tundish_right_discharge_events') %}
+            Boiler: {{ states('sensor.boiler_starts_today') if is_number(states('sensor.boiler_starts_today')) else na }} starts ({{ states('counter.boiler_failed_ignitions_today') }} failed ignitions), {{ (ft | float(0) | round(1)) if is_number(ft) else na }} h firing.
+            Cylinders (top): left {{ (lt | float(0) | round(1)) if is_number(lt) else na }} °C ({{ lc if is_number(lc) else na }} %),
+            right {{ (rtp | float(0) | round(1)) if is_number(rtp) else na }} °C ({{ rc if is_number(rc) else na }} %).
+            Tundish discharge events: left {{ (tl | int(0)) if is_number(tl) else na }},
+            right {{ (tr | int(0)) if is_number(tr) else na }}.
+            {% set sp = states('sensor.control_room_esp32_control_room_boiler_system_pressure') %}
+            {% set cm = states('sensor.boiler_pressure_daily_cold_minimum') %}
+            {% if is_state('input_boolean.alerts_boiler_pressure', 'on') %}System pressure {{ (sp | float(0) | round(2)) if is_number(sp) else na }} bar; cold minimum {{ cm if is_number(cm) else na }} bar{% set cw = state_attr('sensor.boiler_pressure_daily_cold_minimum', 'water_temperature') %}{% if cw is not none %} at {{ cw }} °C water{% endif %} (previous {{ state_attr('sensor.boiler_pressure_daily_cold_minimum', 'previous') or 'n/a' }}{% set pw = state_attr('sensor.boiler_pressure_daily_cold_minimum', 'previous_water_temperature') %}{% if pw is not none %} at {{ pw }} °C{% endif %}).{% endif %}
+            {% set mf = states('sensor.family_room_morning_shortfall') %}
+            {% set md = states('sensor.dining_room_morning_shortfall') %}
+            {% set mh = states('sensor.hall_morning_shortfall') %}
+            UFH mornings (temp vs setpoint at period end): Family {{ mf if is_number(mf) else na }},
+            Dining {{ md if is_number(md) else na }}, Hall {{ mh if is_number(mh) else na }} °C.
             Calls without heat today: {{ states('counter.boiler_no_heat_calls_today') | int(0) }}.
-            {% if is_state('input_boolean.alerts_cylinder_pressure', 'on') %}Inlets: left {{ states('sensor.control_room_esp32_control_room_cylinder_left_inlet_pressure') | float(0) | round(2) }}, right {{ states('sensor.control_room_esp32_control_room_cylinder_right_inlet_pressure') | float(0) | round(2) }} bar.{% endif %}
+            {% set il = states('sensor.control_room_esp32_control_room_cylinder_left_inlet_pressure') %}
+            {% set ir = states('sensor.control_room_esp32_control_room_cylinder_right_inlet_pressure') %}
+            {% if is_state('input_boolean.alerts_cylinder_pressure', 'on') %}Inlets: left {{ (il | float(0) | round(2)) if is_number(il) else na }}, right {{ (ir | float(0) | round(2)) if is_number(ir) else na }} bar.{% endif %}

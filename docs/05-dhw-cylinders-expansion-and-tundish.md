@@ -177,3 +177,10 @@ Two wet events on the right tundish, the first since the new vessels (11 Nov):
 **Why the left inlet reads ~2.4 bar overnight:** with no reheat and no draw for many hours, the trapped pressure above the pressure reducing valve relaxes back towards the mains supply level. The right held 3.45 bar on the same night.
 
 The peak sensors stay in for now: they turned out to matter for something else (see [doc 19](19-control-room-esp-api-drops.md)).
+
+## Addendum (26-27 Nov 2026): event 7, and the full map
+- **Event 7: 26 Nov 18:12:30-18:39:40**, idle: no reheat, no hot draw, inlet only 2.44-2.54 bar, no pressure spike. The seat passes at low pressure too.
+- **All seven events against the raw data** (21-26 Nov): three began at a quick pressure rise (a shower closing ×2, the pressure reducing valve topping up), one mid-shower, three at steady pressure with nothing happening (3.45-4.0 bar). The left tundish stayed dry throughout. No single trigger: a passing seat; disturbances may release a drop that has built up at the outlet.
+- **Burner timing checked and ruled out:** 344 burner starts in the period; only event 7 began within a second of one. Backflow up the shared discharge was also ruled out (joins several metres away and lower, no smell, no condensate).
+- **Kept separate from the heating leak:** the cylinders are mains-pressure water, topped up automatically through the pressure reducing valve, so a tundish drip never shows on the boiler gauge; a cylinder coil leak would *raise* the boiler pressure, not lower it.
+- Plumber: replace the right expansion relief valve cartridge; check the right inlet strainer / pressure reducing valve.

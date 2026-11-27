@@ -130,3 +130,35 @@ Topped up to 1.3 bar on 22 Nov at 18:12. Cold minimum each night (pump off, wate
 | 4 (26 Nov) | 0.96 bar | 25.5 °C | 0.07 bar |
 
 The first night's larger drop is most likely air coming out of solution after the top-up. Since then the loss is **0.05-0.07 bar a day**, back in the range measured before the top-up (0.042-0.055 bar/day, temperature-corrected). At this rate the cold minimum will pass 0.9 bar around 28 Nov: the plan is to top up to 1.3 bar then, and keep logging. The pressure data gives the rate, not the location; the tissue round and the boiler casing (Gas Safe) are still the ways to find it.
+
+## Addendum (26-27 Nov 2026): measuring the leak from data, and where it isn't
+
+### Night-to-night at the same water temperature
+Pressure falls overnight from the leak and from the water cooling. Reading the pressure each night at the **same return temperature** (28-30 °C, around 02:00) cancels the cooling:
+
+| Night to night | System level | Loss |
+|---|---|---|
+| 18 → 19 Nov | ~1.10-1.15 bar | 0.085 bar |
+| 19 → 21 Nov | ~1.0-1.05 | 0.038 / day |
+| 21 → 22 Nov | ~0.93-0.98 | 0.053 |
+| *(22 Nov top-up)* | | |
+| 23 → 24 Nov | ~1.11-1.20 | 0.090 |
+| 24 → 25 Nov | ~1.05-1.11 | 0.064 |
+| 25 → 26 Nov | ~0.97-1.04 | 0.076 |
+| 26 → 27 Nov | ~0.91-0.97 | 0.054 |
+
+- Steady at **~0.04-0.09 bar/day (mean ~0.06)**, not worsening.
+- **Apparently faster at higher pressure** (~0.08/day at 1.1-1.2 bar vs ~0.05 at 0.93-1.0): fits a seat that weeps more as pressure rises (a relief valve). Suggestive only: the first day after a top-up also loses dissolved air, and heating hours vary. The 27 Nov top-up to ~1.3 bar is the clean repeat (3 nights).
+- **What doesn't work:** separating leak from cooling *within* one night. The boiler's NTCs reach room temperature long before the radiators and UFH screed do, so the fit swings. Manifold NTCs would fix that.
+- The owner recalls the loss continuing through the summer with the heating off, possibly slower: a **static** component, plus perhaps a pressure/temperature-dependent one.
+
+### 27 Nov: top-up, bleed, and a full leak round (all dry)
+- Topped up 11:18 (0.89 bar, system cool); all radiators bled (air only in the fully open towel rail: fresh-water degassing), UFH pump and the vent above it bled (no air); small top-up ~12:45.
+- **Checked dry, by tissue and torch:** under the boiler, the filling loop, the magnetic filter; every pipe and joint in the eaves around the control room (boiler flow/return, flows to top floor, middle floor and UFH, the DHW outlet, condensate and discharge pipes, plastic joints); the **whole UFH manifold and pump group** (isolators, mixing valve, gauge, pump unions and vent, flow meters, actuator bases, every loop connection, end pieces, drains) and the floor below. Radiators: evening round with the heating on.
+- **Discharge arrangement:** the boiler pressure relief valve discharge, the boiler condensate and both cylinders' tundish discharges join one pipe into the house's main waste/soil stack. Nothing ends outside. The boiler relief valve's copper tip is visible where it drops into the plastic pipe: the one place its leak would show (tissue wrap, checked over the following days).
+- Not reachable without the boiler cover (plumber): the relief valve itself, the boiler's pump and automatic air vent.
+
+### Next
+1. Copper tip check; 3 nights at ~1.3 bar.
+2. If the tip stays dry: **UFH isolation test** in a daytime lull (close the manifold's flow and return ball valves ~4 h; a pressure **step down when reopened** = the leak is in the UFH; no step = elsewhere).
+3. Plumber: the relief valve and the parts under the cover.

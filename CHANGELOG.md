@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.15.0] - 2026-11-27
+- **Doc 04 addendum:** leak rate night to night at a fixed water temperature (~0.06 bar/day, apparently faster at higher pressure), why a within-night fit fails, 27 Nov top-up/bleed, full leak round (all dry), the shared discharge to the soil stack, next steps (copper tip, 3 nights at 1.3 bar, UFH isolation test).
+- **Doc 05 addendum:** event 7 (idle, low pressure), the 7-event map, burner timing and backflow ruled out, kept separate from the heating leak.
+- **Doc 19:** test 2, heartbeat vs sampling (from 27 Nov 09:13), with the 2026.11.1 caveat.
+- **Doc 15 / alerts package:** "n/a" for unavailable sensors (short-cycling alert and digest), boiler-relay wording, UFH-only note.
+- **Config:** control-room heartbeat build; alerts package 27 Nov.
+
 ## [0.14.0] - 2026-11-26
 - **Doc 05 addendum:** six right tundish events; water hammer tested with temporary 20 ms peak-pressure sensors and ruled out; condensation ruled out; working theory a passing expansion relief valve seat (G3); right inlet falls to 0.75 bar under draw (strainer / pressure reducing valve for the plumber).
 - **Doc 04 addendum:** leak rate after the 22 Nov top-up, nights 1-4 (0.05-0.07 bar/day; night 1 includes air release); top-up plan.

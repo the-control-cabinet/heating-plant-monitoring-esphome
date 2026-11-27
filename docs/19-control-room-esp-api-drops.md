@@ -23,3 +23,14 @@ On 24 Nov at 22:08 the board was flashed with two extra diagnostic sensors that 
 4. Then remove the diagnostic sensors and counters, and turn power saving back to its default. All are flagged in the firmware header.
 
 The firmware in [`config/esphome/esp32-control-room-heating.yaml`](../config/esphome/esp32-control-room-heating.yaml) is the diagnostic build that's running now.
+
+## Test 2: traffic or sampling? (from 27 Nov 2026, 09:13)
+The 24 Nov peak sensors changed two things at once: steady traffic to Home Assistant **and** 20 ms ADC sampling keeping the board's main loop busy. Baseline with them on: **0.43 drops an hour** (6 in 14 h, 26-27 Nov), 0 Wi-Fi drops.
+
+One change: both peak sensors removed (their job was done: water hammer ruled out) and a **heartbeat** added, a diagnostic sensor that sends a changing value every second, the same message rate with no fast sampling.
+- Drops stay near 0.4/h → **traffic** is the cure; a heartbeat (or a shorter keep-alive) becomes the permanent fix.
+- Drops return to ~2/h → the **sampling/loop activity** was the cure; loop timing is the next lead.
+
+Caveat, recorded honestly: the ESPHome dashboard had already updated itself, so this flash also took the board from 2026.11.0 to 2026.11.1. The 2026.11.1 notes touch nothing on this board. The rest of the fleet followed at ~10:35 the same day.
+
+*Result: to be added after 24-36 h.*

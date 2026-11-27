@@ -1,9 +1,10 @@
-# 24 Nov 2026 DIAGNOSTIC (temporary, flagged): water hammer check on both cylinder inlets.
-#   The normal inlet sensors sample once a second and then median(7) + average(5), so a hammer spike
-#   (tens of ms) is invisible on them. Added, nothing else changed: a second ADC read of GPIO1/GPIO2
-#   every 20 ms, max over 2 s, published as "Cylinder Left/Right Inlet Pressure Peak (diag)".
-#   Both pins now carry allow_other_uses: true (needed for two ADC sensors on one pin).
-#   Remove once the hammer test is done: the two "Peak (diag)" sensors and the allow_other_uses lines.
+# 27 Nov 2026 DIAGNOSTIC TEST (one change, flagged): the API-drop lead. After the 24 Nov peak sensors went on,
+#   API drops fell from ~2.3/h to ~0.4-0.56/h. Two possible reasons: steady traffic to HA, or the 20 ms ADC
+#   sampling keeping the main loop busy. This build REMOVES both peak sensors (and the allow_other_uses lines)
+#   and ADDS one heartbeat sensor publishing every 1 s (same message rate, no fast sampling).
+#   Drops stay low -> traffic is the cause: keep a heartbeat (or a shorter API keep-alive) as the fix.
+#   Drops return to ~2/h -> it was the sampling/loop activity: look at loop timing instead.
+#   All other 23 Nov diagnostics kept unchanged (counters, loop time, BSSID, power save off).
 # 23 Nov 2026 22:40 (one change): wifi power_save_mode: none. 19:59-22:28 on the diagnostic build: 4 API drops,
 #   0 Wi-Fi drops, loop time 2-3 ms before each drop (no stall), same BSSID.
 # 23 Nov 2026 DIAGNOSTIC (temporary, flagged): why the board's HA connection drops for 1-2 s about hourly.
@@ -610,9 +611,7 @@ sensor:
   # Same filtering as the boiler sensor: fast (diagnostic, ~5-8 s) + 1-min main.
   # =========================================================
   - platform: adc
-    pin:
-      number: GPIO1
-      allow_other_uses: true
+    pin: GPIO1
     id: inlet_left_pin_v
     name: "Inlet (Left) Pressure Pin Voltage"
     entity_category: diagnostic
@@ -668,9 +667,7 @@ sensor:
           send_every: 5
  
   - platform: adc
-    pin:
-      number: GPIO2
-      allow_other_uses: true
+    pin: GPIO2
     id: inlet_right_pin_v
     name: "Inlet (Right) Pressure Pin Voltage"
     entity_category: diagnostic
@@ -726,56 +723,6 @@ sensor:
           send_every: 5
  
 
-  # 24 Nov DIAGNOSTIC: hammer peak capture (left). Remove after the hammer test.
-  - platform: adc
-    pin:
-      number: GPIO1
-      allow_other_uses: true
-    id: inlet_left_peak_diag
-    name: "Cylinder Left Inlet Pressure Peak (diag)"
-    entity_category: diagnostic
-    device_class: pressure
-    state_class: measurement
-    unit_of_measurement: "bar"
-    accuracy_decimals: 2
-    attenuation: 12db
-    samples: 1
-    update_interval: 20ms
-    filters:
-      - lambda: |-
-          float v_norm = (x / ${inlet_left_divider_ratio}) * (5.0 / ${pressure_supply_v});
-          float p = (v_norm - ${inlet_left_zero_v}) * (${inlet_full_scale_bar} / 4.0) * ${inlet_left_span_gain};
-          return p < 0 ? 0.0f : p;
-      - max:
-          window_size: 100
-          send_every: 100
-          send_first_at: 100
-
-  # 24 Nov DIAGNOSTIC: hammer peak capture (right). Remove after the hammer test.
-  - platform: adc
-    pin:
-      number: GPIO2
-      allow_other_uses: true
-    id: inlet_right_peak_diag
-    name: "Cylinder Right Inlet Pressure Peak (diag)"
-    entity_category: diagnostic
-    device_class: pressure
-    state_class: measurement
-    unit_of_measurement: "bar"
-    accuracy_decimals: 2
-    attenuation: 12db
-    samples: 1
-    update_interval: 20ms
-    filters:
-      - lambda: |-
-          float v_norm = (x / ${inlet_right_divider_ratio}) * (5.0 / ${pressure_supply_v});
-          float p = (v_norm - ${inlet_right_zero_v}) * (${inlet_full_scale_bar} / 4.0) * ${inlet_right_span_gain};
-          return p < 0 ? 0.0f : p;
-      - max:
-          window_size: 100
-          send_every: 100
-          send_first_at: 100
- 
   # Tundish counters: wet events (dry -> wet) and discharge events (dry -> running)
   - platform: template
     name: "Tundish (Left) Wet Events"
@@ -810,6 +757,17 @@ sensor:
  
   - platform: uptime
     name: "Control Room Uptime"
+
+  # 27 Nov DIAGNOSTIC (one change): heartbeat. Publishes a changing value every 1 s, the same message
+  # rate the two peak sensors gave (one each per 2 s), with no fast ADC sampling. Remove with the block.
+  - platform: template
+    name: "Control Room Heartbeat (diag)"
+    id: diag_heartbeat
+    entity_category: diagnostic
+    accuracy_decimals: 0
+    update_interval: 1s
+    lambda: |-
+      return (float) (millis() / 1000);
  
   # Boiler state v3 outputs (published by the state logic)
   - platform: template
